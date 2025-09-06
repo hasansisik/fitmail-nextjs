@@ -106,37 +106,37 @@ export function Mail({
             isCollapsed={isCollapsed}
             links={[
               {
-                title: "Inbox",
+                title: "Gelen Kutusu",
                 label: "128",
                 icon: Inbox,
                 variant: "default",
               },
               {
-                title: "Drafts",
+                title: "Taslaklar",
                 label: "9",
                 icon: File,
                 variant: "ghost",
               },
               {
-                title: "Sent",
+                title: "Gönderilenler",
                 label: "",
                 icon: Send,
                 variant: "ghost",
               },
               {
-                title: "Junk",
+                title: "Spam",
                 label: "23",
                 icon: ArchiveX,
                 variant: "ghost",
               },
               {
-                title: "Trash",
+                title: "Çöp Kutusu",
                 label: "",
                 icon: Trash2,
                 variant: "ghost",
               },
               {
-                title: "Archive",
+                title: "Arşiv",
                 label: "",
                 icon: Archive,
                 variant: "ghost",
@@ -148,31 +148,31 @@ export function Mail({
             isCollapsed={isCollapsed}
             links={[
               {
-                title: "Social",
+                title: "Sosyal",
                 label: "972",
                 icon: Users2,
                 variant: "ghost",
               },
               {
-                title: "Updates",
+                title: "Güncellemeler",
                 label: "342",
                 icon: AlertCircle,
                 variant: "ghost",
               },
               {
-                title: "Forums",
+                title: "Forumlar",
                 label: "128",
                 icon: MessagesSquare,
                 variant: "ghost",
               },
               {
-                title: "Shopping",
+                title: "Alışveriş",
                 label: "8",
                 icon: ShoppingCart,
                 variant: "ghost",
               },
               {
-                title: "Promotions",
+                title: "Promosyonlar",
                 label: "21",
                 icon: Archive,
                 variant: "ghost",
@@ -184,19 +184,19 @@ export function Mail({
         <ResizablePanel defaultSize={defaultLayout[1]} minSize={30}>
           <Tabs defaultValue="all">
             <div className="flex items-center px-4 py-2">
-              <h1 className="text-xl font-bold">Inbox</h1>
+              <h1 className="text-xl font-bold">Gelen Kutusu</h1>
               <TabsList className="ml-auto">
                 <TabsTrigger
                   value="all"
                   className="text-zinc-600 dark:text-zinc-200"
                 >
-                  All mail
+                  Tüm E-postalar
                 </TabsTrigger>
                 <TabsTrigger
                   value="unread"
                   className="text-zinc-600 dark:text-zinc-200"
                 >
-                  Unread
+                  Okunmamış
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -205,7 +205,7 @@ export function Mail({
               <form>
                 <div className="relative">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Search" className="pl-8" />
+                  <Input placeholder="Ara" className="pl-8" />
                 </div>
               </form>
             </div>

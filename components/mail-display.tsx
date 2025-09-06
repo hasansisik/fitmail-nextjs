@@ -59,28 +59,28 @@ export function MailDisplay({ mail }: MailDisplayProps) {
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" disabled={!mail}>
                 <Archive className="h-4 w-4" />
-                <span className="sr-only">Archive</span>
+                <span className="sr-only">Arşivle</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Archive</TooltipContent>
+            <TooltipContent>Arşivle</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" disabled={!mail}>
                 <ArchiveX className="h-4 w-4" />
-                <span className="sr-only">Move to junk</span>
+                <span className="sr-only">Spam'e taşı</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Move to junk</TooltipContent>
+            <TooltipContent>Spam'e taşı</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" disabled={!mail}>
                 <Trash2 className="h-4 w-4" />
-                <span className="sr-only">Move to trash</span>
+                <span className="sr-only">Çöp kutusuna taşı</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Move to trash</TooltipContent>
+            <TooltipContent>Çöp kutusuna taşı</TooltipContent>
           </Tooltip>
           <Separator orientation="vertical" className="mx-1 h-6" />
           <Tooltip>
@@ -89,19 +89,19 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                 <TooltipTrigger asChild>
                   <Button variant="ghost" size="icon" disabled={!mail}>
                     <Clock className="h-4 w-4" />
-                    <span className="sr-only">Snooze</span>
+                    <span className="sr-only">Ertle</span>
                   </Button>
                 </TooltipTrigger>
               </PopoverTrigger>
               <PopoverContent className="flex w-[535px] p-0">
                 <div className="flex flex-col gap-2 border-r px-2 py-4">
-                  <div className="px-4 text-sm font-medium">Snooze until</div>
+                  <div className="px-4 text-sm font-medium">Şu zamana kadar ertle</div>
                   <div className="grid min-w-[250px] gap-1">
                     <Button
                       variant="ghost"
                       className="justify-start font-normal"
                     >
-                      Later today{" "}
+                      Bugün daha sonra{" "}
                       <span className="ml-auto text-muted-foreground">
                         {format(addHours(today, 4), "E, h:m b")}
                       </span>
@@ -110,7 +110,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                       variant="ghost"
                       className="justify-start font-normal"
                     >
-                      Tomorrow
+                      Yarın
                       <span className="ml-auto text-muted-foreground">
                         {format(addDays(today, 1), "E, h:m b")}
                       </span>
@@ -119,7 +119,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                       variant="ghost"
                       className="justify-start font-normal"
                     >
-                      This weekend
+                      Bu hafta sonu
                       <span className="ml-auto text-muted-foreground">
                         {format(nextSaturday(today), "E, h:m b")}
                       </span>
@@ -128,7 +128,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                       variant="ghost"
                       className="justify-start font-normal"
                     >
-                      Next week
+                      Gelecek hafta
                       <span className="ml-auto text-muted-foreground">
                         {format(addDays(today, 7), "E, h:m b")}
                       </span>
@@ -140,7 +140,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                 </div>
               </PopoverContent>
             </Popover>
-            <TooltipContent>Snooze</TooltipContent>
+            <TooltipContent>Ertle</TooltipContent>
           </Tooltip>
         </div>
         <div className="ml-auto flex items-center gap-2">
@@ -148,28 +148,28 @@ export function MailDisplay({ mail }: MailDisplayProps) {
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" disabled={!mail}>
                 <Reply className="h-4 w-4" />
-                <span className="sr-only">Reply</span>
+                <span className="sr-only">Yanıtla</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Reply</TooltipContent>
+            <TooltipContent>Yanıtla</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" disabled={!mail}>
                 <ReplyAll className="h-4 w-4" />
-                <span className="sr-only">Reply all</span>
+                <span className="sr-only">Hepsine yanıtla</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Reply all</TooltipContent>
+            <TooltipContent>Hepsine yanıtla</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" disabled={!mail}>
                 <Forward className="h-4 w-4" />
-                <span className="sr-only">Forward</span>
+                <span className="sr-only">İlet</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Forward</TooltipContent>
+            <TooltipContent>İlet</TooltipContent>
           </Tooltip>
         </div>
         <Separator orientation="vertical" className="mx-2 h-6" />
@@ -177,14 +177,14 @@ export function MailDisplay({ mail }: MailDisplayProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" disabled={!mail}>
               <MoreVertical className="h-4 w-4" />
-              <span className="sr-only">More</span>
+              <span className="sr-only">Daha fazla</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>Mark as unread</DropdownMenuItem>
-            <DropdownMenuItem>Star thread</DropdownMenuItem>
-            <DropdownMenuItem>Add label</DropdownMenuItem>
-            <DropdownMenuItem>Mute thread</DropdownMenuItem>
+            <DropdownMenuItem>Okunmamış olarak işaretle</DropdownMenuItem>
+            <DropdownMenuItem>Konuyu yıldızla</DropdownMenuItem>
+            <DropdownMenuItem>Etiket ekle</DropdownMenuItem>
+            <DropdownMenuItem>Konuyu sustur</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -206,7 +206,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                 <div className="font-semibold">{mail.name}</div>
                 <div className="line-clamp-1 text-xs">{mail.subject}</div>
                 <div className="line-clamp-1 text-xs">
-                  <span className="font-medium">Reply-To:</span> {mail.email}
+                  <span className="font-medium">Yanıt-Adresi:</span> {mail.email}
                 </div>
               </div>
             </div>
@@ -226,22 +226,22 @@ export function MailDisplay({ mail }: MailDisplayProps) {
               <div className="grid gap-4">
                 <Textarea
                   className="p-4"
-                  placeholder={`Reply ${mail.name}...`}
+                  placeholder={`${mail.name} yanıtla...`}
                 />
                 <div className="flex items-center">
                   <Label
                     htmlFor="mute"
                     className="flex items-center gap-2 text-xs font-normal"
                   >
-                    <Switch id="mute" aria-label="Mute thread" /> Mute this
-                    thread
+                    <Switch id="mute" aria-label="Konuyu sustur" /> Bu konuyu
+                    sustur
                   </Label>
                   <Button
                     onClick={(e) => e.preventDefault()}
                     size="sm"
                     className="ml-auto"
                   >
-                    Send
+                    Gönder
                   </Button>
                 </div>
               </div>
@@ -250,7 +250,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
         </div>
       ) : (
         <div className="p-8 text-center text-muted-foreground">
-          No message selected
+          Hiç mesaj seçilmedi
         </div>
       )}
     </div>
