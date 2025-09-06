@@ -6,11 +6,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 
 export function RegisterForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
+  const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState({
     firstName: "",
@@ -44,6 +46,10 @@ export function RegisterForm({
     e.preventDefault()
     // Handle form submission
     console.log("Form submitted:", formData)
+    // Simulate registration process
+    console.log("Registration successful")
+    // Redirect to mail page
+    router.push("/mail")
   }
 
   const renderStep = () => {
