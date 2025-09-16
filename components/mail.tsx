@@ -1,27 +1,9 @@
 "use client"
 
 import * as React from "react"
-import {
-  AlertCircle,
-  Archive,
-  ArchiveX,
-  File,
-  Inbox,
-  MessagesSquare,
-  Search,
-  Send,
-  ShoppingCart,
-  Trash2,
-  Users2,
-} from "lucide-react"
+import { Search } from "lucide-react"
 
-import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable"
 import { Separator } from "@/components/ui/separator"
 import {
   Tabs,
@@ -29,11 +11,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { TooltipProvider } from "@/components/ui/tooltip"
-import { AccountSwitcher } from "@/components/account-switcher"
 import { MailDisplay } from "@/components/mail-display"
 import { MailList } from "@/components/mail-list"
-import { Nav } from "@/components/nav"
 import { type Mail } from "@/app/mail/data"
 import { useMail } from "@/app/mail/use-mail"
 
@@ -57,131 +36,13 @@ export function Mail({
   navCollapsedSize,
 }: MailProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
+  const [isMaximized, setIsMaximized] = React.useState(false)
   const [mail] = useMail()
 
   return (
-    <TooltipProvider delayDuration={0}>
-      <ResizablePanelGroup
-        direction="horizontal"
-        onLayout={(sizes: number[]) => {
-          document.cookie = `react-resizable-panels:layout:mail=${JSON.stringify(
-            sizes
-          )}`
-        }}
-        className="h-full max-h-[800px] items-stretch"
-      >
-        <ResizablePanel
-          defaultSize={defaultLayout[0]}
-          collapsedSize={navCollapsedSize}
-          collapsible={true}
-          minSize={15}
-          maxSize={20}
-          onCollapse={() => {
-            setIsCollapsed(true)
-            document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(
-              true
-            )}`
-          }}
-          onResize={() => {
-            setIsCollapsed(false)
-            document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(
-              false
-            )}`
-          }}
-          className={cn(
-            isCollapsed &&
-              "min-w-[50px] transition-all duration-300 ease-in-out"
-          )}
-        >
-          <div
-            className={cn(
-              "flex h-[52px] items-center justify-center",
-              isCollapsed ? "h-[52px]" : "px-2"
-            )}
-          >
-            <AccountSwitcher isCollapsed={isCollapsed} accounts={accounts} />
-          </div>
-          <Separator />
-          <Nav
-            isCollapsed={isCollapsed}
-            links={[
-              {
-                title: "Gelen Kutusu",
-                label: "128",
-                icon: Inbox,
-                variant: "default",
-              },
-              {
-                title: "Taslaklar",
-                label: "9",
-                icon: File,
-                variant: "ghost",
-              },
-              {
-                title: "Gönderilenler",
-                label: "",
-                icon: Send,
-                variant: "ghost",
-              },
-              {
-                title: "Spam",
-                label: "23",
-                icon: ArchiveX,
-                variant: "ghost",
-              },
-              {
-                title: "Çöp Kutusu",
-                label: "",
-                icon: Trash2,
-                variant: "ghost",
-              },
-              {
-                title: "Arşiv",
-                label: "",
-                icon: Archive,
-                variant: "ghost",
-              },
-            ]}
-          />
-          <Separator />
-          <Nav
-            isCollapsed={isCollapsed}
-            links={[
-              {
-                title: "Sosyal",
-                label: "972",
-                icon: Users2,
-                variant: "ghost",
-              },
-              {
-                title: "Güncellemeler",
-                label: "342",
-                icon: AlertCircle,
-                variant: "ghost",
-              },
-              {
-                title: "Forumlar",
-                label: "128",
-                icon: MessagesSquare,
-                variant: "ghost",
-              },
-              {
-                title: "Alışveriş",
-                label: "8",
-                icon: ShoppingCart,
-                variant: "ghost",
-              },
-              {
-                title: "Promosyonlar",
-                label: "21",
-                icon: Archive,
-                variant: "ghost",
-              },
-            ]}
-          />
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={defaultLayout[1]} minSize={30}>
+    <div className="h-full flex">
+      {!isMaximized && (
+        <div className="w-1/2">
           <Tabs defaultValue="all">
             <div className="flex items-center px-4 py-2">
               <h1 className="text-xl font-bold">Gelen Kutusu</h1>
@@ -216,14 +77,19 @@ export function Mail({
               <MailList items={mails.filter((item) => !item.read)} />
             </TabsContent>
           </Tabs>
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={defaultLayout[2]} minSize={30}>
-          <MailDisplay
-            mail={mails.find((item) => item.id === mail.selected) || null}
-          />
-        </ResizablePanel>
-      </ResizablePanelGroup>
-    </TooltipProvider>
+        </div>
+      )}
+      <div className={isMaximized ? "w-full" : "w-1/2"}>
+        <div className="flex h-full flex-col">
+          <div className="flex-1">
+            <MailDisplay
+              mail={mails.find((item) => item.id === mail.selected) || null}
+              isMaximized={isMaximized}
+              onToggleMaximize={() => setIsMaximized(!isMaximized)}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }

@@ -2,9 +2,9 @@ import { cookies } from "next/headers"
 import Image from "next/image"
 
 import { Mail } from "@/components/mail"
-import { accounts, mails } from "./data"
+import { accounts, mails } from "../data"
 
-export default async function MailPage() {
+export default async function TrashPage() {
   const cookieStore = await cookies()
   const layout = cookieStore.get("react-resizable-panels:layout:mail")
   const collapsed = cookieStore.get("react-resizable-panels:collapsed")
@@ -12,8 +12,8 @@ export default async function MailPage() {
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined
 
-  // Gelen kutusu mailleri filtrele
-  const inboxMails = mails.filter(mail => mail.category === "inbox")
+  // Çöp kutusu mailleri filtrele
+  const trashMails = mails.filter(mail => mail.category === "trash")
 
   return (
     <>
@@ -36,7 +36,7 @@ export default async function MailPage() {
       <div className="hidden flex-col md:flex">
         <Mail
           accounts={accounts}
-          mails={inboxMails}
+          mails={trashMails}
           defaultLayout={defaultLayout}
           defaultCollapsed={defaultCollapsed}
           navCollapsedSize={4}

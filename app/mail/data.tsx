@@ -1,4 +1,5 @@
 export const mails = [
+  // Gelen Kutusu - Genel Mailler
   {
     id: "6c84fb90-12c4-11e1-840d-7b25c5ee775a",
     name: "William Smith",
@@ -8,6 +9,7 @@ export const mails = [
     date: "2023-10-22T09:00:00",
     read: true,
     labels: ["toplantı", "iş", "önemli"],
+    category: "inbox",
   },
   {
     id: "110e8400-e29b-11d4-a716-446655440000",
@@ -18,6 +20,7 @@ export const mails = [
     date: "2023-10-22T10:30:00",
     read: true,
     labels: ["iş", "önemli"],
+    category: "inbox",
   },
   {
     id: "3e7c3f6d-bdf5-46ae-8d90-171300f27ae2",
@@ -28,6 +31,7 @@ export const mails = [
     date: "2023-04-10T11:45:00",
     read: true,
     labels: ["kişisel"],
+    category: "inbox",
   },
   {
     id: "61c35085-72d7-42b4-8d62-738f700d4b92",
@@ -38,6 +42,7 @@ export const mails = [
     date: "2023-03-25T13:15:00",
     read: false,
     labels: ["iş", "bütçe"],
+    category: "inbox",
   },
   {
     id: "8f7b5db9-d935-4e42-8e05-1f1d0a3dfb97",
@@ -48,253 +53,288 @@ export const mails = [
     date: "2023-03-10T15:00:00",
     read: false,
     labels: ["toplantı", "iş", "önemli"],
+    category: "inbox",
   },
+
+  // Taslaklar
   {
-    id: "1f0f2c02-e299-40de-9b1d-86ef9e42126b",
-    name: "Sarah Brown",
-    email: "sarahbrown@example.com",
-    subject: "Yanıt: Teklif Hakkında Geri Bildirim",
-    text: "Teklif hakkındaki geri bildiriminiz için teşekkürler. Harika görünüyor! Umut verici bulduğunuzu duyduğuma sevindim. Ekip, ortaya koyduğunuz tüm önemli noktaları ele almak için özenle çalıştı ve artık proje için güçlü bir temelimiz olduğuna inanıyorum.\n\nİncelemeniz için revize edilmiş teklifi ekledim.\n\nBaşka yorum veya öneriniz varsa lütfen bana bildirin. Yanıtınızı dört gözle bekliyorum.\n\nSaygılarımla, Sarah",
-    date: "2023-02-15T16:30:00",
+    id: "draft-1",
+    name: "Sen",
+    email: "sen@example.com",
+    subject: "Proje Raporu Taslağı",
+    text: "Bu hafta proje ilerlemesi hakkında detaylı bir rapor hazırladım. Ana başarılarımız ve karşılaştığımız zorluklar...",
+    date: "2023-10-23T14:30:00",
     read: true,
-    labels: ["iş"],
+    labels: ["iş", "rapor"],
+    category: "drafts",
   },
   {
-    id: "17c0a96d-4415-42b1-8b4f-764efab57f66",
-    name: "David Lee",
-    email: "davidlee@example.com",
-    subject: "Yeni Proje Fikri",
-    text: "Sizinle tartışmak istediğim heyecan verici yeni bir proje fikrim var. Hizmetlerimizi, son aylarda önemli büyüme gösteren niş bir pazara yönelik olarak genişletmeyi içeriyor.\n\nPotansiyel faydaları ve uygulama stratejisini özetleyen detaylı bir teklif hazırladım.\n\nBu proje işimizi olumlu yönde önemli ölçüde etkileme potansiyeline sahip. Detaylara girmek ve mevcut hedeflerimizle uyumlu olup olmadığını belirlemek için bir toplantı ayarlayalım.\n\nSaygılarımla, David",
-    date: "2023-01-28T17:45:00",
-    read: false,
-    labels: ["toplantı", "iş", "önemli"],
-  },
-  {
-    id: "2f0130cb-39fc-44c4-bb3c-0a4337edaaab",
-    name: "Olivia Wilson",
-    email: "oliviawilson@example.com",
-    subject: "Tatil Planları",
-    text: "Gelecek ay için tatilimizi planlayalım. Ne düşünüyorsun? Tropikal bir cenneti ziyaret etmeyi düşünüyordum ve bazı destinasyon seçenekleri hazırladım.\n\nRahatlamak ve yeniden şarj olmak zamanımızın geldiğine inanıyorum. Lütfen seçeneklere bir göz atın ve tercihlerinizi bana bildirin.\n\nSorunsuz ve keyifli bir gezi için düzenlemelere başlayabiliriz.\n\nDüşüncelerinizi duymak için heyecanlıyım! Olivia",
-    date: "2022-12-20T18:30:00",
+    id: "draft-2",
+    name: "Sen",
+    email: "sen@example.com",
+    subject: "Ekip Toplantısı Notları",
+    text: "Bugünkü toplantıda ele aldığımız konular:\n1. Proje zaman çizelgesi\n2. Bütçe güncellemeleri\n3. Yeni üye ekleme...",
+    date: "2023-10-23T16:45:00",
     read: true,
-    labels: ["kişisel"],
+    labels: ["toplantı", "notlar"],
+    category: "drafts",
   },
   {
-    id: "de305d54-75b4-431b-adb2-eb6b9e546014",
-    name: "James Martin",
-    email: "jamesmartin@example.com",
-    subject: "Yanıt: Konferans Kaydı",
-    text: "Gelecek ayki konferans için kaydı tamamladım. Etkinlik harika bir ağ kurma fırsatı vaat ediyor ve çeşitli oturumlara katılmayı ve sektör uzmanlarıyla bağlantı kurmayı dört gözle bekliyorum.\n\nReferansınız için konferans programını da ekledim.\n\nKeşfetmemi istediğiniz belirli konular veya oturumlar varsa lütfen bana bildirin. Heyecan verici bir etkinlik ve en iyi şekilde yararlanacağım.\n\nSaygılarımla, James",
-    date: "2022-11-30T19:15:00",
+    id: "draft-3",
+    name: "Sen",
+    email: "sen@example.com",
+    subject: "Müşteri Sunumu",
+    text: "Yarınki müşteri sunumu için hazırladığım slaytlar. Ana noktalar:\n- Proje özeti\n- İlerleme durumu\n- Gelecek planları...",
+    date: "2023-10-23T18:20:00",
     read: true,
-    labels: ["iş", "konferans"],
+    labels: ["sunum", "müşteri"],
+    category: "drafts",
   },
+
+  // Gönderilenler
   {
-    id: "7dd90c63-00f6-40f3-bd87-5060a24e8ee7",
-    name: "Sophia White",
-    email: "sophiawhite@example.com",
-    subject: "Ekip Yemeği",
-    text: "Başarımızı kutlamak için gelecek hafta ekip yemeği yapalım. Önemli kilometre taşlarına ulaştık ve çalışmamızı ve özverimizi takdir etme zamanı geldi.\n\nGüzel bir restoranda rezervasyon yaptırdım ve keyifli bir akşam olacağından eminim.\n\nLütfen müsaitliğinizi ve diyet tercihlerinizi onaylayın. Ekip ile eğlenceli ve unutulmaz bir yemek için dört gözle bekliyorum!\n\nEn iyisi, Sophia",
-    date: "2022-11-05T20:30:00",
-    read: false,
-    labels: ["toplantı", "iş"],
-  },
-  {
-    id: "99a88f78-3eb4-4d87-87b7-7b15a49a0a05",
-    name: "Daniel Johnson",
-    email: "danieljohnson@example.com",
-    subject: "Geri Bildirim Talebi",
-    text: "En son proje teslimleriniz hakkında geri bildiriminizi almak istiyorum. Önemli ilerleme kaydettik ve doğru yolda olduğumuzdan emin olmak için görüşlerinize değer veriyorum.\n\nİncelemeniz için teslimleri ekledim ve özellikle kaliteyi veya verimliliği daha da artırabileceğimizi düşündüğünüz alanlarla ilgileniyorum.\n\nGeri bildiriminiz paha biçilmez ve zamanınız ve uzmanlığınız için minnettarım. Bu projeyi başarılı kılmak için birlikte çalışalım.\n\nSaygılarımla, Daniel",
-    date: "2022-10-22T09:30:00",
-    read: false,
-    labels: ["iş"],
-  },
-  {
-    id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-    name: "Ava Taylor",
-    email: "avataylor@example.com",
-    subject: "Yanıt: Toplantı Gündemi",
-    text: "Gelecek haftaki toplantımızın gündemi işte. Ele almamız gereken tüm konuları ve her biri için zaman tahsislerini dahil ettim.\n\nTartışmak istediğiniz ek öğeler veya ele almak istediğiniz belirli noktalar varsa lütfen bana bildirin, bunları gündeme entegre edebiliriz.\n\nToplantımızın verimli olması ve tüm ilgili konuları ele alması çok önemli.\n\nToplantımızı dört gözle bekliyorum! Ava",
-    date: "2022-10-10T10:45:00",
+    id: "sent-1",
+    name: "Sen",
+    email: "sen@example.com",
+    subject: "Proje Durumu Güncellemesi",
+    text: "Merhaba ekip,\n\nBu hafta proje ilerlemesi hakkında güncelleme paylaşmak istiyorum. Ana hedeflerimize ulaşma konusunda iyi bir ilerleme kaydettik...",
+    date: "2023-10-22T11:00:00",
     read: true,
-    labels: ["toplantı", "iş"],
+    labels: ["iş", "güncelleme"],
+    category: "sent",
   },
   {
-    id: "c1a0ecb4-2540-49c5-86f8-21e5ce79e4e6",
-    name: "William Anderson",
-    email: "williamanderson@example.com",
-    subject: "Ürün Lansmanı Güncellemesi",
-    text: "Ürün lansmanı plana uygun ilerliyor. Görüşmemiz sırasında bir güncelleme sağlayacağım. Yeni ürünümüzün geliştirilmesi ve pazarlanmasında önemli ilerleme kaydettik.\n\nGörüşmemiz sırasında en son güncellemeleri sizinle paylaşmak için heyecanlıyım. Başarılı bir lansman sağlamak için çabalarımızı koordine etmemiz çok önemli. Lütfen sorularınız veya görüşlerinizle hazırlıklı gelin.\n\nBu ürün lansmanını büyük bir başarı haline getirelim!\n\nSaygılarımla, William",
-    date: "2022-09-20T12:00:00",
-    read: false,
-    labels: ["toplantı", "iş", "önemli"],
-  },
-  {
-    id: "ba54eefd-4097-4949-99f2-2a9ae4d1a836",
-    name: "Mia Harris",
-    email: "miaharris@example.com",
-    subject: "Yanıt: Seyahat Programı",
-    text: "Seyahat programını aldım. Harika görünüyor! Detayları düzenlemede gösterdiğiniz hızlı yardım için teşekkürler. Programı ve konaklama yerlerini inceledim ve her şey yolunda görünüyor. Geziyi dört gözle bekliyorum ve sorunsuz ve keyifli bir deneyim olacağından eminim.\n\nVarış yerimizde önerdiğiniz belirli aktiviteler veya turistik yerler varsa lütfen önerilerinizi paylaşmaktan çekinmeyin.\n\nGezi için heyecanlıyım! Mia",
-    date: "2022-09-10T13:15:00",
+    id: "sent-2",
+    name: "Sen",
+    email: "sen@example.com",
+    subject: "Toplantı Davetiyesi",
+    text: "Merhaba,\n\nYarın saat 14:00'da proje değerlendirme toplantısı yapacağız. Lütfen hazırlıklı gelin...",
+    date: "2023-10-21T15:30:00",
     read: true,
-    labels: ["kişisel", "seyahat"],
+    labels: ["toplantı", "davetiye"],
+    category: "sent",
   },
+
+  // Spam
   {
-    id: "df09b6ed-28bd-4e0c-85a9-9320ec5179aa",
-    name: "Ethan Clark",
-    email: "ethanclark@example.com",
-    subject: "Ekip Oluşturma Etkinliği",
-    text: "Departmanımız için bir ekip oluşturma etkinliği planlayalım. Ekip uyumu ve moralimiz başarımız için hayati önem taşıyor ve iyi organize edilmiş bir ekip oluşturma etkinliğinin inanılmaz derecede faydalı olabileceğine inanıyorum. Araştırma yaptım ve eğlenceli ve ilgi çekici aktiviteler için birkaç fikrim var.\n\nLütfen düşüncelerinizi ve müsaitliğinizi bana bildirin. Bu etkinliğin hem eğlenceli hem de verimli olmasını istiyoruz.\n\nBirlikte ekibimizi güçlendirecek ve performansımızı artıracağız.\n\nSaygılarımla, Ethan",
-    date: "2022-08-25T15:30:00",
+    id: "spam-1",
+    name: "Kazanan Sen!",
+    email: "kazanan@spam.com",
+    subject: "1 Milyon TL Kazandınız!",
+    text: "Tebrikler! Büyük ödülü kazandınız. Hemen tıklayın ve paranızı alın!",
+    date: "2023-10-20T08:00:00",
     read: false,
-    labels: ["toplantı", "iş"],
+    labels: ["spam"],
+    category: "spam",
   },
   {
-    id: "d67c1842-7f8b-4b4b-9be1-1b3b1ab4611d",
-    name: "Chloe Hall",
-    email: "chloehall@example.com",
-    subject: "Yanıt: Bütçe Onayı",
-    text: "Bütçe onaylandı. Projeye devam edebiliriz. Bütçe teklifimizin maliye departmanından yeşil ışık aldığını bildirmekten memnuniyet duyuyorum. Bu önemli bir kilometre taşı ve projeyi planlandığı gibi ilerletebileceğimiz anlamına geliyor.\n\nReferansınız için nihai bütçeyi ekledim. Projeyi zamanında ve bütçe dahilinde teslim etmek için yolda kaldığımızdan emin olalım.\n\nBizim için heyecan verici bir zaman! Chloe",
-    date: "2022-08-10T16:45:00",
+    id: "spam-2",
+    name: "Ücretsiz Kredi",
+    email: "kredi@spam.com",
+    subject: "Hemen 50.000 TL Kredi Alın",
+    text: "Hiçbir belge istemeden, anında onay! Tıklayın ve kredinizi alın!",
+    date: "2023-10-19T12:00:00",
+    read: false,
+    labels: ["spam", "kredi"],
+    category: "spam",
+  },
+  {
+    id: "spam-3",
+    name: "Süper Fırsat",
+    email: "firsat@spam.com",
+    subject: "Son 24 Saat! %90 İndirim",
+    text: "Kaçırılmayacak fırsat! Tüm ürünlerde %90 indirim. Hemen alışverişe başlayın!",
+    date: "2023-10-18T20:00:00",
+    read: false,
+    labels: ["spam", "indirim"],
+    category: "spam",
+  },
+
+  // Çöp Kutusu
+  {
+    id: "trash-1",
+    name: "Eski Müşteri",
+    email: "eski@musteri.com",
+    subject: "Eski Proje Hakkında",
+    text: "Geçen yılki proje hakkında bir sorum var...",
+    date: "2022-05-15T10:00:00",
     read: true,
-    labels: ["iş", "bütçe"],
+    labels: ["eski"],
+    category: "trash",
+  },
+
+  // Arşiv
+  {
+    id: "archive-1",
+    name: "Tamamlanan Proje",
+    email: "proje@tamamlandi.com",
+    subject: "Proje Başarıyla Tamamlandı",
+    text: "Proje başarıyla tamamlandı. Tüm ekip üyelerine teşekkürler...",
+    date: "2023-08-15T16:00:00",
+    read: true,
+    labels: ["tamamlandı", "proje"],
+    category: "archive",
+  },
+
+  // Sosyal
+  {
+    id: "social-1",
+    name: "LinkedIn",
+    email: "noreply@linkedin.com",
+    subject: "Yeni Bağlantı İsteği",
+    text: "Ahmet Yılmaz sizinle bağlantı kurmak istiyor...",
+    date: "2023-10-23T09:15:00",
+    read: false,
+    labels: ["sosyal", "linkedin"],
+    category: "social",
   },
   {
-    id: "6c9a7f94-8329-4d70-95d3-51f68c186ae1",
-    name: "Samuel Turner",
-    email: "samuelturner@example.com",
-    subject: "Hafta Sonu Yürüyüşü",
-    text: "Hafta sonu dağlarda yürüyüşe kim katılmak ister? Açık hava macerası özlemi çekiyordum ve dağlarda yürüyüş mükemmel bir kaçış gibi geliyor. Meydan okumaya hazırsanız, bazı manzaralı patikaları keşfedebilir ve doğanın güzelliğinin tadını çıkarabiliriz.\n\nAraştırma yaptım ve aklımda birkaç rota var.\n\nİlgileniyorsanız bana bildirin, detayları planlayabiliriz.\n\nKesinlikle unutulmaz bir deneyim olacak! Samuel",
-    date: "2022-07-28T17:30:00",
+    id: "social-2",
+    name: "Facebook",
+    email: "noreply@facebook.com",
+    subject: "Yeni Mesaj Bildirimi",
+    text: "Arkadaşınız Mehmet'ten yeni bir mesaj aldınız...",
+    date: "2023-10-23T08:30:00",
     read: false,
-    labels: ["kişisel"],
+    labels: ["sosyal", "facebook"],
+    category: "social",
+  },
+  {
+    id: "social-3",
+    name: "Twitter",
+    email: "noreply@twitter.com",
+    subject: "Yeni Takipçi",
+    text: "Sizi 5 kişi takip etmeye başladı...",
+    date: "2023-10-22T19:45:00",
+    read: false,
+    labels: ["sosyal", "twitter"],
+    category: "social",
+  },
+
+  // Güncellemeler
+  {
+    id: "updates-1",
+    name: "GitHub",
+    email: "noreply@github.com",
+    subject: "Yeni Commit Bildirimi",
+    text: "Proje deposunda yeni bir commit yapıldı...",
+    date: "2023-10-23T14:20:00",
+    read: false,
+    labels: ["güncelleme", "github"],
+    category: "updates",
+  },
+  {
+    id: "updates-2",
+    name: "Slack",
+    email: "noreply@slack.com",
+    subject: "Yeni Mesaj Bildirimi",
+    text: "#genel kanalında yeni mesajlar var...",
+    date: "2023-10-23T13:10:00",
+    read: false,
+    labels: ["güncelleme", "slack"],
+    category: "updates",
+  },
+
+  // Forumlar
+  {
+    id: "forums-1",
+    name: "Stack Overflow",
+    email: "noreply@stackoverflow.com",
+    subject: "Soru Yanıtlandı",
+    text: "Soru sorduğunuz konuda yeni bir yanıt aldınız...",
+    date: "2023-10-23T12:00:00",
+    read: false,
+    labels: ["forum", "stackoverflow"],
+    category: "forums",
+  },
+  {
+    id: "forums-2",
+    name: "Reddit",
+    email: "noreply@reddit.com",
+    subject: "Yeni Yorum Bildirimi",
+    text: "Gönderinize yeni bir yorum yapıldı...",
+    date: "2023-10-22T21:30:00",
+    read: false,
+    labels: ["forum", "reddit"],
+    category: "forums",
+  },
+
+  // Alışveriş
+  {
+    id: "shopping-1",
+    name: "Amazon",
+    email: "noreply@amazon.com",
+    subject: "Siparişiniz Kargoya Verildi",
+    text: "Siparişiniz kargoya verildi. Takip numarası: 123456789...",
+    date: "2023-10-23T10:00:00",
+    read: false,
+    labels: ["alışveriş", "amazon"],
+    category: "shopping",
+  },
+  {
+    id: "shopping-2",
+    name: "Trendyol",
+    email: "noreply@trendyol.com",
+    subject: "İndirim Fırsatı",
+    text: "Favori markalarınızda %30'a varan indirimler...",
+    date: "2023-10-22T15:00:00",
+    read: false,
+    labels: ["alışveriş", "indirim"],
+    category: "shopping",
+  },
+
+  // Promosyonlar
+  {
+    id: "promotions-1",
+    name: "Netflix",
+    email: "noreply@netflix.com",
+    subject: "Yeni Dizi Önerileri",
+    text: "Sizin için seçtiğimiz yeni diziler...",
+    date: "2023-10-23T18:00:00",
+    read: false,
+    labels: ["promosyon", "netflix"],
+    category: "promotions",
+  },
+  {
+    id: "promotions-2",
+    name: "Spotify",
+    email: "noreply@spotify.com",
+    subject: "Haftalık Müzik Önerileri",
+    text: "Bu hafta için size özel müzik listesi...",
+    date: "2023-10-22T20:00:00",
+    read: false,
+    labels: ["promosyon", "müzik"],
+    category: "promotions",
+  },
+]
+
+export const accounts = [
+  {
+    label: "Alicia Koch",
+    email: "alicia.koch@email.com",
+    icon: (
+      <svg role="img" viewBox="0 0 24 24" className="h-4 w-4">
+        <path
+          fill="currentColor"
+          d="M7.5 7.5h-.75A2.25 2.25 0 0 0 4.5 9.75v7.5a2.25 2.25 0 0 0 2.25 2.25h7.5a2.25 2.25 0 0 0 2.25-2.25v-7.5a2.25 2.25 0 0 0-2.25-2.25h-.75m-6 3.75-3 3m0 0 3 3m-3-3h11.25m-1.5 0V9.75m0 0h-7.5m7.5 0v7.5"
+        />
+      </svg>
+    ),
+  },
+  {
+    label: "John Doe",
+    email: "john.doe@email.com",
+    icon: (
+      <svg role="img" viewBox="0 0 24 24" className="h-4 w-4">
+        <path
+          fill="currentColor"
+          d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+        />
+      </svg>
+    ),
   },
 ]
 
 export type Mail = (typeof mails)[number]
 
-export const accounts = [
-  {
-    label: "Alicia Koch",
-    email: "alicia@vercel.com",
-    icon: (
-      <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <title>Vercel</title>
-        <path d="M24 22.525H0l12-21.05 12 21.05z" fill="currentColor" />
-      </svg>
-    ),
-  },
-  {
-    label: "Alicia Koch",
-    email: "alicia@gmail.com",
-    icon: (
-      <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <title>Gmail</title>
-        <path
-          d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"
-          fill="currentColor"
-        />
-      </svg>
-    ),
-  },
-  {
-    label: "Alicia Koch",
-    email: "alicia@icloud.com",
-    icon: (
-      <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <title>iCloud</title>
-        <path
-          d="M13.762 4.29a6.51 6.51 0 0 0-5.669 3.332 3.571 3.571 0 0 0-1.558-.36 3.571 3.571 0 0 0-3.516 3A4.918 4.918 0 0 0 0 14.796a4.918 4.918 0 0 0 4.92 4.914 4.93 4.93 0 0 0 .617-.045h14.42c2.305-.272 4.041-2.258 4.043-4.589v-.009a4.594 4.594 0 0 0-3.727-4.508 6.51 6.51 0 0 0-6.511-6.27z"
-          fill="currentColor"
-        />
-      </svg>
-    ),
-  },
-]
-
 export type Account = (typeof accounts)[number]
-
-export const contacts = [
-  {
-    name: "Emma Johnson",
-    email: "emma.johnson@example.com",
-  },
-  {
-    name: "Liam Wilson",
-    email: "liam.wilson@example.com",
-  },
-  {
-    name: "Olivia Davis",
-    email: "olivia.davis@example.com",
-  },
-  {
-    name: "Noah Martinez",
-    email: "noah.martinez@example.com",
-  },
-  {
-    name: "Ava Taylor",
-    email: "ava.taylor@example.com",
-  },
-  {
-    name: "Lucas Brown",
-    email: "lucas.brown@example.com",
-  },
-  {
-    name: "Sophia Smith",
-    email: "sophia.smith@example.com",
-  },
-  {
-    name: "Ethan Wilson",
-    email: "ethan.wilson@example.com",
-  },
-  {
-    name: "Isabella Jackson",
-    email: "isabella.jackson@example.com",
-  },
-  {
-    name: "Mia Clark",
-    email: "mia.clark@example.com",
-  },
-  {
-    name: "Mason Lee",
-    email: "mason.lee@example.com",
-  },
-  {
-    name: "Layla Harris",
-    email: "layla.harris@example.com",
-  },
-  {
-    name: "William Anderson",
-    email: "william.anderson@example.com",
-  },
-  {
-    name: "Ella White",
-    email: "ella.white@example.com",
-  },
-  {
-    name: "James Thomas",
-    email: "james.thomas@example.com",
-  },
-  {
-    name: "Harper Lewis",
-    email: "harper.lewis@example.com",
-  },
-  {
-    name: "Benjamin Moore",
-    email: "benjamin.moore@example.com",
-  },
-  {
-    name: "Aria Hall",
-    email: "aria.hall@example.com",
-  },
-  {
-    name: "Henry Turner",
-    email: "henry.turner@example.com",
-  },
-  {
-    name: "Scarlett Adams",
-    email: "scarlett.adams@example.com",
-  },
-]
-
-export type Contact = (typeof contacts)[number]

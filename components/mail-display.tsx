@@ -11,6 +11,8 @@ import {
   Reply,
   ReplyAll,
   Trash2,
+  Maximize2,
+  Minimize2,
 } from "lucide-react"
 
 import {
@@ -46,15 +48,37 @@ import { Mail } from "@/app/mail/data"
 
 interface MailDisplayProps {
   mail: Mail | null
+  isMaximized?: boolean
+  onToggleMaximize?: () => void
 }
 
-export function MailDisplay({ mail }: MailDisplayProps) {
+export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: MailDisplayProps) {
   const today = new Date()
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center p-2">
         <div className="flex items-center gap-2">
+          {onToggleMaximize && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={onToggleMaximize}
+                  title={isMaximized ? "Küçült" : "Büyüt"}
+                >
+                  {isMaximized ? (
+                    <Minimize2 className="h-4 w-4" />
+                  ) : (
+                    <Maximize2 className="h-4 w-4" />
+                  )}
+                  <span className="sr-only">{isMaximized ? "Küçült" : "Büyüt"}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{isMaximized ? "Küçült" : "Büyüt"}</TooltipContent>
+            </Tooltip>
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" disabled={!mail}>
@@ -67,20 +91,11 @@ export function MailDisplay({ mail }: MailDisplayProps) {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" disabled={!mail}>
-                <ArchiveX className="h-4 w-4" />
-                <span className="sr-only">Spam'e taşı</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Spam'e taşı</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" disabled={!mail}>
                 <Trash2 className="h-4 w-4" />
-                <span className="sr-only">Çöp kutusuna taşı</span>
+                <span className="sr-only">Sil</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Çöp kutusuna taşı</TooltipContent>
+            <TooltipContent>Sil</TooltipContent>
           </Tooltip>
           <Separator orientation="vertical" className="mx-1 h-6" />
           <Tooltip>
