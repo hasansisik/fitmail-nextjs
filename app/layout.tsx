@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { MainLayout } from "@/components/main-layout";
+import { Providers } from "@/redux/provider";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,9 +30,26 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <MainLayout>
-          {children}
-        </MainLayout>
+        <Providers>
+          <MainLayout>
+            {children}
+          </MainLayout>
+          <Toaster 
+            position="top-right"
+            expand={true}
+            richColors
+            closeButton
+            duration={4000}
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: 'var(--background)',
+                color: 'var(--foreground)',
+                border: '1px solid var(--border)',
+              },
+            }}
+          />
+        </Providers>
       </body>
     </html>
   );

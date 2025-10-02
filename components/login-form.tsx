@@ -5,19 +5,63 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useRouter } from "next/navigation"
+import { useAppDispatch } from "@/redux/hook"
+import { login } from "@/redux/actions/userActions"
+import { toast } from "sonner"
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
   const router = useRouter()
+  const dispatch = useAppDispatch()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Simulate login process
-    console.log("Login successful")
-    // Redirect to mail page
-    router.push("/mail")
+    
+    const formData = new FormData(e.currentTarget as HTMLFormElement)
+    const email = formData.get("email") as string
+    const password = formData.get("password") as string
+    
+    // Validate inputs
+    if (!email || !password) {
+      toast.error("Lütfen tüm alanları doldurun!")
+      return
+    }
+    
+    // Add @fitmail.com domain if not present
+    const fullEmail = email.includes("@") ? email : `${email}@fitmail.com`
+    
+    const loginData = {
+      email: fullEmail,
+      password: password
+    }
+    
+    console.log("Login data:", loginData)
+    const loadingToastId = toast.loading("Giriş yapılıyor...")
+    
+    try {
+      // Call Redux action for login
+      const result = await dispatch(login(loginData)).unwrap()
+      console.log("Login result:", result)
+      
+      // Dismiss loading toast
+      toast.dismiss(loadingToastId)
+      
+      // Login successful
+      toast.success("Giriş başarılı!")
+      // Redirect to mail page
+      router.push("/mail")
+    } catch (error: any) {
+      console.error("Login failed:", error)
+      
+      // Dismiss loading toast
+      toast.dismiss(loadingToastId)
+      
+      // Show error message
+      const errorMessage = typeof error === 'string' ? error : error?.message || "Giriş yapılırken bir hata oluştu"
+      toast.error(errorMessage)
+    }
   }
 
   return (
@@ -31,7 +75,7 @@ export function LoginForm({
       <div className="grid gap-6">
         <div className="grid gap-3">
           <Label htmlFor="email">E-posta</Label>
-          <Input id="email" type="email" placeholder="ornek@email.com" required />
+          <Input id="email" name="email" type="email" placeholder="ornek@email.com" required />
         </div>
         <div className="grid gap-3">
           <div className="flex items-center">
@@ -43,7 +87,7 @@ export function LoginForm({
               Şifrenizi mi unuttunuz?
             </a>
           </div>
-          <Input id="password" type="password" required />
+          <Input id="password" name="password" type="password" required />
         </div>
         <Button type="submit" className="w-full">
           Giriş Yap

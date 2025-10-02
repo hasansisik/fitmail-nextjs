@@ -83,6 +83,11 @@ export function Step2BasicInfo({ formData, onInputChange, onNext, onBack }: Step
             </SelectContent>
           </Select>
         </div>
+        <div className="w-full">
+          <p className="text-xs text-muted-foreground">
+            ⚠️ 13 yaşından küçük kullanıcılar kayıt olamaz
+          </p>
+        </div>
       </div>
       <div className="flex gap-3">
         <Button type="button" variant="outline" onClick={onBack} className="flex-1">

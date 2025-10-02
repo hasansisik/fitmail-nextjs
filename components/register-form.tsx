@@ -3,6 +3,9 @@
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useAppDispatch } from "@/redux/hook"
+import { register } from "@/redux/actions/userActions"
+import { toast } from "sonner"
 import { Step1PersonalInfo } from "./register/step1-personal-info"
 import { Step2BasicInfo } from "./register/step2-basic-info"
 import { Step3Email } from "./register/step3-email"
@@ -16,11 +19,13 @@ export function RegisterForm({
   ...props
 }: React.ComponentProps<"form">) {
   const router = useRouter()
+  const dispatch = useAppDispatch()
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
+    recoveryEmail: "",
     password: "",
     confirmPassword: "",
     day: "",
@@ -64,6 +69,67 @@ export function RegisterForm({
 
 
   const handleNext = () => {
+    // Check age validation on step 2
+    if (currentStep === 2) {
+      if (!formData.day || !formData.month || !formData.year) {
+        toast.error("Lütfen doğum tarihinizi tam olarak girin!")
+        return
+      }
+      
+      // Calculate age
+      const birthDate = new Date(
+        parseInt(formData.year), 
+        parseInt(formData.month) - 1, 
+        parseInt(formData.day)
+      )
+      
+      const today = new Date()
+      const age = today.getFullYear() - birthDate.getFullYear()
+      const monthDiff = today.getMonth() - birthDate.getMonth()
+      const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) 
+        ? age - 1 
+        : age
+      
+      if (actualAge < 13) {
+        toast.error("13 yaşından küçük kullanıcılar kayıt olamaz!")
+        return
+      }
+      
+      if (actualAge > 120) {
+        toast.error("Geçerli bir yaş girin!")
+        return
+      }
+    }
+    
+    // Check email validation on step 3
+    if (currentStep === 3) {
+      if (!formData.email || formData.email.trim() === '') {
+        toast.error("E-posta adresi gereklidir!")
+        return
+      }
+      if (formData.email.length < 3) {
+        toast.error("E-posta adresi en az 3 karakter olmalıdır!")
+        return
+      }
+      // Check if email contains invalid characters
+      if (!/^[a-zA-Z0-9._-]+$/.test(formData.email)) {
+        toast.error("E-posta adresi sadece harf, rakam, nokta, alt çizgi ve tire içerebilir!")
+        return
+      }
+    }
+    
+    // Check password match on step 4
+    if (currentStep === 4) {
+      if (formData.password !== formData.confirmPassword) {
+        toast.error("Şifreler eşleşmiyor!")
+        return
+      }
+      if (formData.password.length < 6) {
+        toast.error("Şifre en az 6 karakter olmalıdır!")
+        return
+      }
+    }
+    
     if (currentStep < 6) {
       setCurrentStep(currentStep + 1)
     }
@@ -75,14 +141,61 @@ export function RegisterForm({
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission
-    console.log("Form submitted:", formData)
-    // Simulate registration process
-    console.log("Registration successful")
-    // Redirect to mail page
-    router.push("/mail")
+    
+    // Create birth date from day, month, year
+    const birthDate = new Date(
+      parseInt(formData.year), 
+      parseInt(formData.month) - 1, 
+      parseInt(formData.day)
+    )
+    
+    // Calculate age
+    const today = new Date()
+    const age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
+    const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) 
+      ? age - 1 
+      : age
+    
+    // Prepare registration data
+    const registrationData = {
+      name: formData.firstName,
+      surname: formData.lastName,
+      email: `${formData.email}@fitmail.com`,
+      recoveryEmail: formData.recoveryEmail || undefined,
+      password: formData.password,
+      birthDate: birthDate.toISOString(),
+      age: actualAge,
+      gender: formData.gender
+    }
+    
+    console.log("Registration data:", registrationData)
+    const loadingToastId = toast.loading("Kayıt yapılıyor...")
+    
+    try {
+      // Call Redux action for registration
+      const result = await dispatch(register(registrationData)).unwrap()
+      console.log("Registration result:", result)
+      
+      // Dismiss loading toast
+      toast.dismiss(loadingToastId)
+      
+      // Registration successful
+      toast.success("Kayıt başarılı!")
+      // Redirect to mail page
+      router.push("/mail")
+    } catch (error: any) {
+      console.error("Registration failed:", error)
+      
+      // Dismiss loading toast
+      toast.dismiss(loadingToastId)
+      
+      // Show error message
+      const errorMessage = typeof error === 'string' ? error : error?.message || "Kayıt olurken bir hata oluştu"
+      toast.error(errorMessage)
+    }
   }
 
   const renderStep = () => {

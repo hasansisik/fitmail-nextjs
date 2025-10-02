@@ -1,10 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { buttonVariants } from "@/components/ui/button"
+import { useAppDispatch } from "@/redux/hook"
+import { logout } from "@/redux/actions/userActions"
+import { toast } from "sonner"
 import {
   ResizableHandle,
   ResizablePanel,
@@ -29,6 +32,7 @@ import {
   ShoppingCart,
   Settings,
   Mail,
+  LogOut,
 } from "lucide-react"
 import { AccountSwitcher } from "@/components/account-switcher"
 import { accounts } from "@/app/mail/data"
@@ -135,6 +139,14 @@ const settingsNav = [
     variant: "ghost" as const,
     href: "/settings"
   },
+  {
+    title: "Çıkış Yap",
+    label: "",
+    icon: LogOut,
+    variant: "ghost" as const,
+    href: "#",
+    isLogout: true
+  },
 ]
 
 interface MainLayoutProps {
@@ -143,7 +155,20 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   const pathname = usePathname()
+  const router = useRouter()
+  const dispatch = useAppDispatch()
   const [isCollapsed, setIsCollapsed] = useState(false)
+
+  const handleLogout = async () => {
+    try {
+      await dispatch(logout()).unwrap()
+      toast.success("Başarıyla çıkış yapıldı!")
+      router.push("/login")
+    } catch (error: any) {
+      console.error("Logout failed:", error)
+      toast.error("Çıkış yapılırken bir hata oluştu")
+    }
+  }
 
   // Settings sayfalarında sidebar gösterme
   const isSettingsPage = pathname.startsWith('/settings')
@@ -331,38 +356,69 @@ export function MainLayout({ children }: MainLayoutProps) {
                 <nav className="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2">
                   {settingsNav.map((link, index) => {
                     const isActive = pathname.startsWith(link.href)
+                    const isLogout = link.isLogout
+                    
                     return isCollapsed ? (
                       <Tooltip key={index} delayDuration={0}>
                         <TooltipTrigger asChild>
-                          <a
-                            href={link.href}
-                            className={cn(
-                              buttonVariants({ variant: isActive ? "default" : "ghost", size: "icon" }),
-                              !isActive && "hover:bg-transparent hover:text-foreground",
-                              "h-9 w-9",
-                            )}
-                          >
-                            <link.icon className="h-4 w-4" />
-                            <span className="sr-only">{link.title}</span>
-                          </a>
+                          {isLogout ? (
+                            <button
+                              onClick={handleLogout}
+                              className={cn(
+                                buttonVariants({ variant: "ghost", size: "icon" }),
+                                "hover:bg-transparent hover:text-foreground",
+                                "h-9 w-9",
+                              )}
+                            >
+                              <link.icon className="h-4 w-4" />
+                              <span className="sr-only">{link.title}</span>
+                            </button>
+                          ) : (
+                            <a
+                              href={link.href}
+                              className={cn(
+                                buttonVariants({ variant: isActive ? "default" : "ghost", size: "icon" }),
+                                !isActive && "hover:bg-transparent hover:text-foreground",
+                                "h-9 w-9",
+                              )}
+                            >
+                              <link.icon className="h-4 w-4" />
+                              <span className="sr-only">{link.title}</span>
+                            </a>
+                          )}
                         </TooltipTrigger>
                         <TooltipContent side="right" className="flex items-center gap-4">
                           {link.title}
                         </TooltipContent>
                       </Tooltip>
                     ) : (
-                      <a
-                        key={index}
-                        href={link.href}
-                        className={cn(
-                          buttonVariants({ variant: isActive ? "default" : "ghost", size: "sm" }),
-                          !isActive && "hover:bg-transparent hover:text-foreground",
-                          "justify-start"
-                        )}
-                      >
-                        <link.icon className="mr-2 h-4 w-4" />
-                        {link.title}
-                      </a>
+                      isLogout ? (
+                        <button
+                          key={index}
+                          onClick={handleLogout}
+                          className={cn(
+                            buttonVariants({ variant: "ghost", size: "sm" }),
+                            "hover:bg-transparent hover:text-foreground",
+                            "justify-start"
+                          )}
+                        >
+                          <link.icon className="mr-2 h-4 w-4" />
+                          {link.title}
+                        </button>
+                      ) : (
+                        <a
+                          key={index}
+                          href={link.href}
+                          className={cn(
+                            buttonVariants({ variant: isActive ? "default" : "ghost", size: "sm" }),
+                            !isActive && "hover:bg-transparent hover:text-foreground",
+                            "justify-start"
+                          )}
+                        >
+                          <link.icon className="mr-2 h-4 w-4" />
+                          {link.title}
+                        </a>
+                      )
                     )
                   })}
                 </nav>
