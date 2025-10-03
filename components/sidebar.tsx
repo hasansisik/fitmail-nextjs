@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
@@ -10,7 +11,13 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  TooltipProvider,
 } from "@/components/ui/tooltip"
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable"
 import {
   Inbox,
   File,
@@ -24,6 +31,8 @@ import {
   ShoppingCart,
   Settings,
   LogOut,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import { useAppSelector } from "@/redux/hook"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -147,11 +156,20 @@ const settingsNav = [
   },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  isCollapsed?: boolean
+  onCollapse?: (collapsed: boolean) => void
+}
+
+export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: SidebarProps = {}) {
   const pathname = usePathname()
   const router = useRouter()
   const dispatch = useAppDispatch()
   const { user } = useAppSelector((state) => state.user)
+  const [internalIsCollapsed, setInternalIsCollapsed] = useState(false)
+  
+  const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : internalIsCollapsed
+  const setIsCollapsed = onCollapse || setInternalIsCollapsed
   
   // Dinamik navigation array'leri
   const mainNav = getMainNav()
@@ -175,66 +193,129 @@ export function Sidebar() {
     const isLogout = link.isLogout
 
     return isLogout ? (
-      <button
-        key={index}
-        onClick={handleLogout}
-        className={cn(
-          buttonVariants({ variant: "ghost", size: "sm" }),
-          "hover:bg-transparent hover:text-foreground",
-          "justify-start w-full"
-        )}
-      >
-        <link.icon className="mr-2 h-4 w-4" />
-        {link.title}
-      </button>
+      isCollapsed ? (
+        <Tooltip key={index} delayDuration={0}>
+          <TooltipTrigger asChild>
+            <button
+              onClick={handleLogout}
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "icon" }),
+                "h-9 w-9 mx-auto",
+                "hover:bg-transparent hover:text-foreground"
+              )}
+            >
+              <link.icon className="h-4 w-4" />
+              <span className="sr-only">{link.title}</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="flex items-center gap-4">
+            {link.title}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <button
+          key={index}
+          onClick={handleLogout}
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "sm" }),
+            "hover:bg-transparent hover:text-foreground",
+            "justify-start w-full"
+          )}
+        >
+          <link.icon className="mr-2 h-4 w-4" />
+          {link.title}
+        </button>
+      )
     ) : (
-      <a
-        key={index}
-        href={link.href}
-        className={cn(
-          buttonVariants({ variant: isActive ? "default" : "ghost", size: "sm" }),
-          !isActive && "hover:bg-transparent hover:text-foreground",
-          "justify-start w-full"
-        )}
-      >
-        <link.icon className="mr-2 h-4 w-4" />
-        {link.title}
-        {link.label && (
-          <span
-            className={cn(
-              "ml-auto",
-              isActive && "text-primary-foreground"
+      isCollapsed ? (
+        <Tooltip key={index} delayDuration={0}>
+          <TooltipTrigger asChild>
+            <a
+              href={link.href}
+              className={cn(
+                buttonVariants({ variant: isActive ? "default" : "ghost", size: "icon" }),
+                "h-9 w-9 mx-auto",
+                !isActive && "hover:bg-transparent hover:text-foreground"
+              )}
+            >
+              <link.icon className="h-4 w-4" />
+              <span className="sr-only">{link.title}</span>
+            </a>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="flex items-center gap-4">
+            {link.title}
+            {link.label && (
+              <span className="bg-muted text-muted-foreground text-xs px-2 py-1 rounded-full">
+                {link.label}
+              </span>
             )}
-          >
-            {link.label}
-          </span>
-        )}
-      </a>
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <a
+          key={index}
+          href={link.href}
+          className={cn(
+            buttonVariants({ variant: isActive ? "default" : "ghost", size: "sm" }),
+            !isActive && "hover:bg-transparent hover:text-foreground",
+            "justify-start w-full"
+          )}
+        >
+          <link.icon className="mr-2 h-4 w-4" />
+          {link.title}
+          {link.label && (
+            <span
+              className={cn(
+                "ml-auto",
+                isActive && "text-primary-foreground"
+              )}
+            >
+              {link.label}
+            </span>
+          )}
+        </a>
+      )
     )
   }
 
   return (
-    <div className="flex h-screen w-64 flex-col border-r bg-background">
+    <div className="flex h-screen w-full flex-col bg-background transition-all duration-300 ease-in-out">
       {/* User Account Section */}
-      <div className="flex h-16 items-center justify-center px-4">
-        <div className="flex items-center gap-3">
+      {!isCollapsed && (
+        <div className="flex h-16 items-center justify-center px-4">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src="" alt={`${user?.name} ${user?.surname}`} />
+              <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
+                {userInitials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">{user?.name} {user?.surname}</span>
+              <span className="text-xs text-muted-foreground">{user?.email}</span>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {isCollapsed && (
+        <div className="flex h-16 items-center justify-center px-2">
           <Avatar className="h-8 w-8">
             <AvatarImage src="" alt={`${user?.name} ${user?.surname}`} />
             <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
               {userInitials}
             </AvatarFallback>
           </Avatar>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">{user?.name} {user?.surname}</span>
-            <span className="text-xs text-muted-foreground">{user?.email}</span>
-          </div>
         </div>
-      </div>
+      )}
       
       {/* Main Navigation and Category Navigation Combined - Scrollable */}
       <div className="flex flex-1 flex-col gap-4 py-2 overflow-y-auto">
         {/* Main Navigation */}
-        <nav className="grid gap-1 px-2">
+        <nav className={cn(
+          "grid gap-1",
+          isCollapsed ? "px-1" : "px-2"
+        )}>
           {mainNav.map((link, index) => {
             const isActive = pathname === link.href || (pathname === "/dashboard/mail" && link.title === "Gelen Kutusu")
             return renderNavItem(link, index, isActive)
@@ -242,7 +323,10 @@ export function Sidebar() {
         </nav>
         
         {/* Category Navigation - Right below main navigation */}
-        <nav className="grid gap-1 px-2">
+        <nav className={cn(
+          "grid gap-1",
+          isCollapsed ? "px-1" : "px-2"
+        )}>
           {categoryNav.map((link, index) => {
             const isActive = pathname === link.href
             return renderNavItem(link, index, isActive)
@@ -252,12 +336,16 @@ export function Sidebar() {
       
       {/* Settings and Logout - Fixed at Bottom */}
       <div className="flex flex-col gap-4 py-2 border-t">
-        <nav className="grid gap-1 px-2">
+        <nav className={cn(
+          "grid gap-1",
+          isCollapsed ? "px-1" : "px-2"
+        )}>
           {settingsNav.map((link, index) => {
             const isActive = pathname.startsWith(link.href)
             return renderNavItem(link, index, isActive)
           })}
         </nav>
+
       </div>
     </div>
   )
