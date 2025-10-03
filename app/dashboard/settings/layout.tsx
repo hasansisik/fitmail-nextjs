@@ -28,34 +28,16 @@ import {
 const settingsNav = [
   {
     title: "Hesap",
-    href: "/settings/account",
+    href: "/dashboard/settings/account",
     icon: User,
     variant: "ghost" as const,
   },
   {
     title: "Genel Ayarlar",
-    href: "/settings/general",
+    href: "/dashboard/settings/general",
     icon: Settings,
     variant: "ghost" as const,
-  },
-  {
-    title: "Bildirimler",
-    href: "/settings/notifications",
-    icon: Bell,
-    variant: "ghost" as const,
-  },
-  {
-    title: "Görünüm",
-    href: "/settings/appearance",
-    icon: Palette,
-    variant: "ghost" as const,
-  },
-  {
-    title: "Entegrasyonlar",
-    href: "/settings/integrations",
-    icon: Zap,
-    variant: "ghost" as const,
-  },
+  }
 ]
 
 export default function SettingsLayout({

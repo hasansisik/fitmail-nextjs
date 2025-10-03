@@ -43,7 +43,7 @@ const mainNav = [
     label: "128",
     icon: Inbox,
     variant: "default" as const,
-    href: "/mail",
+    href: "/dashboard/mail",
     category: "inbox"
   },
   {
@@ -51,7 +51,7 @@ const mainNav = [
     label: "9",
     icon: File,
     variant: "ghost" as const,
-    href: "/mail/drafts",
+    href: "/dashboard/mail/drafts",
     category: "drafts"
   },
   {
@@ -59,7 +59,7 @@ const mainNav = [
     label: "",
     icon: Send,
     variant: "ghost" as const,
-    href: "/mail/sent",
+    href: "/dashboard/mail/sent",
     category: "sent"
   },
   {
@@ -67,7 +67,7 @@ const mainNav = [
     label: "23",
     icon: ArchiveX,
     variant: "ghost" as const,
-    href: "/mail/spam",
+    href: "/dashboard/mail/spam",
     category: "spam"
   },
   {
@@ -75,7 +75,7 @@ const mainNav = [
     label: "",
     icon: Trash2,
     variant: "ghost" as const,
-    href: "/mail/trash",
+    href: "/dashboard/mail/trash",
     category: "trash"
   },
   {
@@ -83,7 +83,7 @@ const mainNav = [
     label: "",
     icon: Archive,
     variant: "ghost" as const,
-    href: "/mail/archive",
+    href: "/dashboard/mail/archive",
     category: "archive"
   },
 ]
@@ -94,7 +94,7 @@ const categoryNav = [
     label: "972",
     icon: Users2,
     variant: "ghost" as const,
-    href: "/mail/social",
+    href: "/dashboard/mail/social",
     category: "social"
   },
   {
@@ -102,7 +102,7 @@ const categoryNav = [
     label: "342",
     icon: AlertCircle,
     variant: "ghost" as const,
-    href: "/mail/updates",
+    href: "/dashboard/mail/updates",
     category: "updates"
   },
   {
@@ -110,7 +110,7 @@ const categoryNav = [
     label: "128",
     icon: MessagesSquare,
     variant: "ghost" as const,
-    href: "/mail/forums",
+    href: "/dashboard/mail/forums",
     category: "forums"
   },
   {
@@ -118,7 +118,7 @@ const categoryNav = [
     label: "8",
     icon: ShoppingCart,
     variant: "ghost" as const,
-    href: "/mail/shopping",
+    href: "/dashboard/mail/shopping",
     category: "shopping"
   },
   {
@@ -126,7 +126,7 @@ const categoryNav = [
     label: "21",
     icon: Archive,
     variant: "ghost" as const,
-    href: "/mail/promotions",
+    href: "/dashboard/mail/promotions",
     category: "promotions"
   },
 ]
@@ -137,7 +137,7 @@ const settingsNav = [
     label: "",
     icon: Settings,
     variant: "ghost" as const,
-    href: "/settings"
+    href: "/dashboard/settings"
   },
   {
     title: "Çıkış Yap",
@@ -181,10 +181,10 @@ export function MainLayout({ children }: MainLayoutProps) {
   ] : []
 
   // Settings sayfalarında sidebar gösterme
-  const isSettingsPage = pathname.startsWith('/settings')
+  const isSettingsPage = pathname.startsWith('/dashboard/settings')
   
   // Mail sayfalarında sidebar gösterme
-  const isMailPage = pathname.startsWith('/mail')
+  const isMailPage = pathname.startsWith('/dashboard/mail')
 
   // Login/register sayfalarında sidebar gösterme
   const isAuthPage = pathname === '/login' || pathname === '/register'
@@ -245,7 +245,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               >
                 <nav className="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2">
                   {mainNav.map((link, index) => {
-                    const isActive = pathname === link.href || (pathname === "/mail" && link.title === "Gelen Kutusu")
+                    const isActive = pathname === link.href || (pathname === "/dashboard/mail" && link.title === "Gelen Kutusu")
                     return isCollapsed ? (
                       <Tooltip key={index} delayDuration={0}>
                         <TooltipTrigger asChild>

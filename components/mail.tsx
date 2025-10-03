@@ -15,8 +15,8 @@ import {
 import { MailDisplay } from "@/components/mail-display"
 import { MailList } from "@/components/mail-list"
 import { SendMailDialog } from "@/components/send-mail-dialog"
-import { type Mail } from "@/app/mail/data"
-import { useMail } from "@/app/mail/use-mail"
+import { type Mail } from "@/app/dashboard/mail/data"
+import { useMail } from "@/app/dashboard/mail/use-mail"
 
 interface MailProps {
   accounts: {

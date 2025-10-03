@@ -185,7 +185,7 @@ export function RegisterForm({
       // Registration successful
       toast.success("Kayıt başarılı!")
       // Redirect to mail page
-      router.push("/mail")
+      router.push("/dashboard/mail")
     } catch (error: any) {
       console.error("Registration failed:", error)
       

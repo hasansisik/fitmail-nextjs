@@ -51,7 +51,7 @@ export function LoginForm({
       // Login successful
       toast.success("Giriş başarılı!")
       // Redirect to mail page
-      router.push("/mail")
+      router.push("/dashboard/mail")
     } catch (error: any) {
       console.error("Login failed:", error)
       
