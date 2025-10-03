@@ -29,8 +29,8 @@ export function LoginForm({
       return
     }
     
-    // Add @fitmail.com domain if not present
-    const fullEmail = email.includes("@") ? email : `${email}@fitmail.com`
+    // Add @gozdedijital.xyz domain if not present
+    const fullEmail = email.includes("@") ? email : `${email}@gozdedijital.xyz`
     
     const loginData = {
       email: fullEmail,

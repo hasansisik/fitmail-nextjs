@@ -39,7 +39,7 @@ export function Step3Email({ formData, onInputChange, onNext, onBack }: Step3Pro
             required 
           />
           <span className="bg-muted border border-l-0 border-input px-3 h-10 flex items-center text-sm text-muted-foreground rounded-r-md">
-            @fitmail.com
+            @gozdedijital.xyz
           </span>
         </div>
         <p className="text-xs text-muted-foreground">

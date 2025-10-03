@@ -27,7 +27,7 @@ export function PolicyDialog({
       <div>
         <h3 className="text-lg font-semibold mb-3 text-foreground">1. Kişisel Verilerin Toplanması</h3>
         <p className="text-sm text-foreground leading-relaxed">
-          Fitmail olarak, hizmetlerimizi sunabilmek için belirli kişisel verilerinizi topluyoruz. Bu veriler arasında adınız, e-posta adresiniz, doğum tarihiniz ve cinsiyet bilginiz bulunmaktadır.
+          Gözde Dijital olarak, hizmetlerimizi sunabilmek için belirli kişisel verilerinizi topluyoruz. Bu veriler arasında adınız, e-posta adresiniz, doğum tarihiniz ve cinsiyet bilginiz bulunmaktadır.
         </p>
       </div>
       
@@ -94,7 +94,7 @@ export function PolicyDialog({
       <div>
         <h3 className="text-lg font-semibold mb-3 text-foreground">1. Hizmet Tanımı</h3>
         <p className="text-sm text-foreground leading-relaxed">
-          Fitmail, kullanıcılara e-posta hizmeti sunan bir platformdur. Hizmetimizi kullanarak e-posta gönderebilir, alabilir ve yönetebilirsiniz.
+          Gözde Dijital, kullanıcılara e-posta hizmeti sunan bir platformdur. Hizmetimizi kullanarak e-posta gönderebilir, alabilir ve yönetebilirsiniz.
         </p>
       </div>
       

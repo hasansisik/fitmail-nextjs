@@ -1,9 +1,13 @@
-import type { Metadata } from "next";
+"use client"
+
 import { Geist, Geist_Mono } from "next/font/google";
+import { useEffect } from "react";
 import "./globals.css";
 import { MainLayout } from "@/components/main-layout";
 import { Providers } from "@/redux/provider";
 import { Toaster } from "sonner";
+import { useAppDispatch } from "@/redux/hook";
+import { loadUser } from "@/redux/actions/userActions";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,10 +19,20 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Fitmail",
-  description: "E-posta Yönetimi",
-};
+function LayoutContent({ children }: { children: React.ReactNode }) {
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    // Uygulama başladığında kullanıcı bilgilerini yükle
+    dispatch(loadUser());
+  }, [dispatch]);
+
+  return (
+    <MainLayout>
+      {children}
+    </MainLayout>
+  );
+}
 
 export default function RootLayout({
   children,
@@ -31,9 +45,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <MainLayout>
+          <LayoutContent>
             {children}
-          </MainLayout>
+          </LayoutContent>
           <Toaster 
             position="top-right"
             expand={true}

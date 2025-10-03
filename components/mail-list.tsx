@@ -12,7 +12,7 @@ interface MailListProps {
 }
 
 export function MailList({ items }: MailListProps) {
-  const [mail, setMail] = useMail()
+  const [mail, { selectMail }] = useMail()
 
   return (
     <ScrollArea className="h-screen">
@@ -24,12 +24,7 @@ export function MailList({ items }: MailListProps) {
               "flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent",
               mail.selected === item.id && "bg-muted"
             )}
-            onClick={() =>
-              setMail({
-                ...mail,
-                selected: item.id,
-              })
-            }
+            onClick={() => selectMail(item.id)}
           >
             <div className="flex w-full flex-col gap-1">
               <div className="flex items-center">

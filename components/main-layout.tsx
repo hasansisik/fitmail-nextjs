@@ -35,7 +35,7 @@ import {
   LogOut,
 } from "lucide-react"
 import { AccountSwitcher } from "@/components/account-switcher"
-import { accounts } from "@/app/mail/data"
+import { useAppSelector } from "@/redux/hook"
 
 const mainNav = [
   {
@@ -157,6 +157,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const pathname = usePathname()
   const router = useRouter()
   const dispatch = useAppDispatch()
+  const { user } = useAppSelector((state) => state.user)
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   const handleLogout = async () => {
@@ -169,6 +170,15 @@ export function MainLayout({ children }: MainLayoutProps) {
       toast.error("Çıkış yapılırken bir hata oluştu")
     }
   }
+
+  // Kullanıcı bilgilerini accounts'a dönüştür
+  const userAccounts = user ? [
+    {
+      label: `${user.name} ${user.surname}`,
+      email: user.email,
+      icon: null // Icon kaldırıldı
+    }
+  ] : []
 
   // Settings sayfalarında sidebar gösterme
   const isSettingsPage = pathname.startsWith('/settings')
@@ -226,7 +236,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                   isCollapsed ? "h-[52px]" : "px-2"
                 )}
               >
-                <AccountSwitcher isCollapsed={isCollapsed} accounts={accounts} />
+                <AccountSwitcher isCollapsed={isCollapsed} accounts={userAccounts} />
               </div>
               
               <div

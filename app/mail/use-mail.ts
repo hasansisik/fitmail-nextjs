@@ -7,9 +7,19 @@ type Config = {
 }
 
 const configAtom = atom<Config>({
-  selected: mails[0].id,
+  selected: null, // Başlangıçta hiçbir mail seçili olmasın
 })
 
 export function useMail() {
-  return useAtom(configAtom)
+  const [config, setConfig] = useAtom(configAtom)
+  
+  const selectMail = (mailId: Mail["id"] | null) => {
+    setConfig({ selected: mailId })
+  }
+  
+  const clearSelection = () => {
+    setConfig({ selected: null })
+  }
+  
+  return [config, { selectMail, clearSelection }] as const
 }

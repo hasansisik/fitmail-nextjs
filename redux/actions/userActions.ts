@@ -1313,3 +1313,73 @@ export const clearError = createAsyncThunk(
   }
 );
 
+// Send Mail Action
+export const sendMail = createAsyncThunk(
+  "user/sendMail",
+  async (mailData: {
+    to: string[];
+    cc?: string[];
+    bcc?: string[];
+    subject: string;
+    content: string;
+    htmlContent?: string;
+  }, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
+      }
+
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      const { data } = await axios.post(`${server}/mail/send`, mailData, config);
+      return data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+// Get Mails by Category Action
+export const getMailsByCategory = createAsyncThunk(
+  "user/getMailsByCategory",
+  async (params: {
+    folder: string;
+    page?: number;
+    limit?: number;
+    search?: string;
+    isRead?: boolean;
+  }, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
+      }
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      // Query parametrelerini oluştur
+      const queryParams = new URLSearchParams();
+      queryParams.append('folder', params.folder);
+      if (params.page) queryParams.append('page', params.page.toString());
+      if (params.limit) queryParams.append('limit', params.limit.toString());
+      if (params.search) queryParams.append('search', params.search);
+      if (params.isRead !== undefined) queryParams.append('isRead', params.isRead.toString());
+
+      const { data } = await axios.get(`${server}/mail/inbox?${queryParams.toString()}`, config);
+      return data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
