@@ -10,6 +10,48 @@ export const mails = [
     read: true,
     labels: ["toplantı", "iş", "önemli"],
     category: "inbox",
+    attachments: [
+      {
+        id: "att1",
+        name: "proje_raporu.pdf",
+        type: "application/pdf",
+        size: 1024000,
+        url: "/attachments/proje_raporu.pdf"
+      },
+      {
+        id: "att2", 
+        name: "toplanti_notlari.docx",
+        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        size: 512000,
+        url: "/attachments/toplanti_notlari.docx"
+      }
+    ],
+    conversation: [
+      {
+        id: "conv1",
+        sender: "William Smith",
+        senderEmail: "williamsmith@example.com",
+        text: "Merhaba, projeyi görüşmek için yarın bir toplantı yapalım. Proje detaylarını inceliyorum ve paylaşmak istediğim bazı fikirlerim var.",
+        date: "2023-10-22T09:00:00",
+        isFromMe: false
+      },
+      {
+        id: "conv2",
+        sender: "Hasan Sisik",
+        senderEmail: "hasan@example.com",
+        text: "Merhaba William! Toplantı fikri harika. Ben de proje hakkında bazı düşüncelerim var. Saat 14:00'da uygun mu?",
+        date: "2023-10-22T10:15:00",
+        isFromMe: true
+      },
+      {
+        id: "conv3",
+        sender: "William Smith",
+        senderEmail: "williamsmith@example.com",
+        text: "Evet, saat 14:00 mükemmel! Konferans salonunda buluşalım. Proje raporunu da getireceğim.",
+        date: "2023-10-22T10:30:00",
+        isFromMe: false
+      }
+    ]
   },
   {
     id: "110e8400-e29b-11d4-a716-446655440000",
@@ -21,6 +63,15 @@ export const mails = [
     read: true,
     labels: ["iş", "önemli"],
     category: "inbox",
+    attachments: [
+      {
+        id: "att3",
+        name: "proje_onerileri.pdf",
+        type: "application/pdf",
+        size: 768000,
+        url: "/attachments/proje_onerileri.pdf"
+      }
+    ]
   },
   {
     id: "3e7c3f6d-bdf5-46ae-8d90-171300f27ae2",
@@ -32,6 +83,22 @@ export const mails = [
     read: true,
     labels: ["kişisel"],
     category: "inbox",
+    attachments: [
+      {
+        id: "att4",
+        name: "dogada_yuruyus.jpg",
+        type: "image/jpeg",
+        size: 2048000,
+        url: "/attachments/dogada_yuruyus.jpg"
+      },
+      {
+        id: "att5",
+        name: "rota_haritasi.pdf",
+        type: "application/pdf",
+        size: 512000,
+        url: "/attachments/rota_haritasi.pdf"
+      }
+    ]
   },
   {
     id: "61c35085-72d7-42b4-8d62-738f700d4b92",
@@ -335,6 +402,26 @@ export const accounts = [
   },
 ]
 
-export type Mail = (typeof mails)[number]
+export type Attachment = {
+  id: string
+  name: string
+  type: string
+  size: number
+  url: string
+}
+
+export type ConversationMessage = {
+  id: string
+  sender: string
+  senderEmail: string
+  text: string
+  date: string
+  isFromMe: boolean
+}
+
+export type Mail = (typeof mails)[number] & {
+  attachments?: Attachment[]
+  conversation?: ConversationMessage[]
+}
 
 export type Account = (typeof accounts)[number]
