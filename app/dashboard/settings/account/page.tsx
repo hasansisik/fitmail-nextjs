@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
@@ -15,9 +16,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { User, Mail, Calendar, Shield, Trash2, Eye, EyeOff } from "lucide-react"
+import { User, Mail, Calendar, Shield, Trash2, Eye, EyeOff, Edit } from "lucide-react"
+import { useAppDispatch, useAppSelector } from "@/redux/hook"
+import { editProfile, changePassword, verifyPassword } from "@/redux/actions/userActions"
+import { toast } from "sonner"
+import { uploadImageToCloudinary } from "@/utils/cloudinary"
+import ReactCrop, { centerCrop, makeAspectCrop, Crop, PixelCrop } from 'react-image-crop'
+import 'react-image-crop/dist/ReactCrop.css'
 
 export default function AccountSettingsPage() {
+  const dispatch = useAppDispatch()
+  const { user, loading, error, message } = useAppSelector((state) => state.user)
+  
   const [isEditing, setIsEditing] = useState(false)
   const [showPasswordDialog, setShowPasswordDialog] = useState(false)
   const [passwordStep, setPasswordStep] = useState<'current' | 'new'>('current')
@@ -32,22 +42,208 @@ export default function AccountSettingsPage() {
     confirmPassword: ''
   })
   const [passwordError, setPasswordError] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
+  const [showCropModal, setShowCropModal] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [crop, setCrop] = useState<Crop>()
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop>()
+  const [previewUrl, setPreviewUrl] = useState<string>('')
+  const imgRef = useRef<HTMLImageElement>(null)
   const [formData, setFormData] = useState({
-    name: "Hasan Yılmaz",
-    email: "hasan@fitmail.com",
-    phone: "+90 555 123 45 67",
-    birthDate: "1990-01-15",
-    location: "İstanbul, Türkiye"
+    name: "",
+    surname: "",
+    email: "",
+    recoveryEmail: "",
+    birthDate: "",
+    location: "",
+    gender: ""
   })
 
-  const handleSave = () => {
-    setIsEditing(false)
-    // Burada API çağrısı yapılabilir
+  // Load user data when component mounts
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || "",
+        surname: user.surname || "",
+        email: user.email || "",
+        recoveryEmail: user.recoveryEmail || "",
+        birthDate: user.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : "",
+        location: user.address ? `${user.address.city}, ${user.address.state}` : "",
+        gender: user.gender || ""
+      })
+      setAvatarUrl(user.profile?.picture || "")
+    }
+  }, [user])
+
+  // Show success/error messages
+  useEffect(() => {
+    if (message) {
+      toast.success(message)
+    }
+    if (error) {
+      toast.error(error)
+    }
+  }, [message, error])
+
+  // Dosya seçme fonksiyonu
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Dosya tipini kontrol et
+    if (!file.type.startsWith('image/')) {
+      toast.error('Lütfen geçerli bir resim dosyası seçin')
+      return
+    }
+
+    // Dosya boyutunu kontrol et (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Dosya boyutu 5MB\'dan küçük olmalıdır')
+      return
+    }
+
+    setSelectedFile(file)
+    const url = URL.createObjectURL(file)
+    setPreviewUrl(url)
+    setShowCropModal(true)
+  }
+
+  // Kırpma tamamlandığında
+  const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { width, height } = e.currentTarget
+    const crop = centerCrop(
+      makeAspectCrop(
+        {
+          unit: '%',
+          width: 90,
+        },
+        1,
+        width,
+        height
+      ),
+      width,
+      height
+    )
+    setCrop(crop)
+  }, [])
+
+  // Kırpılmış resmi canvas'a çizme
+  const getCroppedImg = (image: HTMLImageElement, crop: PixelCrop): Promise<Blob> => {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    
+    if (!ctx) {
+      throw new Error('Canvas context not available')
+    }
+
+    const scaleX = image.naturalWidth / image.width
+    const scaleY = image.naturalHeight / image.height
+    
+    canvas.width = crop.width
+    canvas.height = crop.height
+
+    ctx.drawImage(
+      image,
+      crop.x * scaleX,
+      crop.y * scaleY,
+      crop.width * scaleX,
+      crop.height * scaleY,
+      0,
+      0,
+      crop.width,
+      crop.height
+    )
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          throw new Error('Canvas is empty')
+        }
+        resolve(blob)
+      }, 'image/jpeg', 0.9)
+    })
+  }
+
+  // Kırpma işlemini tamamla
+  const handleCropComplete = async () => {
+    if (!selectedFile || !completedCrop || !imgRef.current) return
+
+    setIsUploading(true)
+    try {
+      const croppedImageBlob = await getCroppedImg(imgRef.current, completedCrop)
+      const croppedFile = new File([croppedImageBlob], selectedFile.name, {
+        type: 'image/jpeg',
+      })
+
+      const uploadedUrl = await uploadImageToCloudinary(croppedFile)
+      setAvatarUrl(uploadedUrl)
+      
+      // Otomatik olarak profile güncelle
+      await dispatch(editProfile({ picture: uploadedUrl })).unwrap()
+      toast.success('Profil fotoğrafı başarıyla güncellendi')
+      
+      // Modal'ı kapat ve temizle
+      setShowCropModal(false)
+      setSelectedFile(null)
+      setPreviewUrl('')
+      setCrop(undefined)
+      setCompletedCrop(undefined)
+    } catch (error) {
+      console.error('Avatar upload failed:', error)
+      toast.error('Profil fotoğrafı yüklenirken hata oluştu')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  // Modal'ı kapat
+  const handleCloseCropModal = () => {
+    setShowCropModal(false)
+    setSelectedFile(null)
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+      setPreviewUrl('')
+    }
+    setCrop(undefined)
+    setCompletedCrop(undefined)
+  }
+
+  const handleSave = async () => {
+    try {
+      const updateData = {
+        name: formData.name,
+        surname: formData.surname,
+        recoveryEmail: formData.recoveryEmail,
+        birthDate: formData.birthDate,
+        gender: formData.gender,
+        address: {
+          city: formData.location.split(',')[0]?.trim() || "",
+          state: formData.location.split(',')[1]?.trim() || "",
+        }
+      }
+
+      await dispatch(editProfile(updateData)).unwrap()
+      setIsEditing(false)
+    } catch (error) {
+      console.error('Profile update failed:', error)
+    }
   }
 
   const handleCancel = () => {
     setIsEditing(false)
-    // Form verilerini sıfırla
+    // Reset form data to original user data
+    if (user) {
+      setFormData({
+        name: user.name || "",
+        surname: user.surname || "",
+        email: user.email || "",
+        recoveryEmail: user.recoveryEmail || "",
+        birthDate: user.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : "",
+        location: user.address ? `${user.address.city}, ${user.address.state}` : "",
+        gender: user.gender || ""
+      })
+    }
   }
 
   // Şifre değiştirme fonksiyonları
@@ -58,17 +254,23 @@ export default function AccountSettingsPage() {
     setPasswordError('')
   }
 
-  const handleCurrentPasswordSubmit = () => {
-    // Burada gerçek API çağrısı yapılacak
-    if (passwordData.currentPassword === '123456') { // Örnek doğrulama
-      setPasswordStep('new')
+  const handleCurrentPasswordSubmit = async () => {
+    try {
       setPasswordError('')
-    } else {
-      setPasswordError('Mevcut şifre yanlış')
+      const result = await dispatch(verifyPassword(passwordData.currentPassword)).unwrap()
+      
+      if (result.isValid) {
+        setPasswordStep('new')
+        setPasswordError('')
+      } else {
+        setPasswordError('Mevcut şifre yanlış')
+      }
+    } catch (error: any) {
+      setPasswordError(error || 'Şifre doğrulama sırasında hata oluştu')
     }
   }
 
-  const handleNewPasswordSubmit = () => {
+  const handleNewPasswordSubmit = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setPasswordError('Yeni şifreler eşleşmiyor')
       return
@@ -78,12 +280,19 @@ export default function AccountSettingsPage() {
       return
     }
     
-    // Burada gerçek API çağrısı yapılacak
-    console.log('Password changed successfully')
-    setShowPasswordDialog(false)
-    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
-    setPasswordError('')
-    setPasswordStep('current')
+    try {
+      await dispatch(changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      })).unwrap()
+      
+      setShowPasswordDialog(false)
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
+      setPasswordError('')
+      setPasswordStep('current')
+    } catch (error) {
+      setPasswordError('Şifre değiştirme sırasında hata oluştu')
+    }
   }
 
   const togglePasswordVisibility = (field: 'current' | 'new' | 'confirm') => {
@@ -123,100 +332,161 @@ export default function AccountSettingsPage() {
           </p>
         </div>
         <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-12 w-12">
-              <AvatarImage src="/placeholder-avatar.jpg" />
-              <AvatarFallback className="text-sm">HY</AvatarFallback>
-            </Avatar>
-            <div className="space-y-1">
-              <h3 className="text-base font-medium">{formData.name}</h3>
-              <p className="text-sm text-muted-foreground">{formData.email}</p>
-              <div className="flex gap-1">
-                <Badge variant="secondary" className="text-xs">Premium Üye</Badge>
-                <Badge variant="outline" className="text-xs">Doğrulanmış</Badge>
-              </div>
-            </div>
-          </div>
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <Avatar className="h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity">
+                        <AvatarImage src={avatarUrl || "/placeholder-avatar.jpg"} />
+                        <AvatarFallback className="text-sm">
+                          {formData.name?.[0]}{formData.surname?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      {isUploading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        </div>
+                      )}
+                      {/* Edit Icon */}
+                      <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-1.5 shadow-lg">
+                        <Edit className="h-3 w-3" />
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        disabled={isUploading}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-base font-medium">{formData.name} {formData.surname}</h3>
+                      <p className="text-sm text-muted-foreground">{formData.email}</p>
+                    </div>
+                  </div>
 
           <Separator />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Ad Soyad</Label>
-              {isEditing ? (
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                />
-              ) : (
-                <p className="text-sm py-2 px-3 bg-muted rounded-md">{formData.name}</p>
-              )}
+          <div className="space-y-6">
+            {/* Kişisel Bilgiler */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-muted-foreground">Kişisel Bilgiler</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Ad</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="border-0 bg-muted/50 cursor-not-allowed"
+                    readOnly={!isEditing}
+                    disabled={!isEditing}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="surname">Soyad</Label>
+                  <Input
+                    id="surname"
+                    value={formData.surname}
+                    onChange={(e) => setFormData({...formData, surname: e.target.value})}
+                    className="border-0 bg-muted/50 cursor-not-allowed"
+                    readOnly={!isEditing}
+                    disabled={!isEditing}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">E-posta</Label>
+                  <Input
+                    id="email"
+                    value={formData.email}
+                    className="border-0 bg-muted/50 cursor-not-allowed"
+                    readOnly
+                    disabled
+                  />
+                  <p className="text-xs text-muted-foreground">E-posta adresi değiştirilemez</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="recoveryEmail">Kurtarıcı E-posta</Label>
+                  <Input
+                    id="recoveryEmail"
+                    type="email"
+                    value={formData.recoveryEmail || ""}
+                    onChange={(e) => setFormData({...formData, recoveryEmail: e.target.value})}
+                    placeholder="Kurtarıcı e-posta adresinizi girin"
+                    className="border-0 bg-muted/50 cursor-not-allowed"
+                    readOnly={!isEditing}
+                    disabled={!isEditing}
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">E-posta</Label>
-              {isEditing ? (
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                />
-              ) : (
-                <p className="text-sm py-2 px-3 bg-muted rounded-md">{formData.email}</p>
-              )}
-            </div>
+            {/* Kişisel Detaylar */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-muted-foreground">Kişisel Detaylar</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="birthDate">Doğum Tarihi</Label>
+                  <Input
+                    id="birthDate"
+                    type="date"
+                    value={formData.birthDate}
+                    onChange={(e) => setFormData({...formData, birthDate: e.target.value})}
+                    className="border-0 bg-muted/50 cursor-not-allowed"
+                    readOnly={!isEditing}
+                    disabled={!isEditing}
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefon</Label>
-              {isEditing ? (
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                />
-              ) : (
-                <p className="text-sm py-2 px-3 bg-muted rounded-md">{formData.phone}</p>
-              )}
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="gender">Cinsiyet</Label>
+                  <Select
+                    value={formData.gender}
+                    onValueChange={(value) => setFormData({...formData, gender: value})}
+                    disabled={!isEditing}
+                  >
+                    <SelectTrigger className="border-0 bg-muted/50 cursor-not-allowed">
+                      <SelectValue placeholder="Seçiniz" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Erkek</SelectItem>
+                      <SelectItem value="female">Kadın</SelectItem>
+                      <SelectItem value="other">Diğer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="birthDate">Doğum Tarihi</Label>
-              {isEditing ? (
-                <Input
-                  id="birthDate"
-                  type="date"
-                  value={formData.birthDate}
-                  onChange={(e) => setFormData({...formData, birthDate: e.target.value})}
-                />
-              ) : (
-                <p className="text-sm py-2 px-3 bg-muted rounded-md">{formData.birthDate}</p>
-              )}
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="location">Konum</Label>
-              {isEditing ? (
-                <Input
-                  id="location"
-                  value={formData.location}
-                  onChange={(e) => setFormData({...formData, location: e.target.value})}
-                />
-              ) : (
-                <p className="text-sm py-2 px-3 bg-muted rounded-md">{formData.location}</p>
-              )}
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="location">Konum</Label>
+                  <Input
+                    id="location"
+                    value={formData.location || ""}
+                    onChange={(e) => setFormData({...formData, location: e.target.value})}
+                    placeholder="Şehir, İl"
+                    className="border-0 bg-muted/50 cursor-not-allowed"
+                    readOnly={!isEditing}
+                    disabled={!isEditing}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
           <div className="flex gap-2">
             {isEditing ? (
               <>
-                <Button onClick={handleSave}>Kaydet</Button>
-                <Button variant="outline" onClick={handleCancel}>İptal</Button>
+                <Button onClick={handleSave} disabled={loading}>
+                  {loading ? "Kaydediliyor..." : "Kaydet"}
+                </Button>
+                <Button variant="outline" onClick={handleCancel} disabled={loading}>
+                  İptal
+                </Button>
               </>
             ) : (
-              <Button onClick={() => setIsEditing(true)}>Düzenle</Button>
+              <Button onClick={() => setIsEditing(true)} disabled={loading}>
+                Düzenle
+              </Button>
             )}
           </div>
         </div>
@@ -387,6 +657,53 @@ export default function AccountSettingsPage() {
               }
             >
               {passwordStep === 'current' ? 'Devam Et' : 'Şifreyi Değiştir'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Kırpma Modal'ı */}
+      <Dialog open={showCropModal} onOpenChange={handleCloseCropModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Profil Fotoğrafını Kırp</DialogTitle>
+            <DialogDescription>
+              Fotoğrafınızı istediğiniz şekilde kırpın ve kaydedin.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {previewUrl && (
+              <div className="flex justify-center">
+                <ReactCrop
+                  crop={crop}
+                  onChange={(_, percentCrop) => setCrop(percentCrop)}
+                  onComplete={(c) => setCompletedCrop(c)}
+                  aspect={1}
+                  minWidth={100}
+                  minHeight={100}
+                >
+                  <img
+                    ref={imgRef}
+                    alt="Crop me"
+                    src={previewUrl}
+                    onLoad={onImageLoad}
+                    className="max-h-96"
+                  />
+                </ReactCrop>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseCropModal}>
+              İptal
+            </Button>
+            <Button 
+              onClick={handleCropComplete}
+              disabled={!completedCrop || isUploading}
+            >
+              {isUploading ? 'Yükleniyor...' : 'Kaydet'}
             </Button>
           </DialogFooter>
         </DialogContent>

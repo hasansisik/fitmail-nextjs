@@ -72,9 +72,9 @@ export interface ResetPasswordPayload {
 }
 
 export interface EditProfilePayload {
-  name: string;
-  email: string;
-  password: string;
+  name?: string;
+  surname?: string;
+  recoveryEmail?: string;
   address?: {
     street?: string;
     city?: string;
@@ -82,11 +82,28 @@ export interface EditProfilePayload {
     postalCode?: string;
     country?: string;
   };
-  phoneNumber?: string;
   picture?: string;
   bio?: string;
   skills?: string[];
   theme?: string;
+  birthDate?: string;
+  age?: number;
+  gender?: string;
+  weight?: number;
+  height?: number;
+  mailAddress?: string;
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface UpdateSettingsPayload {
+  language?: string;
+  timezone?: string;
+  dateFormat?: string;
+  timeFormat?: string;
 }
 
 export interface CreateListingPayload {
@@ -421,6 +438,87 @@ export const editProfile = createAsyncThunk(
       };
       const response = await axios.post(
         `${server}/auth/edit-profile`,
+        formData,
+        config
+      );
+      return response.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
+export const verifyPassword = createAsyncThunk(
+  "user/verifyPassword",
+  async (password: string, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const response = await axios.post(
+        `${server}/auth/verify-password`,
+        { password },
+        config
+      );
+      return response.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
+export const changePassword = createAsyncThunk(
+  "user/changePassword",
+  async (formData: ChangePasswordPayload, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const response = await axios.post(
+        `${server}/auth/change-password`,
+        formData,
+        config
+      );
+      return response.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
+export const updateSettings = createAsyncThunk(
+  "user/updateSettings",
+  async (formData: UpdateSettingsPayload, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const response = await axios.post(
+        `${server}/auth/update-settings`,
         formData,
         config
       );

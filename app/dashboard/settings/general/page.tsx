@@ -1,33 +1,52 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { Settings, Globe, Mail, Clock, Shield, Database } from "lucide-react"
+import { Globe } from "lucide-react"
+import { useAppDispatch, useAppSelector } from "@/redux/hook"
+import { updateSettings } from "@/redux/actions/userActions"
+import { toast } from "sonner"
 
 export default function GeneralSettingsPage() {
+  const dispatch = useAppDispatch()
+  const { user, loading, error, message } = useAppSelector((state) => state.user)
+  
   const [settings, setSettings] = useState({
     language: "tr",
     timezone: "Europe/Istanbul",
     dateFormat: "DD/MM/YYYY",
-    timeFormat: "24",
-    autoSave: true,
-    autoReply: false,
-    emailSignature: "Saygılarımla,\nHasan Yılmaz",
-    maxAttachmentSize: "25",
-    emailRetention: "365",
-    spamFilter: true,
-    virusScan: true,
-    encryption: true
+    timeFormat: "24"
   })
 
-  const handleSave = () => {
-    // API çağrısı yapılabilir
-    console.log("Settings saved:", settings)
+  // Load user settings when component mounts
+  useEffect(() => {
+    if (user?.settings) {
+      setSettings(prev => ({
+        ...prev,
+        ...user.settings
+      }))
+    }
+  }, [user])
+
+  // Show success/error messages
+  useEffect(() => {
+    if (message) {
+      toast.success(message)
+    }
+    if (error) {
+      toast.error(error)
+    }
+  }, [message, error])
+
+  const handleSave = async () => {
+    try {
+      await dispatch(updateSettings(settings)).unwrap()
+    } catch (error) {
+      console.error('Settings update failed:', error)
+    }
   }
 
   return (
@@ -114,7 +133,9 @@ export default function GeneralSettingsPage() {
       </div>
 
       <div className="flex justify-end">
-        <Button onClick={handleSave}>Ayarları Kaydet</Button>
+        <Button onClick={handleSave} disabled={loading}>
+          {loading ? "Kaydediliyor..." : "Ayarları Kaydet"}
+        </Button>
       </div>
     </div>
   )

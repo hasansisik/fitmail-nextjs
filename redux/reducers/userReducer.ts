@@ -12,6 +12,8 @@ import {
   forgotPassword,
   resetPassword,
   editProfile,
+  changePassword,
+  updateSettings,
   createListing,
   getAllListings,
   getUserListings,
@@ -300,9 +302,39 @@ export const userReducer = createReducer(initialState, (builder) => {
     })
     .addCase(editProfile.fulfilled, (state, action) => {
       state.loading = false;
-      state.user = action.payload;
+      if (action.payload.user) {
+        state.user = action.payload.user;
+      }
+      state.message = action.payload.message;
     })
     .addCase(editProfile.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    })
+    // Change Password
+    .addCase(changePassword.pending, (state) => {
+      state.loading = true;
+    })
+    .addCase(changePassword.fulfilled, (state, action) => {
+      state.loading = false;
+      state.message = action.payload.message;
+    })
+    .addCase(changePassword.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    })
+    // Update Settings
+    .addCase(updateSettings.pending, (state) => {
+      state.loading = true;
+    })
+    .addCase(updateSettings.fulfilled, (state, action) => {
+      state.loading = false;
+      if (state.user) {
+        state.user.settings = action.payload.settings;
+      }
+      state.message = action.payload.message;
+    })
+    .addCase(updateSettings.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload as string;
     })
