@@ -60,12 +60,6 @@ export function Mail({
             <div className="flex items-center px-4 py-2">
               <div className="flex items-center gap-3">
                 <h1 className="text-xl font-bold">{categoryTitle}</h1>
-                {currentUser && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>•</span>
-                    <span>{currentUser.email}</span>
-                  </div>
-                )}
               </div>
               <div className="ml-auto flex items-center gap-2">
                 <Button

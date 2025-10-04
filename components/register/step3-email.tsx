@@ -32,7 +32,7 @@ export function Step3Email({ formData, onInputChange, onNext, onBack }: Step3Pro
           <Input 
             id="email" 
             type="text" 
-            placeholder="hasan" 
+            placeholder="mail" 
             value={formData.email}
             onChange={handleEmailChange}
             className="rounded-r-none h-10"
