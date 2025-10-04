@@ -21,11 +21,52 @@ import {
 } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Mail } from "@/app/dashboard/mail/data"
+import { useAppDispatch } from "@/redux/hook"
+import { moveMailToCategory, removeMailFromCategory } from "@/redux/actions/mailActions"
+
+// API'den gelen mail formatı
+interface ApiMail {
+  _id: string
+  from: {
+    name: string
+    email: string
+  }
+  to: Array<{ name: string; email: string }>
+  cc: Array<{ name: string; email: string }>
+  bcc: Array<{ name: string; email: string }>
+  subject: string
+  content: string
+  htmlContent?: string
+  attachments: Array<{
+    id: string
+    name: string
+    type: string
+    size: number
+    url: string
+  }>
+  labels: string[]
+  folder: string
+  isRead: boolean
+  isStarred: boolean
+  isImportant: boolean
+  receivedAt: string
+  createdAt: string
+  updatedAt: string
+  status: string
+  mailgunId: string
+  messageId: string
+  references: string[]
+  user: {
+    _id: string
+    name: string
+    surname: string
+    mailAddress: string
+  }
+}
 
 interface MailContextMenuProps {
   children: React.ReactNode
-  mail: Mail
+  mail: ApiMail
   onAction: (action: string, mailId: string, data?: any) => void
 }
 
@@ -44,12 +85,26 @@ const moveToCategories = [
 ]
 
 export function MailContextMenu({ children, mail, onAction }: MailContextMenuProps) {
+  const dispatch = useAppDispatch()
   const [open, setOpen] = React.useState(false)
   const [labelSearch, setLabelSearch] = React.useState("")
   const [moveSearch, setMoveSearch] = React.useState("")
 
   const handleAction = (action: string, data?: any) => {
-    onAction(action, mail.id, data)
+    onAction(action, mail._id, data)
+    setOpen(false)
+  }
+
+  const handleCategoryAction = async (action: string, category: string) => {
+    try {
+      if (action === 'add') {
+        await dispatch(moveMailToCategory({ mailId: mail._id, category })).unwrap()
+      } else if (action === 'remove') {
+        await dispatch(removeMailFromCategory({ mailId: mail._id, category })).unwrap()
+      }
+    } catch (error) {
+      console.error('Kategori işlemi başarısız:', error)
+    }
     setOpen(false)
   }
 
@@ -185,18 +240,30 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
           <div className="px-2 py-1">
             <div className="text-xs font-medium text-muted-foreground mb-2">Etiketle</div>
             <div className="space-y-1">
-              {filteredLabels.map((label) => (
-                <Button
-                  key={label}
-                  variant="ghost"
-                  className="justify-start h-6 px-2 text-xs"
-                  onClick={() => handleAction("toggleLabel", { label, checked: !mail.labels.includes(label) })}
-                >
-                  <Tag className="mr-2 h-3 w-3" />
-                  {label}
-                  {mail.labels.includes(label) && " ✓"}
-                </Button>
-              ))}
+                  {filteredLabels.map((label) => {
+                    const categoryMap: Record<string, string> = {
+                      "Sosyal": "social",
+                      "Güncellemeler": "updates", 
+                      "Forumlar": "forums",
+                      "Alışveriş": "shopping",
+                      "Promosyon": "promotions"
+                    }
+                    const categoryKey = categoryMap[label]
+                    const isInCategory = mail.labels.includes(categoryKey)
+                    
+                    return (
+                      <Button
+                        key={label}
+                        variant="ghost"
+                        className="justify-start h-6 px-2 text-xs"
+                        onClick={() => handleCategoryAction(isInCategory ? 'remove' : 'add', categoryKey)}
+                      >
+                        <Tag className="mr-2 h-3 w-3" />
+                        {label}
+                        {isInCategory && " ✓"}
+                      </Button>
+                    )
+                  })}
             </div>
           </div>
 

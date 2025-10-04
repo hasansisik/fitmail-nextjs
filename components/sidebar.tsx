@@ -2,10 +2,11 @@
 
 import { useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
 import { useAppDispatch } from "@/redux/hook"
 import { logout } from "@/redux/actions/userActions"
+import { getMailsByLabelCategory, getMailStats } from "@/redux/actions/mailActions"
+import { cn } from "@/lib/utils"
+import { buttonVariants } from "@/components/ui/button"
 import { toast } from "sonner"
 import {
   Tooltip,
@@ -38,16 +39,11 @@ import { useAppSelector } from "@/redux/hook"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { mails } from "@/app/dashboard/mail/data"
 
-// Mail sayılarını hesaplayan fonksiyon
-const getMailCount = (category: string) => {
-  return mails.filter(mail => mail.category === category).length
-}
-
-// Dinamik navigation array'leri
-const getMainNav = () => [
+// Dinamik navigation array'leri - mail stats kullanacak
+const getMainNav = (mailStats: any) => [
   {
     title: "Gelen Kutusu",
-    label: getMailCount("inbox").toString(),
+    label: (mailStats?.inbox || 0).toString(),
     icon: Inbox,
     variant: "default" as const,
     href: "/dashboard/mail",
@@ -55,7 +51,7 @@ const getMainNav = () => [
   },
   {
     title: "Taslaklar",
-    label: getMailCount("drafts").toString(),
+    label: (mailStats?.drafts || 0).toString(),
     icon: File,
     variant: "ghost" as const,
     href: "/dashboard/mail/drafts",
@@ -63,7 +59,7 @@ const getMainNav = () => [
   },
   {
     title: "Gönderilenler",
-    label: getMailCount("sent").toString(),
+    label: (mailStats?.sent || 0).toString(),
     icon: Send,
     variant: "ghost" as const,
     href: "/dashboard/mail/sent",
@@ -71,7 +67,7 @@ const getMainNav = () => [
   },
   {
     title: "Spam",
-    label: getMailCount("spam").toString(),
+    label: (mailStats?.spam || 0).toString(),
     icon: ArchiveX,
     variant: "ghost" as const,
     href: "/dashboard/mail/spam",
@@ -79,7 +75,7 @@ const getMainNav = () => [
   },
   {
     title: "Çöp Kutusu",
-    label: getMailCount("trash").toString(),
+    label: (mailStats?.trash || 0).toString(),
     icon: Trash2,
     variant: "ghost" as const,
     href: "/dashboard/mail/trash",
@@ -87,7 +83,7 @@ const getMainNav = () => [
   },
   {
     title: "Arşiv",
-    label: getMailCount("archive").toString(),
+    label: (mailStats?.archive || 0).toString(),
     icon: Archive,
     variant: "ghost" as const,
     href: "/dashboard/mail/archive",
@@ -95,10 +91,10 @@ const getMainNav = () => [
   },
 ]
 
-const getCategoryNav = () => [
+const getCategoryNav = (mailStats: any) => [
   {
     title: "Sosyal",
-    label: getMailCount("social").toString(),
+    label: (mailStats?.social || 0).toString(),
     icon: Users2,
     variant: "ghost" as const,
     href: "/dashboard/mail/social",
@@ -106,7 +102,7 @@ const getCategoryNav = () => [
   },
   {
     title: "Güncellemeler",
-    label: getMailCount("updates").toString(),
+    label: (mailStats?.updates || 0).toString(),
     icon: AlertCircle,
     variant: "ghost" as const,
     href: "/dashboard/mail/updates",
@@ -114,7 +110,7 @@ const getCategoryNav = () => [
   },
   {
     title: "Forumlar",
-    label: getMailCount("forums").toString(),
+    label: (mailStats?.forums || 0).toString(),
     icon: MessagesSquare,
     variant: "ghost" as const,
     href: "/dashboard/mail/forums",
@@ -122,7 +118,7 @@ const getCategoryNav = () => [
   },
   {
     title: "Alışveriş",
-    label: getMailCount("shopping").toString(),
+    label: (mailStats?.shopping || 0).toString(),
     icon: ShoppingCart,
     variant: "ghost" as const,
     href: "/dashboard/mail/shopping",
@@ -130,7 +126,7 @@ const getCategoryNav = () => [
   },
   {
     title: "Promosyon",
-    label: getMailCount("promotions").toString(),
+    label: (mailStats?.promotions || 0).toString(),
     icon: Archive,
     variant: "ghost" as const,
     href: "/dashboard/mail/promotions",
@@ -166,14 +162,35 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
   const router = useRouter()
   const dispatch = useAppDispatch()
   const { user } = useAppSelector((state) => state.user)
+  const { mailStats } = useAppSelector((state) => state.mail)
   const [internalIsCollapsed, setInternalIsCollapsed] = useState(false)
   
   const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : internalIsCollapsed
   const setIsCollapsed = onCollapse || setInternalIsCollapsed
+
+  // Kategori tıklama handler'ı
+  const handleCategoryClick = (category: string) => {
+    console.log(`Kategori tıklandı: ${category}`)
+    // Kategori sayfaları için label category kullan
+    if (['social', 'updates', 'forums', 'shopping', 'promotions'].includes(category)) {
+      dispatch(getMailsByLabelCategory({
+        category: category,
+        page: 1,
+        limit: 50
+      }))
+    } else {
+      // Klasör sayfaları için normal category kullan
+      dispatch(getMailsByCategory({
+        folder: category,
+        page: 1,
+        limit: 50
+      }))
+    }
+  }
   
   // Dinamik navigation array'leri
-  const mainNav = getMainNav()
-  const categoryNav = getCategoryNav()
+  const mainNav = getMainNav(mailStats)
+  const categoryNav = getCategoryNav(mailStats)
 
   const handleLogout = async () => {
     try {
@@ -230,8 +247,8 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       isCollapsed ? (
         <Tooltip key={index} delayDuration={0}>
           <TooltipTrigger asChild>
-            <a
-              href={link.href}
+            <button
+              onClick={() => handleCategoryClick(link.category)}
               className={cn(
                 buttonVariants({ variant: isActive ? "default" : "ghost", size: "icon" }),
                 "h-9 w-9 mx-auto",
@@ -240,7 +257,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
             >
               <link.icon className="h-4 w-4" />
               <span className="sr-only">{link.title}</span>
-            </a>
+            </button>
           </TooltipTrigger>
           <TooltipContent side="right" className="flex items-center gap-4">
             {link.title}
@@ -252,9 +269,9 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
           </TooltipContent>
         </Tooltip>
       ) : (
-        <a
+        <button
           key={index}
-          href={link.href}
+          onClick={() => handleCategoryClick(link.category)}
           className={cn(
             buttonVariants({ variant: isActive ? "default" : "ghost", size: "sm" }),
             !isActive && "hover:bg-transparent hover:text-foreground",
@@ -273,7 +290,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
               {link.label}
             </span>
           )}
-        </a>
+        </button>
       )
     )
   }

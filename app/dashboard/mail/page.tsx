@@ -1,10 +1,32 @@
+"use client"
+
 import Image from "next/image"
+import { useEffect } from "react"
+import { useAppDispatch, useAppSelector } from "@/redux/hook"
+import { getMailsByCategory, getMailStats } from "@/redux/actions/mailActions"
 import { Mail } from "@/components/mail"
-import { accounts, mails } from "./data"
+import { accounts } from "./data"
 
 export default function MailPage() {
-  // Gelen kutusu mailleri filtrele
-  const inboxMails = mails.filter(mail => mail.category === "inbox")
+  const dispatch = useAppDispatch()
+  const { user } = useAppSelector((state) => state.user)
+  
+  // Mail state'ini Redux'tan al
+  const mails = useAppSelector((state) => state.mail.mails || [])
+  const mailsLoading = useAppSelector((state) => state.mail.mailsLoading || false)
+  const mailsError = useAppSelector((state) => state.mail.mailsError)
+
+  useEffect(() => {
+    // Sayfa yüklendiğinde gelen kutusu maillerini çek
+    if (user) {
+      dispatch(getMailsByCategory({
+        folder: "inbox",
+        page: 1,
+        limit: 50
+      }))
+      dispatch(getMailStats())
+    }
+  }, [dispatch, user])
 
   return (
     <>
@@ -27,7 +49,9 @@ export default function MailPage() {
       <div className="hidden flex-col md:flex">
         <Mail
           accounts={accounts}
-          mails={inboxMails}
+          mails={mails}
+          mailsLoading={mailsLoading}
+          mailsError={mailsError}
           defaultLayout={undefined}
           defaultCollapsed={false}
           navCollapsedSize={4}

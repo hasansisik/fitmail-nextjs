@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useAppDispatch } from "@/redux/hook"
-import { sendMail } from "@/redux/actions/userActions"
+import { sendMail } from "@/redux/actions/mailActions"
 import { toast } from "sonner"
 import { Loader2, Send, X } from "lucide-react"
 

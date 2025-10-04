@@ -1,13 +1,54 @@
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Mail } from "@/app/dashboard/mail/data"
 import { useMail } from "@/app/dashboard/mail/use-mail"
 import { MailItem } from "@/components/mail-item"
 
-interface MailListProps {
-  items: Mail[]
+// API'den gelen mail formatı
+interface ApiMail {
+  _id: string
+  from: {
+    name: string
+    email: string
+  }
+  to: Array<{ name: string; email: string }>
+  cc: Array<{ name: string; email: string }>
+  bcc: Array<{ name: string; email: string }>
+  subject: string
+  content: string
+  htmlContent?: string
+  attachments: Array<{
+    id: string
+    name: string
+    type: string
+    size: number
+    url: string
+  }>
+  labels: string[]
+  folder: string
+  isRead: boolean
+  isStarred: boolean
+  isImportant: boolean
+  receivedAt: string
+  createdAt: string
+  updatedAt: string
+  status: string
+  mailgunId: string
+  messageId: string
+  references: string[]
+  user: {
+    _id: string
+    name: string
+    surname: string
+    mailAddress: string
+  }
 }
 
-export function MailList({ items }: MailListProps) {
+interface MailListProps {
+  items: ApiMail[]
+  loading?: boolean
+  error?: string | null
+}
+
+export function MailList({ items, loading = false, error = null }: MailListProps) {
   const handleMailAction = (action: string, mailId: string, data?: any) => {
     console.log(`Action: ${action}, Mail ID: ${mailId}`, data)
     
@@ -67,16 +108,46 @@ export function MailList({ items }: MailListProps) {
     }
   }
 
+  if (loading) {
+    return (
+      <ScrollArea className="h-screen">
+        <div className="flex flex-col gap-2 p-4 pt-0">
+          <div className="flex items-center justify-center h-32">
+            <div className="text-muted-foreground">Mailler yükleniyor...</div>
+          </div>
+        </div>
+      </ScrollArea>
+    )
+  }
+
+  if (error) {
+    return (
+      <ScrollArea className="h-screen">
+        <div className="flex flex-col gap-2 p-4 pt-0">
+          <div className="flex items-center justify-center h-32">
+            <div className="text-destructive">Hata: {error}</div>
+          </div>
+        </div>
+      </ScrollArea>
+    )
+  }
+
   return (
     <ScrollArea className="h-screen">
       <div className="flex flex-col gap-2 p-4 pt-0">
-        {items.map((item) => (
-          <MailItem
-            key={item.id}
-            mail={item}
-            onAction={handleMailAction}
-          />
-        ))}
+        {items.length === 0 ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="text-muted-foreground">Bu kategoride mail bulunamadı</div>
+          </div>
+        ) : (
+          items.map((item, index) => (
+            <MailItem
+              key={item._id || `mail-${index}`}
+              mail={item}
+              onAction={handleMailAction}
+            />
+          ))
+        )}
       </div>
     </ScrollArea>
   )

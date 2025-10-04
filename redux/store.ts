@@ -1,10 +1,12 @@
 // redux/store.ts
 import { configureStore } from "@reduxjs/toolkit";
 import { userReducer } from "./reducers/userReducer";
+import { mailReducer } from "./reducers/mailReducer";
 
 const store = configureStore({
   reducer: {
     user: userReducer,
+    mail: mailReducer,
   },
 });
 

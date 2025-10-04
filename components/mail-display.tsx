@@ -60,11 +60,49 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Mail, Attachment, ConversationMessage } from "@/app/dashboard/mail/data"
+// API'den gelen mail formatı
+interface ApiMail {
+  _id: string
+  from: {
+    name: string
+    email: string
+  }
+  to: Array<{ name: string; email: string }>
+  cc: Array<{ name: string; email: string }>
+  bcc: Array<{ name: string; email: string }>
+  subject: string
+  content: string
+  htmlContent?: string
+  attachments: Array<{
+    id: string
+    name: string
+    type: string
+    size: number
+    url: string
+  }>
+  labels: string[]
+  folder: string
+  isRead: boolean
+  isStarred: boolean
+  isImportant: boolean
+  receivedAt: string
+  createdAt: string
+  updatedAt: string
+  status: string
+  mailgunId: string
+  messageId: string
+  references: string[]
+  user: {
+    _id: string
+    name: string
+    surname: string
+    mailAddress: string
+  }
+}
 import { useState } from "react"
 
 interface MailDisplayProps {
-  mail: Mail | null
+  mail: ApiMail | null
   isMaximized?: boolean
   onToggleMaximize?: () => void
 }
@@ -409,31 +447,31 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
           <div className="flex items-start p-4">
             <div className="flex items-start gap-4 text-sm">
               <Avatar>
-                <AvatarImage alt={mail.name} />
+                <AvatarImage alt={mail.from?.name || 'Gönderen'} />
                 <AvatarFallback>
-                  {mail.name
+                  {(mail.from?.name || 'G')
                     .split(" ")
                     .map((chunk) => chunk[0])
                     .join("")}
                 </AvatarFallback>
               </Avatar>
               <div className="grid gap-1">
-                <div className="font-semibold">{mail.name}</div>
+                <div className="font-semibold">{mail.from?.name || 'Bilinmeyen Gönderen'}</div>
                 <div className="line-clamp-1 text-xs">{mail.subject}</div>
                 <div className="line-clamp-1 text-xs">
-                  <span className="font-medium">Yanıt-Adresi:</span> {mail.email}
+                  <span className="font-medium">Yanıt-Adresi:</span> {mail.from?.email || 'Bilinmeyen'}
                 </div>
               </div>
             </div>
-            {mail.date && (
+            {(mail.receivedAt || mail.createdAt) && (
               <div className="ml-auto text-xs text-muted-foreground">
-                {format(new Date(mail.date), "PPpp")}
+                {format(new Date(mail.receivedAt || mail.createdAt), "PPpp")}
               </div>
             )}
           </div>
           <Separator />
           <div className="flex-1 whitespace-pre-wrap p-4 text-sm">
-            {mail.text}
+            {mail.content || mail.htmlContent || 'İçerik yok'}
           </div>
           
           {/* Karşılıklı Mesajlaşma */}

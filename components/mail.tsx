@@ -15,7 +15,45 @@ import {
 import { MailDisplay } from "@/components/mail-display"
 import { MailList } from "@/components/mail-list"
 import { SendMailDialog } from "@/components/send-mail-dialog"
-import { type Mail } from "@/app/dashboard/mail/data"
+// API'den gelen mail formatı
+interface ApiMail {
+  _id: string
+  from: {
+    name: string
+    email: string
+  }
+  to: Array<{ name: string; email: string }>
+  cc: Array<{ name: string; email: string }>
+  bcc: Array<{ name: string; email: string }>
+  subject: string
+  content: string
+  htmlContent?: string
+  attachments: Array<{
+    id: string
+    name: string
+    type: string
+    size: number
+    url: string
+  }>
+  labels: string[]
+  folder: string
+  isRead: boolean
+  isStarred: boolean
+  isImportant: boolean
+  receivedAt: string
+  createdAt: string
+  updatedAt: string
+  status: string
+  mailgunId: string
+  messageId: string
+  references: string[]
+  user: {
+    _id: string
+    name: string
+    surname: string
+    mailAddress: string
+  }
+}
 import { useMail } from "@/app/dashboard/mail/use-mail"
 
 interface MailProps {
@@ -24,7 +62,9 @@ interface MailProps {
     email: string
     icon: React.ReactNode
   }[]
-  mails: Mail[]
+  mails: ApiMail[]
+  mailsLoading?: boolean
+  mailsError?: string | null
   defaultLayout: number[] | undefined
   defaultCollapsed?: boolean
   navCollapsedSize: number
@@ -34,6 +74,8 @@ interface MailProps {
 export function Mail({
   accounts,
   mails,
+  mailsLoading = false,
+  mailsError = null,
   defaultLayout = [20, 32, 48],
   defaultCollapsed = false,
   navCollapsedSize,
@@ -48,7 +90,7 @@ export function Mail({
   const currentUser = accounts[0]
 
   // Seçili mail var mı kontrol et
-  const selectedMail = mails.find((item) => item.id === mail.selected)
+  const selectedMail = mails.find((item) => item._id === mail.selected)
   const showMailDetail = selectedMail !== undefined
 
   return (
@@ -96,10 +138,18 @@ export function Mail({
               </form>
             </div>
             <TabsContent value="all" className="m-0">
-              <MailList items={mails} />
+              <MailList 
+                items={mails} 
+                loading={mailsLoading}
+                error={mailsError}
+              />
             </TabsContent>
             <TabsContent value="unread" className="m-0">
-              <MailList items={mails.filter((item) => !item.read)} />
+              <MailList 
+                items={mails.filter((item) => !item.isRead)} 
+                loading={mailsLoading}
+                error={mailsError}
+              />
             </TabsContent>
           </Tabs>
         </div>
