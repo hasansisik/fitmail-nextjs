@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { useAppDispatch } from "@/redux/hook"
 import { logout } from "@/redux/actions/userActions"
-import { getMailsByLabelCategory, getMailStats } from "@/redux/actions/mailActions"
+import { getMailsByCategory, getMailsByLabelCategory, getMailStats } from "@/redux/actions/mailActions"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { toast } from "sonner"
@@ -37,7 +37,6 @@ import {
 } from "lucide-react"
 import { useAppSelector } from "@/redux/hook"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { mails } from "@/app/dashboard/mail/data"
 
 // Dinamik navigation array'leri - mail stats kullanacak
 const getMainNav = (mailStats: any) => [
@@ -162,15 +161,28 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
   const router = useRouter()
   const dispatch = useAppDispatch()
   const { user } = useAppSelector((state) => state.user)
-  const { mailStats } = useAppSelector((state) => state.mail)
+  const { mailStats, statsLoading, statsError } = useAppSelector((state) => state.mail)
+  
   const [internalIsCollapsed, setInternalIsCollapsed] = useState(false)
   
   const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : internalIsCollapsed
   const setIsCollapsed = onCollapse || setInternalIsCollapsed
+  
+  // Sidebar yüklendiğinde mail stats'ı çek
+  useEffect(() => {
+    if (user && !mailStats) {
+      console.log('Sidebar: getMailStats çağrılıyor')
+      dispatch(getMailStats())
+    }
+  }, [dispatch, user, mailStats])
 
   // Kategori tıklama handler'ı
-  const handleCategoryClick = (category: string) => {
+  const handleCategoryClick = (category: string, e?: React.MouseEvent) => {
+    e?.preventDefault()
+    e?.stopPropagation()
+    
     console.log(`Kategori tıklandı: ${category}`)
+    
     // Kategori sayfaları için label category kullan
     if (['social', 'updates', 'forums', 'shopping', 'promotions'].includes(category)) {
       dispatch(getMailsByLabelCategory({
@@ -186,11 +198,15 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
         limit: 50
       }))
     }
+    
+    // Sayfa yönlendirmesi de yapalım
+    router.push(`/dashboard/mail${category === 'inbox' ? '' : `/${category}`}`)
   }
   
   // Dinamik navigation array'leri
   const mainNav = getMainNav(mailStats)
   const categoryNav = getCategoryNav(mailStats)
+  
 
   const handleLogout = async () => {
     try {
@@ -217,7 +233,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
               onClick={handleLogout}
               className={cn(
                 buttonVariants({ variant: "ghost", size: "icon" }),
-                "h-9 w-9 mx-auto",
+                "h-9 w-9 mx-auto cursor-pointer",
                 "hover:bg-transparent hover:text-foreground"
               )}
             >
@@ -236,7 +252,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
           className={cn(
             buttonVariants({ variant: "ghost", size: "sm" }),
             "hover:bg-transparent hover:text-foreground",
-            "justify-start w-full"
+            "justify-start w-full cursor-pointer"
           )}
         >
           <link.icon className="mr-2 h-4 w-4" />
@@ -248,10 +264,13 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
         <Tooltip key={index} delayDuration={0}>
           <TooltipTrigger asChild>
             <button
-              onClick={() => handleCategoryClick(link.category)}
+              onClick={(e) => {
+                console.log('Collapsed button clicked:', link.category)
+                handleCategoryClick(link.category, e)
+              }}
               className={cn(
                 buttonVariants({ variant: isActive ? "default" : "ghost", size: "icon" }),
-                "h-9 w-9 mx-auto",
+                "h-9 w-9 mx-auto cursor-pointer",
                 !isActive && "hover:bg-transparent hover:text-foreground"
               )}
             >
@@ -261,7 +280,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
           </TooltipTrigger>
           <TooltipContent side="right" className="flex items-center gap-4">
             {link.title}
-            {link.label && (
+            {!statsLoading && link.label && (
               <span className="bg-muted text-muted-foreground text-xs px-2 py-1 rounded-full">
                 {link.label}
               </span>
@@ -271,16 +290,19 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       ) : (
         <button
           key={index}
-          onClick={() => handleCategoryClick(link.category)}
+          onClick={(e) => {
+            console.log('Expanded button clicked:', link.category)
+            handleCategoryClick(link.category, e)
+          }}
           className={cn(
             buttonVariants({ variant: isActive ? "default" : "ghost", size: "sm" }),
             !isActive && "hover:bg-transparent hover:text-foreground",
-            "justify-start w-full"
+            "justify-start w-full cursor-pointer"
           )}
         >
           <link.icon className="mr-2 h-4 w-4" />
           {link.title}
-          {link.label && (
+          {!statsLoading && link.label && (
             <span
               className={cn(
                 "ml-auto",
@@ -296,7 +318,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
   }
 
   return (
-    <div className="flex h-screen w-full flex-col bg-background transition-all duration-300 ease-in-out">
+    <div className="flex h-screen w-full flex-col bg-background transition-all duration-300 ease-in-out relative z-10">
       {/* User Account Section */}
       {!isCollapsed && (
         <div className="flex h-16 items-center justify-center px-4">
@@ -330,7 +352,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       <div className="flex flex-1 flex-col gap-4 py-2 overflow-y-auto">
         {/* Main Navigation */}
         <nav className={cn(
-          "grid gap-1",
+          "grid gap-1 pointer-events-auto",
           isCollapsed ? "px-1" : "px-2"
         )}>
           {mainNav.map((link, index) => {
@@ -341,7 +363,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
         
         {/* Category Navigation - Right below main navigation */}
         <nav className={cn(
-          "grid gap-1",
+          "grid gap-1 pointer-events-auto",
           isCollapsed ? "px-1" : "px-2"
         )}>
           {categoryNav.map((link, index) => {

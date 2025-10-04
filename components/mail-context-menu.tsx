@@ -12,6 +12,8 @@ import {
   Clock,
   FolderOpen,
   Tag,
+  Star,
+  AlertCircle,
 } from "lucide-react"
 
 import {
@@ -22,7 +24,17 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAppDispatch } from "@/redux/hook"
-import { moveMailToCategory, removeMailFromCategory } from "@/redux/actions/mailActions"
+import { 
+  moveMailToCategory, 
+  removeMailFromCategory,
+  toggleMailReadStatus,
+  moveMailToFolder,
+  deleteMail,
+  markMailAsImportant,
+  markMailAsStarred,
+  snoozeMail
+} from "@/redux/actions/mailActions"
+import { toast } from "sonner"
 
 // API'den gelen mail formatı
 interface ApiMail {
@@ -38,13 +50,16 @@ interface ApiMail {
   content: string
   htmlContent?: string
   attachments: Array<{
-    id: string
-    name: string
-    type: string
+    filename: string
+    originalName?: string
+    mimeType?: string
+    contentType?: string
+    type?: string
     size: number
-    url: string
+    url?: string
   }>
   labels: string[]
+  categories: string[]
   folder: string
   isRead: boolean
   isStarred: boolean
@@ -99,11 +114,79 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
     try {
       if (action === 'add') {
         await dispatch(moveMailToCategory({ mailId: mail._id, category })).unwrap()
+        toast.success(`Mail ${category} kategorisine eklendi`)
       } else if (action === 'remove') {
         await dispatch(removeMailFromCategory({ mailId: mail._id, category })).unwrap()
+        toast.success(`Mail ${category} kategorisinden çıkarıldı`)
       }
     } catch (error) {
       console.error('Kategori işlemi başarısız:', error)
+      toast.error('Kategori işlemi başarısız')
+    }
+    setOpen(false)
+  }
+
+  const handleMailAction = async (action: string, data?: any) => {
+    try {
+      switch (action) {
+        case 'reply':
+          toast.info('Yanıtla özelliği yakında eklenecek')
+          break
+        case 'replyAll':
+          toast.info('Tümünü yanıtla özelliği yakında eklenecek')
+          break
+        case 'forward':
+          toast.info('Yönlendir özelliği yakında eklenecek')
+          break
+        case 'forwardAsAttachment':
+          toast.info('Ek olarak yönlendir özelliği yakında eklenecek')
+          break
+        case 'archive':
+          await dispatch(moveMailToFolder({ mailId: mail._id, folder: 'archive' })).unwrap()
+          toast.success('Mail arşivlendi')
+          break
+        case 'delete':
+          await dispatch(deleteMail(mail._id)).unwrap()
+          toast.success('Mail silindi')
+          break
+        case 'markAsRead':
+          await dispatch(toggleMailReadStatus(mail._id)).unwrap()
+          toast.success(mail.isRead ? 'Mail okunmadı olarak işaretlendi' : 'Mail okundu olarak işaretlendi')
+          break
+        case 'snooze':
+          // 1 saat sonra için ertele
+          const snoozeUntil = new Date(Date.now() + 60 * 60 * 1000).toISOString()
+          await dispatch(snoozeMail({ mailId: mail._id, snoozeUntil })).unwrap()
+          toast.success('Mail 1 saat sonra için ertelendi')
+          break
+        case 'move':
+          if (data?.category) {
+            const folderMap: Record<string, string> = {
+              'Spam': 'spam',
+              'Çöp': 'trash',
+              'Arşiv': 'archive'
+            }
+            const folder = folderMap[data.category]
+            if (folder) {
+              await dispatch(moveMailToFolder({ mailId: mail._id, folder })).unwrap()
+              toast.success(`Mail ${data.category} klasörüne taşındı`)
+            }
+          }
+          break
+        case 'markAsImportant':
+          await dispatch(markMailAsImportant(mail._id)).unwrap()
+          toast.success(mail.isImportant ? 'Mail önemli işareti kaldırıldı' : 'Mail önemli olarak işaretlendi')
+          break
+        case 'markAsStarred':
+          await dispatch(markMailAsStarred(mail._id)).unwrap()
+          toast.success(mail.isStarred ? 'Mail yıldız işareti kaldırıldı' : 'Mail yıldızlı olarak işaretlendi')
+          break
+        default:
+          console.log(`Bilinmeyen action: ${action}`)
+      }
+    } catch (error) {
+      console.error('Mail işlemi başarısız:', error)
+      toast.error('İşlem başarısız')
     }
     setOpen(false)
   }
@@ -150,7 +233,7 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
           <Button
             variant="ghost"
             className="justify-start h-8 px-2"
-            onClick={() => handleAction("reply")}
+            onClick={() => handleMailAction("reply")}
           >
             <Reply className="mr-2 h-4 w-4" />
             Yanıtla
@@ -158,7 +241,7 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
           <Button
             variant="ghost"
             className="justify-start h-8 px-2"
-            onClick={() => handleAction("replyAll")}
+            onClick={() => handleMailAction("replyAll")}
           >
             <ReplyAll className="mr-2 h-4 w-4" />
             Tümünü yanıtla
@@ -166,7 +249,7 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
           <Button
             variant="ghost"
             className="justify-start h-8 px-2"
-            onClick={() => handleAction("forward")}
+            onClick={() => handleMailAction("forward")}
           >
             <Forward className="mr-2 h-4 w-4" />
             Yönlendir
@@ -174,7 +257,7 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
           <Button
             variant="ghost"
             className="justify-start h-8 px-2"
-            onClick={() => handleAction("forwardAsAttachment")}
+            onClick={() => handleMailAction("forwardAsAttachment")}
           >
             <Paperclip className="mr-2 h-4 w-4" />
             Ek olarak yönlendir
@@ -186,7 +269,7 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
           <Button
             variant="ghost"
             className="justify-start h-8 px-2"
-            onClick={() => handleAction("archive")}
+            onClick={() => handleMailAction("archive")}
           >
             <Archive className="mr-2 h-4 w-4" />
             Arşivle
@@ -194,7 +277,7 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
           <Button
             variant="ghost"
             className="justify-start h-8 px-2 text-destructive hover:text-destructive"
-            onClick={() => handleAction("delete")}
+            onClick={() => handleMailAction("delete")}
           >
             <Trash2 className="mr-2 h-4 w-4" />
             Sil
@@ -202,18 +285,34 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
           <Button
             variant="ghost"
             className="justify-start h-8 px-2"
-            onClick={() => handleAction("markAsRead")}
+            onClick={() => handleMailAction("markAsRead")}
           >
             <MailOpen className="mr-2 h-4 w-4" />
-            Okundu olarak işaretle
+            {mail.isRead ? 'Okunmadı olarak işaretle' : 'Okundu olarak işaretle'}
           </Button>
           <Button
             variant="ghost"
             className="justify-start h-8 px-2"
-            onClick={() => handleAction("snooze")}
+            onClick={() => handleMailAction("snooze")}
           >
             <Clock className="mr-2 h-4 w-4" />
             Ertele
+          </Button>
+          <Button
+            variant="ghost"
+            className="justify-start h-8 px-2"
+            onClick={() => handleMailAction("markAsImportant")}
+          >
+            <AlertCircle className="mr-2 h-4 w-4" />
+            {mail.isImportant ? 'Önemli işaretini kaldır' : 'Önemli olarak işaretle'}
+          </Button>
+          <Button
+            variant="ghost"
+            className="justify-start h-8 px-2"
+            onClick={() => handleMailAction("markAsStarred")}
+          >
+            <Star className={`mr-2 h-4 w-4 ${mail.isStarred ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+            {mail.isStarred ? 'Yıldız işaretini kaldır' : 'Yıldızlı olarak işaretle'}
           </Button>
 
           {/* Move Section */}
@@ -225,7 +324,7 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
                   key={category}
                   variant="ghost"
                   className="justify-start h-6 px-2 text-xs"
-                  onClick={() => handleAction("move", { category })}
+                  onClick={() => handleMailAction("move", { category })}
                 >
                   <FolderOpen className="mr-2 h-3 w-3" />
                   {category}
@@ -249,7 +348,7 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
                       "Promosyon": "promotions"
                     }
                     const categoryKey = categoryMap[label]
-                    const isInCategory = mail.labels.includes(categoryKey)
+                    const isInCategory = mail.categories?.includes(categoryKey) || mail.labels.includes(categoryKey)
                     
                     return (
                       <Button

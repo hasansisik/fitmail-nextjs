@@ -18,6 +18,8 @@ import {
   Image as ImageIcon,
   FileText,
   Send,
+  Eye,
+  ExternalLink,
   X,
 } from "lucide-react"
 
@@ -42,6 +44,7 @@ import {
 } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
+import { toast } from "sonner"
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -74,13 +77,16 @@ interface ApiMail {
   content: string
   htmlContent?: string
   attachments: Array<{
-    id: string
-    name: string
-    type: string
+    filename: string
+    originalName?: string
+    mimeType?: string
+    contentType?: string
+    type?: string
     size: number
-    url: string
+    url?: string
   }>
   labels: string[]
+  categories: string[]
   folder: string
   isRead: boolean
   isStarred: boolean
@@ -139,10 +145,104 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
   }
 
   // Attachment ikonunu belirle
-  const getAttachmentIcon = (type: string) => {
+  const getAttachmentIcon = (attachment: any) => {
+    const type = attachment.type || attachment.contentType || attachment.mimeType
+    if (!type) return <Paperclip className="h-4 w-4" />
+    
+    // Resim dosyaları
     if (type.startsWith('image/')) return <ImageIcon className="h-4 w-4" />
+    
+    // PDF dosyaları
     if (type.includes('pdf')) return <FileText className="h-4 w-4" />
+    
+    // Word dosyaları
+    if (type.includes('word') || type.includes('document') || type.includes('msword')) {
+      return <FileText className="h-4 w-4" />
+    }
+    
+    // Excel dosyaları
+    if (type.includes('excel') || type.includes('spreadsheet') || type.includes('ms-excel')) {
+      return <FileText className="h-4 w-4" />
+    }
+    
+    // PowerPoint dosyaları
+    if (type.includes('powerpoint') || type.includes('presentation') || type.includes('ms-powerpoint')) {
+      return <FileText className="h-4 w-4" />
+    }
+    
+    // Metin dosyaları
+    if (type.startsWith('text/')) return <FileText className="h-4 w-4" />
+    
+    // Zip/Arşiv dosyaları
+    if (type.includes('zip') || type.includes('rar') || type.includes('7z') || type.includes('tar') || type.includes('gz')) {
+      return <FileText className="h-4 w-4" />
+    }
+    
+    // Varsayılan
     return <Paperclip className="h-4 w-4" />
+  }
+
+  // Dosya indirme
+  const handleDownload = (attachment: any) => {
+    if (attachment.url) {
+      try {
+        const link = document.createElement('a')
+        link.href = attachment.url
+        link.download = attachment.filename || attachment.name || 'attachment'
+        link.target = '_blank'
+        link.rel = 'noopener noreferrer'
+        
+        // Link'i DOM'a ekle, tıkla ve kaldır
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        
+        toast.success('Dosya indiriliyor...')
+      } catch (error) {
+        console.error('Download error:', error)
+        toast.error('Dosya indirilemedi')
+      }
+    } else {
+      toast.error('Dosya indirilemedi - URL bulunamadı')
+    }
+  }
+
+  // Dosya preview
+  const handlePreview = (attachment: any) => {
+    if (attachment.url) {
+      try {
+        const type = attachment.type || attachment.contentType || attachment.mimeType
+        
+        // PDF ve resimler için doğrudan aç
+        if (type?.includes('pdf') || type?.startsWith('image/')) {
+          window.open(attachment.url, '_blank', 'noopener,noreferrer')
+        } else {
+          // Diğer dosyalar için yeni sekmede aç
+          window.open(attachment.url, '_blank', 'noopener,noreferrer')
+        }
+        
+        toast.success('Dosya açılıyor...')
+      } catch (error) {
+        console.error('Preview error:', error)
+        toast.error('Dosya açılamadı')
+      }
+    } else {
+      toast.error('Dosya önizlenemedi - URL bulunamadı')
+    }
+  }
+
+  // Dosya türüne göre preview desteklenip desteklenmediğini kontrol et
+  const canPreview = (attachment: any) => {
+    const type = attachment.type || attachment.contentType || attachment.mimeType
+    if (!type) return false
+    return type.startsWith('image/') || 
+           type.includes('pdf') || 
+           type.includes('text/') ||
+           type.includes('document') ||
+           type.includes('word') ||
+           type.includes('excel') ||
+           type.includes('powerpoint') ||
+           type.includes('presentation')
   }
 
   // Dosya ekleme
@@ -199,13 +299,13 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
   // Cevapla Tümü
   const handleReplyAll = () => {
     setIsReplying(true)
-    setReplyText(`\n\n--- Orijinal Mesaj ---\n${mail?.text}`)
+    setReplyText(`\n\n--- Orijinal Mesaj ---\n${mail?.content || mail?.htmlContent || ''}`)
   }
 
   // İlet
   const handleForward = () => {
     setIsReplying(true)
-    setReplyText(`\n\n--- İletilen Mesaj ---\nGönderen: ${mail?.name} <${mail?.email}>\nKonu: ${mail?.subject}\n\n${mail?.text}`)
+    setReplyText(`\n\n--- İletilen Mesaj ---\nGönderen: ${mail?.from?.name || 'Bilinmeyen'} <${mail?.from?.email || 'Bilinmeyen'}>\nKonu: ${mail?.subject}\n\n${mail?.content || mail?.htmlContent || ''}`)
   }
 
   // Erteleme fonksiyonları
@@ -465,7 +565,25 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
             </div>
             {(mail.receivedAt || mail.createdAt) && (
               <div className="ml-auto text-xs text-muted-foreground">
-                {format(new Date(mail.receivedAt || mail.createdAt), "PPpp")}
+                {(() => {
+                  try {
+                    const dateValue = mail.receivedAt || mail.createdAt
+                    if (!dateValue) return 'Tarih yok'
+                    
+                    const date = new Date(dateValue)
+                    if (isNaN(date.getTime())) return 'Geçersiz tarih'
+                    
+                    return date.toLocaleDateString('tr-TR', {
+                      day: '2-digit',
+                      month: '2-digit', 
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })
+                  } catch (error) {
+                    return 'Tarih hatası'
+                  }
+                })()}
               </div>
             )}
           </div>
@@ -542,19 +660,51 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
                   <span className="text-sm font-medium">Ekler ({mail.attachments.length})</span>
                 </div>
                 <div className="grid gap-2">
-                  {mail.attachments.map((attachment) => (
+                  {mail.attachments.map((attachment, index) => (
                     <div
-                      key={attachment.id}
+                      key={attachment.id || `attachment-${index}`}
                       className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
                     >
-                      {getAttachmentIcon(attachment.type)}
+                      {getAttachmentIcon(attachment)}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{attachment.name}</p>
-                        <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
+                        <p className="text-sm font-medium truncate">{attachment.filename || attachment.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
+                          {attachment.url && (
+                            <span className="text-xs text-green-600 font-medium">✓ İndirilebilir</span>
+                          )}
+                          {!attachment.url && (
+                            <span className="text-xs text-orange-600 font-medium">⚠ URL yok</span>
+                          )}
+                        </div>
                       </div>
-                      <Button variant="ghost" size="sm">
-                        <Download className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        {canPreview(attachment) && attachment.url && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handlePreview(attachment)}
+                            title="Önizle"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {attachment.url && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleDownload(attachment)}
+                            title="İndir"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {!attachment.url && (
+                          <span className="text-xs text-muted-foreground px-2 py-1">
+                            URL yok
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -612,7 +762,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
                 <Textarea
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
-                  placeholder={`${mail.name} yanıtla...`}
+                  placeholder={`${mail.from?.name || 'Gönderen'} yanıtla...`}
                   className="min-h-[100px]"
                 />
                 

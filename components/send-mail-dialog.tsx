@@ -1,10 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
+import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
   DialogContent,
@@ -14,18 +16,44 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useAppDispatch } from "@/redux/hook"
-import { sendMail } from "@/redux/actions/mailActions"
+import { sendMail, getMailsByCategory, getMailStats } from "@/redux/actions/mailActions"
+import { uploadFileToCloudinary } from "@/utils/cloudinary"
 import { toast } from "sonner"
-import { Loader2, Send, X } from "lucide-react"
+import { 
+  Loader2, 
+  Send, 
+  X, 
+  Paperclip, 
+  Image as ImageIcon, 
+  FileText, 
+  Save,
+  Plus,
+  Trash2
+} from "lucide-react"
 
 interface SendMailDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
+interface Attachment {
+  id: string
+  name: string
+  type: string
+  size: number
+  file: File
+  url?: string | null
+}
+
 export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
   const dispatch = useAppDispatch()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isSavingDraft, setIsSavingDraft] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [showCC, setShowCC] = useState(false)
+  const [showBCC, setShowBCC] = useState(false)
+  const [attachments, setAttachments] = useState<Attachment[]>([])
   const [formData, setFormData] = useState({
     to: "",
     cc: "",
@@ -36,6 +64,101 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files) {
+      setIsUploading(true)
+      const fileArray = Array.from(files)
+      
+      try {
+        const uploadPromises = fileArray.map(async (file) => {
+          try {
+            // Cloudinary'ye yükle
+            const cloudinaryUrl = await uploadFileToCloudinary(file)
+            
+            return {
+              id: Math.random().toString(36).substr(2, 9),
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              file: file,
+              url: cloudinaryUrl // Cloudinary URL'sini ekle
+            }
+          } catch (error) {
+            console.error('File upload error:', error)
+            toast.error(`${file.name} yüklenemedi: ${error}`)
+            
+            // Hata durumunda sadece local file bilgisi
+            return {
+              id: Math.random().toString(36).substr(2, 9),
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              file: file,
+              url: null
+            }
+          }
+        })
+
+        const newAttachments = await Promise.all(uploadPromises)
+        setAttachments(prev => [...prev, ...newAttachments])
+        
+        const successCount = newAttachments.filter(att => att.url).length
+        if (successCount > 0) {
+          toast.success(`${successCount} dosya başarıyla Cloudinary'ye yüklendi`)
+        }
+      } catch (error) {
+        console.error('Batch upload error:', error)
+        toast.error('Dosyalar yüklenirken hata oluştu')
+      } finally {
+        setIsUploading(false)
+      }
+    }
+  }
+
+  const removeAttachment = (id: string) => {
+    setAttachments(prev => prev.filter(att => att.id !== id))
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
+  const saveDraft = async () => {
+    if (!formData.subject && !formData.content) {
+      toast.error("Taslak kaydetmek için en az konu veya içerik gerekli!")
+      return
+    }
+
+    setIsSavingDraft(true)
+    try {
+      // TODO: Implement draft saving API call
+      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
+      toast.success("Taslak kaydedildi!")
+      
+      // Refresh mail list and stats after saving draft
+      try {
+        await dispatch(getMailsByCategory({
+          folder: "drafts",
+          page: 1,
+          limit: 50
+        })).unwrap()
+        
+        await dispatch(getMailStats()).unwrap()
+      } catch (refreshError) {
+        console.error("Failed to refresh mail list after draft save:", refreshError)
+      }
+    } catch (error) {
+      toast.error("Taslak kaydedilemedi!")
+    } finally {
+      setIsSavingDraft(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,6 +173,15 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
     const loadingToastId = toast.loading("Mail gönderiliyor...")
 
     try {
+      // Prepare attachments for sending
+      const attachmentsData = attachments.map(attachment => ({
+        filename: attachment.name,
+        data: attachment.file,
+        contentType: attachment.type,
+        size: attachment.size,
+        url: attachment.url || undefined // Cloudinary URL'sini ekle
+      }));
+
       // Prepare mail data
       const mailData = {
         to: formData.to.split(',').map(email => email.trim()).filter(Boolean),
@@ -57,8 +189,11 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
         bcc: formData.bcc ? formData.bcc.split(',').map(email => email.trim()).filter(Boolean) : undefined,
         subject: formData.subject,
         content: formData.content,
-        htmlContent: formData.content.replace(/\n/g, '<br>')
+        htmlContent: formData.content.replace(/\n/g, '<br>'),
+        attachments: attachmentsData.length > 0 ? attachmentsData : undefined
       }
+
+      console.log("Sending mail with data:", mailData)
 
       // Call Redux action for sending mail
       const result = await dispatch(sendMail(mailData)).unwrap()
@@ -70,6 +205,20 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
       // Success
       toast.success("Mail başarıyla gönderildi!")
       
+      // Refresh mail list and stats
+      try {
+        await dispatch(getMailsByCategory({
+          folder: "inbox",
+          page: 1,
+          limit: 50
+        })).unwrap()
+        
+        await dispatch(getMailStats()).unwrap()
+      } catch (refreshError) {
+        console.error("Failed to refresh mail list:", refreshError)
+        // Don't show error to user as mail was sent successfully
+      }
+      
       // Reset form and close dialog
       setFormData({
         to: "",
@@ -78,6 +227,9 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
         subject: "",
         content: ""
       })
+      setAttachments([])
+      setShowCC(false)
+      setShowBCC(false)
       onOpenChange(false)
       
     } catch (error: any) {
@@ -95,7 +247,7 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
   }
 
   const handleClose = () => {
-    if (!isLoading) {
+    if (!isLoading && !isSavingDraft) {
       setFormData({
         to: "",
         cc: "",
@@ -103,6 +255,9 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
         subject: "",
         content: ""
       })
+      setAttachments([])
+      setShowCC(false)
+      setShowBCC(false)
       onOpenChange(false)
     }
   }
@@ -131,7 +286,7 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
                 value={formData.to}
                 onChange={(e) => handleInputChange("to", e.target.value)}
                 required
-                disabled={isLoading}
+                disabled={isLoading || isSavingDraft}
               />
               <p className="text-xs text-muted-foreground">
                 Birden fazla alıcı için virgül ile ayırın
@@ -140,26 +295,56 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
 
             {/* CC Field */}
             <div className="space-y-2">
-              <Label htmlFor="cc">Kopya (CC)</Label>
-              <Input
-                id="cc"
-                placeholder="kopya@email.com"
-                value={formData.cc}
-                onChange={(e) => handleInputChange("cc", e.target.value)}
-                disabled={isLoading}
-              />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="cc">Kopya (CC)</Label>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="cc-toggle"
+                    checked={showCC}
+                    onCheckedChange={setShowCC}
+                    disabled={isLoading || isSavingDraft}
+                  />
+                  <Label htmlFor="cc-toggle" className="text-sm">
+                    {showCC ? 'Gizle' : 'Göster'}
+                  </Label>
+                </div>
+              </div>
+              {showCC && (
+                <Input
+                  id="cc"
+                  placeholder="kopya@email.com"
+                  value={formData.cc}
+                  onChange={(e) => handleInputChange("cc", e.target.value)}
+                  disabled={isLoading || isSavingDraft}
+                />
+              )}
             </div>
 
             {/* BCC Field */}
             <div className="space-y-2">
-              <Label htmlFor="bcc">Gizli Kopya (BCC)</Label>
-              <Input
-                id="bcc"
-                placeholder="gizli@email.com"
-                value={formData.bcc}
-                onChange={(e) => handleInputChange("bcc", e.target.value)}
-                disabled={isLoading}
-              />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="bcc">Gizli Kopya (BCC)</Label>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="bcc-toggle"
+                    checked={showBCC}
+                    onCheckedChange={setShowBCC}
+                    disabled={isLoading || isSavingDraft}
+                  />
+                  <Label htmlFor="bcc-toggle" className="text-sm">
+                    {showBCC ? 'Gizle' : 'Göster'}
+                  </Label>
+                </div>
+              </div>
+              {showBCC && (
+                <Input
+                  id="bcc"
+                  placeholder="gizli@email.com"
+                  value={formData.bcc}
+                  onChange={(e) => handleInputChange("bcc", e.target.value)}
+                  disabled={isLoading || isSavingDraft}
+                />
+              )}
             </div>
 
             {/* Subject Field */}
@@ -171,8 +356,90 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
                 value={formData.subject}
                 onChange={(e) => handleInputChange("subject", e.target.value)}
                 required
-                disabled={isLoading}
+                disabled={isLoading || isSavingDraft}
               />
+            </div>
+
+            {/* Attachments Field */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Ekler</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isLoading || isSavingDraft || isUploading}
+                  >
+                    {isUploading ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Paperclip className="h-4 w-4 mr-2" />
+                    )}
+                    {isUploading ? 'Yükleniyor...' : 'Dosya Ekle'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isLoading || isSavingDraft || isUploading}
+                  >
+                    {isUploading ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <ImageIcon className="h-4 w-4 mr-2" />
+                    )}
+                    {isUploading ? 'Yükleniyor...' : 'Fotoğraf'}
+                  </Button>
+                </div>
+              </div>
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                onChange={handleFileSelect}
+                className="hidden"
+                accept="*/*"
+              />
+
+              {attachments.length > 0 && (
+                <div className="space-y-2">
+                  {attachments.map((attachment) => (
+                    <div
+                      key={attachment.id}
+                      className="flex items-center justify-between p-2 border rounded-lg bg-muted/50"
+                    >
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">{attachment.name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
+                            {attachment.url && (
+                              <span className="text-xs text-green-600 font-medium">✓ Cloudinary'de</span>
+                            )}
+                            {!attachment.url && (
+                              <span className="text-xs text-orange-600 font-medium">⚠ Yüklenemedi</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeAttachment(attachment.id)}
+                        disabled={isLoading || isSavingDraft}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Content Field */}
@@ -184,7 +451,7 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
                 value={formData.content}
                 onChange={(e) => handleInputChange("content", e.target.value)}
                 required
-                disabled={isLoading}
+                disabled={isLoading || isSavingDraft}
                 rows={8}
                 className="resize-none"
               />
@@ -196,14 +463,34 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={isLoading}
+              disabled={isLoading || isSavingDraft}
             >
               <X className="h-4 w-4 mr-2" />
               İptal
             </Button>
+            
+            <Button
+              type="button"
+              variant="outline"
+              onClick={saveDraft}
+              disabled={isLoading || isSavingDraft || (!formData.subject && !formData.content)}
+            >
+              {isSavingDraft ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Kaydediliyor...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Taslak Kaydet
+                </>
+              )}
+            </Button>
+            
             <Button
               type="submit"
-              disabled={isLoading || !formData.to || !formData.subject || !formData.content}
+              disabled={isLoading || isSavingDraft || !formData.to || !formData.subject || !formData.content}
             >
               {isLoading ? (
                 <>

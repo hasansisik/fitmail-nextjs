@@ -10,6 +10,9 @@ import {
   moveMailToFolder,
   deleteMail,
   manageMailLabels,
+  markMailAsImportant,
+  markMailAsStarred,
+  snoozeMail,
   clearMailError,
 } from "../actions/mailActions";
 
@@ -111,6 +114,7 @@ export const mailReducer = createReducer(initialState, (builder) => {
       const mailIndex = state.mails.findIndex(mail => mail._id === action.meta.arg.mailId);
       if (mailIndex !== -1) {
         state.mails[mailIndex].labels = action.payload.labels;
+        state.mails[mailIndex].categories = action.payload.categories;
       }
     })
     .addCase(moveMailToCategory.rejected, (state, action) => {
@@ -131,6 +135,7 @@ export const mailReducer = createReducer(initialState, (builder) => {
       const mailIndex = state.mails.findIndex(mail => mail._id === action.meta.arg.mailId);
       if (mailIndex !== -1) {
         state.mails[mailIndex].labels = action.payload.labels;
+        state.mails[mailIndex].categories = action.payload.categories;
       }
     })
     .addCase(removeMailFromCategory.rejected, (state, action) => {
@@ -211,6 +216,66 @@ export const mailReducer = createReducer(initialState, (builder) => {
       }
     })
     .addCase(manageMailLabels.rejected, (state, action) => {
+      state.mailsLoading = false;
+      state.mailsError = action.payload as string;
+    })
+    // Mark Mail as Important
+    .addCase(markMailAsImportant.pending, (state) => {
+      state.mailsLoading = true;
+      state.mailsError = null;
+    })
+    .addCase(markMailAsImportant.fulfilled, (state, action) => {
+      state.mailsLoading = false;
+      state.message = action.payload.message;
+      state.mailsError = null;
+      
+      // Update mail in the list
+      const mailIndex = state.mails.findIndex(mail => mail._id === action.meta.arg);
+      if (mailIndex !== -1) {
+        state.mails[mailIndex].isImportant = action.payload.isImportant;
+      }
+    })
+    .addCase(markMailAsImportant.rejected, (state, action) => {
+      state.mailsLoading = false;
+      state.mailsError = action.payload as string;
+    })
+    // Mark Mail as Starred
+    .addCase(markMailAsStarred.pending, (state) => {
+      state.mailsLoading = true;
+      state.mailsError = null;
+    })
+    .addCase(markMailAsStarred.fulfilled, (state, action) => {
+      state.mailsLoading = false;
+      state.message = action.payload.message;
+      state.mailsError = null;
+      
+      // Update mail in the list
+      const mailIndex = state.mails.findIndex(mail => mail._id === action.meta.arg);
+      if (mailIndex !== -1) {
+        state.mails[mailIndex].isStarred = action.payload.isStarred;
+      }
+    })
+    .addCase(markMailAsStarred.rejected, (state, action) => {
+      state.mailsLoading = false;
+      state.mailsError = action.payload as string;
+    })
+    // Snooze Mail
+    .addCase(snoozeMail.pending, (state) => {
+      state.mailsLoading = true;
+      state.mailsError = null;
+    })
+    .addCase(snoozeMail.fulfilled, (state, action) => {
+      state.mailsLoading = false;
+      state.message = action.payload.message;
+      state.mailsError = null;
+      
+      // Update mail in the list
+      const mailIndex = state.mails.findIndex(mail => mail._id === action.meta.arg.mailId);
+      if (mailIndex !== -1) {
+        state.mails[mailIndex].snoozeUntil = action.payload.snoozeUntil;
+      }
+    })
+    .addCase(snoozeMail.rejected, (state, action) => {
       state.mailsLoading = false;
       state.mailsError = action.payload as string;
     })

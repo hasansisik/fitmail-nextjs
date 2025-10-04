@@ -16,7 +16,7 @@ interface UploadResult {
   };
 }
 
-export const uploadImageToCloudinary = (file: File): Promise<string> => {
+export const uploadFileToCloudinary = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const timestamp = Math.round(new Date().getTime() / 1000);
     const signature = generateSignature(timestamp);
@@ -27,7 +27,20 @@ export const uploadImageToCloudinary = (file: File): Promise<string> => {
     formData.append('timestamp', timestamp.toString());
     formData.append('signature', signature);
 
-    fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+    // Dosya türüne göre upload endpoint'i belirle
+    const fileType = file.type;
+    let uploadEndpoint = 'image/upload';
+    
+    if (fileType.startsWith('image/')) {
+      uploadEndpoint = 'image/upload';
+    } else if (fileType.includes('pdf') || fileType.includes('document') || fileType.includes('text')) {
+      uploadEndpoint = 'raw/upload';
+    } else {
+      // Diğer dosyalar için raw upload kullan
+      uploadEndpoint = 'raw/upload';
+    }
+
+    fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${uploadEndpoint}`, {
       method: 'POST',
       body: formData
     })

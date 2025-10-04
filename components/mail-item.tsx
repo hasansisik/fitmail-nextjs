@@ -20,13 +20,16 @@ interface ApiMail {
   content: string
   htmlContent?: string
   attachments: Array<{
-    id: string
-    name: string
-    type: string
+    filename: string
+    originalName?: string
+    mimeType?: string
+    contentType?: string
+    type?: string
     size: number
-    url: string
+    url?: string
   }>
   labels: string[]
+  categories: string[]
   folder: string
   isRead: boolean
   isStarred: boolean
@@ -93,9 +96,34 @@ export function MailItem({ mail, onAction }: MailItemProps) {
                 try {
                   const dateValue = mail.receivedAt || mail.createdAt || mail.updatedAt
                   if (!dateValue) return 'Tarih yok'
-                  const date = new Date(dateValue)
+                  
+                  // Tarih string'ini parse et
+                  let date: Date
+                  if (typeof dateValue === 'string') {
+                    date = new Date(dateValue)
+                  } else {
+                    date = dateValue
+                  }
+                  
                   if (isNaN(date.getTime())) return 'Geçersiz tarih'
-                  return formatDistanceToNow(date, { addSuffix: true })
+                  
+                  // Türkçe format için
+                  const now = new Date()
+                  const diffInHours = Math.abs(now.getTime() - date.getTime()) / (1000 * 60 * 60)
+                  
+                  if (diffInHours < 1) {
+                    return 'Az önce'
+                  } else if (diffInHours < 24) {
+                    return `${Math.floor(diffInHours)} saat önce`
+                  } else if (diffInHours < 168) { // 7 gün
+                    return `${Math.floor(diffInHours / 24)} gün önce`
+                  } else {
+                    return date.toLocaleDateString('tr-TR', { 
+                      day: '2-digit', 
+                      month: '2-digit', 
+                      year: '2-digit' 
+                    })
+                  }
                 } catch (error) {
                   return 'Tarih hatası'
                 }
@@ -105,7 +133,7 @@ export function MailItem({ mail, onAction }: MailItemProps) {
           <div className="text-xs font-medium">{mail.subject}</div>
         </div>
         <div className="line-clamp-2 text-xs text-muted-foreground">
-          {mail.content ? mail.content.substring(0, 300) : 'İçerik yok'}
+          {mail.content ? mail.content.substring(0, 200) + (mail.content.length > 200 ? '...' : '') : 'İçerik yok'}
         </div>
         {mail.labels.length ? (
           <div className="flex items-center gap-2">

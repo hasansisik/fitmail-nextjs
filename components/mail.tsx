@@ -29,13 +29,16 @@ interface ApiMail {
   content: string
   htmlContent?: string
   attachments: Array<{
-    id: string
-    name: string
-    type: string
+    filename: string
+    originalName?: string
+    mimeType?: string
+    contentType?: string
+    type?: string
     size: number
-    url: string
+    url?: string
   }>
   labels: string[]
+  categories: string[]
   folder: string
   isRead: boolean
   isStarred: boolean
@@ -57,11 +60,6 @@ interface ApiMail {
 import { useMail } from "@/app/dashboard/mail/use-mail"
 
 interface MailProps {
-  accounts: {
-    label: string
-    email: string
-    icon: React.ReactNode
-  }[]
   mails: ApiMail[]
   mailsLoading?: boolean
   mailsError?: string | null
@@ -72,7 +70,6 @@ interface MailProps {
 }
 
 export function Mail({
-  accounts,
   mails,
   mailsLoading = false,
   mailsError = null,
@@ -86,8 +83,7 @@ export function Mail({
   const [showSendDialog, setShowSendDialog] = React.useState(false)
   const [mail, { clearSelection }] = useMail()
 
-  // İlk account'u (kullanıcı) al
-  const currentUser = accounts[0]
+  // Kullanıcı bilgisi Redux'tan alınacak
 
   // Seçili mail var mı kontrol et
   const selectedMail = mails.find((item) => item._id === mail.selected)

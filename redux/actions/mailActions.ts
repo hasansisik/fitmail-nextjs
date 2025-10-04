@@ -12,6 +12,13 @@ export const sendMail = createAsyncThunk(
     subject: string;
     content: string;
     htmlContent?: string;
+    attachments?: Array<{
+      filename: string;
+      data: File;
+      contentType: string;
+      size: number;
+      url?: string;
+    }>;
   }, thunkAPI) => {
     try {
       const token = localStorage.getItem("accessToken");
@@ -19,14 +26,45 @@ export const sendMail = createAsyncThunk(
         return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
       }
 
+      // Prepare FormData for file uploads
+      const formData = new FormData();
+      
+      // Add basic mail data
+      formData.append('to', JSON.stringify(mailData.to));
+      formData.append('subject', mailData.subject);
+      formData.append('content', mailData.content);
+      formData.append('htmlContent', mailData.htmlContent || mailData.content);
+      
+      if (mailData.cc) {
+        formData.append('cc', JSON.stringify(mailData.cc));
+      }
+      if (mailData.bcc) {
+        formData.append('bcc', JSON.stringify(mailData.bcc));
+      }
+      
+      // Add attachments
+      if (mailData.attachments && mailData.attachments.length > 0) {
+        const attachmentNames = mailData.attachments.map(att => att.filename);
+        const attachmentTypes = mailData.attachments.map(att => att.contentType);
+        const attachmentUrls = mailData.attachments.map(att => att.url || '');
+        
+        mailData.attachments.forEach((attachment) => {
+          formData.append(`attachments`, attachment.data);
+        });
+        
+        formData.append('attachmentNames', JSON.stringify(attachmentNames));
+        formData.append('attachmentTypes', JSON.stringify(attachmentTypes));
+        formData.append('attachmentUrls', JSON.stringify(attachmentUrls));
+      }
+
       const config = {
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
         },
       };
 
-      const { data } = await axios.post(`${server}/mail/send`, mailData, config);
+      const { data } = await axios.post(`${server}/mail/send`, formData, config);
       return data;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
@@ -102,7 +140,7 @@ export const getMailsByLabelCategory = createAsyncThunk(
       if (params.search) queryParams.append('search', params.search);
       if (params.isRead !== undefined) queryParams.append('isRead', params.isRead.toString());
 
-      const { data } = await axios.get(`${server}/mail/category/${params.category}?${queryParams.toString()}`, config);
+      const { data } = await axios.get(`${server}/mail/label-category/${params.category}?${queryParams.toString()}`, config);
       return data;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
@@ -275,6 +313,81 @@ export const manageMailLabels = createAsyncThunk(
       };
 
       const { data } = await axios.patch(`${server}/mail/${mailId}/labels`, { action, label }, config);
+      return { mailId, ...data };
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+// Mark Mail as Important Action
+export const markMailAsImportant = createAsyncThunk(
+  "mail/markMailAsImportant",
+  async (mailId: string, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
+      }
+
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      const { data } = await axios.patch(`${server}/mail/${mailId}/important`, {}, config);
+      return { mailId, ...data };
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+// Mark Mail as Starred Action
+export const markMailAsStarred = createAsyncThunk(
+  "mail/markMailAsStarred",
+  async (mailId: string, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
+      }
+
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      const { data } = await axios.patch(`${server}/mail/${mailId}/starred`, {}, config);
+      return { mailId, ...data };
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+// Snooze Mail Action
+export const snoozeMail = createAsyncThunk(
+  "mail/snoozeMail",
+  async ({ mailId, snoozeUntil }: { mailId: string; snoozeUntil: string }, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
+      }
+
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      const { data } = await axios.patch(`${server}/mail/${mailId}/snooze`, { snoozeUntil }, config);
       return { mailId, ...data };
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);

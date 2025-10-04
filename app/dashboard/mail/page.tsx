@@ -5,7 +5,6 @@ import { useEffect } from "react"
 import { useAppDispatch, useAppSelector } from "@/redux/hook"
 import { getMailsByCategory, getMailStats } from "@/redux/actions/mailActions"
 import { Mail } from "@/components/mail"
-import { accounts } from "./data"
 
 export default function MailPage() {
   const dispatch = useAppDispatch()
@@ -48,7 +47,6 @@ export default function MailPage() {
       </div>
       <div className="hidden flex-col md:flex">
         <Mail
-          accounts={accounts}
           mails={mails}
           mailsLoading={mailsLoading}
           mailsError={mailsError}

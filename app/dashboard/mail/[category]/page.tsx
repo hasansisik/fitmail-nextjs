@@ -1,5 +1,9 @@
+"use client"
+
 import Image from "next/image"
-import { mails, accounts } from "../data"
+import { useEffect } from "react"
+import { useAppDispatch, useAppSelector } from "@/redux/hook"
+import { getMailsByCategory, getMailsByLabelCategory, getMailStats } from "@/redux/actions/mailActions"
 import { Mail } from "@/components/mail"
 
 interface MailCategoryPageProps {
@@ -8,8 +12,14 @@ interface MailCategoryPageProps {
   }>
 }
 
-export default async function MailCategoryPage({ params }: MailCategoryPageProps) {
-  const { category } = await params
+export default function MailCategoryPage({ params }: MailCategoryPageProps) {
+  const dispatch = useAppDispatch()
+  const { user } = useAppSelector((state) => state.user)
+  
+  // Mail state'ini Redux'tan al
+  const mails = useAppSelector((state) => state.mail.mails || [])
+  const mailsLoading = useAppSelector((state) => state.mail.mailsLoading || false)
+  const mailsError = useAppSelector((state) => state.mail.mailsError)
 
   // Kategori başlıklarını tanımla
   const getCategoryTitle = (category: string) => {
@@ -29,8 +39,33 @@ export default async function MailCategoryPage({ params }: MailCategoryPageProps
     return titles[category] || "Bilinmeyen Kategori"
   }
 
-  // Kategoriye göre mailleri filtrele
-  const categoryMails = mails.filter(mail => mail.category === category)
+  // Kategori değiştiğinde mailleri yükle
+  useEffect(() => {
+    if (user && params) {
+      params.then(({ category }) => {
+        console.log('Category page loading mails for:', category)
+        
+        // Kategori sayfaları için label category kullan
+        if (['social', 'updates', 'forums', 'shopping', 'promotions'].includes(category)) {
+          dispatch(getMailsByLabelCategory({
+            category: category,
+            page: 1,
+            limit: 50
+          }))
+        } else {
+          // Klasör sayfaları için normal category kullan
+          dispatch(getMailsByCategory({
+            folder: category,
+            page: 1,
+            limit: 50
+          }))
+        }
+        
+        // Mail stats'ı da güncelle
+        dispatch(getMailStats())
+      })
+    }
+  }, [dispatch, user, params])
 
   return (
     <>
@@ -52,12 +87,13 @@ export default async function MailCategoryPage({ params }: MailCategoryPageProps
       </div>
       <div className="hidden flex-col md:flex">
         <Mail
-          accounts={accounts}
-          mails={categoryMails}
+          mails={mails}
+          mailsLoading={mailsLoading}
+          mailsError={mailsError}
           defaultLayout={undefined}
           defaultCollapsed={false}
           navCollapsedSize={4}
-          categoryTitle={getCategoryTitle(category)}
+          categoryTitle={params ? getCategoryTitle(params.toString()) : "Yükleniyor..."}
         />
       </div>
     </>

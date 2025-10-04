@@ -16,11 +16,13 @@ interface ApiMail {
   content: string
   htmlContent?: string
   attachments: Array<{
-    id: string
-    name: string
-    type: string
+    filename: string
+    originalName?: string
+    mimeType?: string
+    contentType?: string
+    type?: string
     size: number
-    url: string
+    url?: string
   }>
   labels: string[]
   folder: string
