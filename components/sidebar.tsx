@@ -129,7 +129,7 @@ const getCategoryNav = () => [
     category: "shopping"
   },
   {
-    title: "Promosyonlar",
+    title: "Promosyon",
     label: getMailCount("promotions").toString(),
     icon: Archive,
     variant: "ghost" as const,
