@@ -163,7 +163,7 @@ export function RegisterForm({
     const registrationData = {
       name: formData.firstName,
       surname: formData.lastName,
-      email: `${formData.email}@fitmail.com`,
+      email: `${formData.email}@gozdedijital.xyz`,
       recoveryEmail: formData.recoveryEmail || undefined,
       password: formData.password,
       birthDate: birthDate.toISOString(),

@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { User, Mail, Calendar, Shield, Trash2, Eye, EyeOff, Edit } from "lucide-react"
+import { User, Mail, Calendar, Shield, Trash2, Eye, EyeOff, Edit, CheckCircle, AlertCircle } from "lucide-react"
 import { useAppDispatch, useAppSelector } from "@/redux/hook"
 import { editProfile, changePassword, verifyPassword } from "@/redux/actions/userActions"
 import { toast } from "sonner"
@@ -59,6 +59,12 @@ export default function AccountSettingsPage() {
     location: "",
     gender: ""
   })
+  
+  // Mail adresi ayarlama state'leri
+  const [mailAddress, setMailAddress] = useState("")
+  const [isSettingMail, setIsSettingMail] = useState(false)
+  const [mailSetupStatus, setMailSetupStatus] = useState<'idle' | 'checking' | 'available' | 'setting' | 'success' | 'error'>('idle')
+  const [mailError, setMailError] = useState("")
 
   // Load user data when component mounts
   useEffect(() => {
@@ -310,6 +316,109 @@ export default function AccountSettingsPage() {
     setShowPasswords({ current: false, new: false, confirm: false })
   }
 
+  // Mail adresi kontrol etme
+  const checkMailAddress = async () => {
+    if (!mailAddress) return
+    
+    setMailSetupStatus('checking')
+    setMailError('')
+    
+    try {
+      const response = await fetch('/api/v1/mail/check-address', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ email: mailAddress })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        setMailSetupStatus('available')
+      } else {
+        setMailSetupStatus('error')
+        setMailError(data.message || 'Mail adresi kontrol edilemedi')
+      }
+    } catch (error) {
+      setMailSetupStatus('error')
+      setMailError('Mail adresi kontrol edilirken hata oluştu')
+    }
+  }
+
+  // Mail adresini ayarla
+  const setupMailAddress = async () => {
+    if (!mailAddress) return
+    
+    setMailSetupStatus('setting')
+    setMailError('')
+    
+    try {
+      const response = await fetch('/api/v1/mail/setup-address', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ email: mailAddress })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        setMailSetupStatus('success')
+        toast.success('Mail adresi başarıyla ayarlandı! Artık bu adrese gelen mailleri alabilirsiniz.')
+        // User state'ini güncelle
+        if (user) {
+          user.mailAddress = mailAddress
+        }
+      } else {
+        setMailSetupStatus('error')
+        setMailError(data.message || 'Mail adresi ayarlanamadı')
+      }
+    } catch (error) {
+      setMailSetupStatus('error')
+      setMailError('Mail adresi ayarlanırken hata oluştu')
+    }
+  }
+
+  // Mailbox oluştur (sadece mailbox, route değil)
+  const createMailbox = async () => {
+    if (!mailAddress) return
+    
+    setMailSetupStatus('setting')
+    setMailError('')
+    
+    try {
+      const response = await fetch('/api/v1/mail/create-mailbox', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ email: mailAddress })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        setMailSetupStatus('success')
+        toast.success(`Mailbox başarıyla oluşturuldu! Şifre: ${data.password}`)
+        // User state'ini güncelle
+        if (user) {
+          user.mailAddress = mailAddress
+        }
+      } else {
+        setMailSetupStatus('error')
+        setMailError(data.message || 'Mailbox oluşturulamadı')
+      }
+    } catch (error) {
+      setMailSetupStatus('error')
+      setMailError('Mailbox oluşturulurken hata oluştu')
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -489,6 +598,126 @@ export default function AccountSettingsPage() {
               </Button>
             )}
           </div>
+        </div>
+      </div>
+      <Separator className="my-6" />
+
+      {/* Mail Address Section */}
+      <div className="space-y-4">
+        <div className="pb-3">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <Mail className="h-4 w-4" />
+            Mail Adresi
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Mail adresinizi ayarlayın ve gelen mailleri alın
+          </p>
+        </div>
+        <div className="space-y-4">
+          {/* Mevcut mail adresi */}
+          {user?.mailAddress && (
+            <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <div>
+                <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                  Mail adresiniz: {user.mailAddress}
+                </p>
+                <p className="text-xs text-green-600 dark:text-green-400">
+                  Bu adrese gelen mailler otomatik olarak alınacak
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Mail adresi ayarlama */}
+          {!user?.mailAddress && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="mailAddress">Mail Adresi</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="mailAddress"
+                    type="email"
+                    value={mailAddress}
+                    onChange={(e) => setMailAddress(e.target.value)}
+                    placeholder="ornek@gozdedijital.xyz"
+                    className="flex-1"
+                    disabled={mailSetupStatus === 'checking' || mailSetupStatus === 'setting'}
+                  />
+                  <Button
+                    onClick={checkMailAddress}
+                    disabled={!mailAddress || mailSetupStatus === 'checking' || mailSetupStatus === 'setting'}
+                    variant="outline"
+                  >
+                    {mailSetupStatus === 'checking' ? 'Kontrol Ediliyor...' : 'Kontrol Et'}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Mail adresiniz @gozdedijital.xyz ile bitmelidir
+                </p>
+              </div>
+
+              {/* Mail adresi durumu */}
+              {mailSetupStatus === 'available' && (
+                <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <CheckCircle className="h-4 w-4 text-blue-600" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                      Mail adresi kullanılabilir
+                    </p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400">
+                      Bu adresi ayarlayabilirsiniz
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={setupMailAddress}
+                      disabled={mailSetupStatus === 'setting'}
+                      size="sm"
+                    >
+                      {mailSetupStatus === 'setting' ? 'Ayarlanıyor...' : 'Ayarla (Route + Mailbox)'}
+                    </Button>
+                    <Button
+                      onClick={createMailbox}
+                      disabled={mailSetupStatus === 'setting'}
+                      size="sm"
+                      variant="outline"
+                    >
+                      {mailSetupStatus === 'setting' ? 'Oluşturuluyor...' : 'Sadece Mailbox Oluştur'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {mailSetupStatus === 'error' && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <div>
+                    <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                      Hata
+                    </p>
+                    <p className="text-xs text-red-600 dark:text-red-400">
+                      {mailError}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {mailSetupStatus === 'success' && (
+                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <div>
+                    <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                      Mail adresi başarıyla ayarlandı!
+                    </p>
+                    <p className="text-xs text-green-600 dark:text-green-400">
+                      Artık {mailAddress} adresine gelen mailleri alabilirsiniz
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <Separator className="my-6" />
