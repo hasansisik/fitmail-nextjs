@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Metadata } from "@/components/metadata"
 import { User, Mail, Calendar, Shield, Trash2, Eye, EyeOff, Edit, CheckCircle, AlertCircle } from "lucide-react"
 import { useAppDispatch, useAppSelector } from "@/redux/hook"
 import { editProfile, changePassword, verifyPassword } from "@/redux/actions/userActions"
@@ -420,13 +421,19 @@ export default function AccountSettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Hesap Ayarları</h1>
-        <p className="text-muted-foreground text-sm">
-          Hesap bilgilerinizi görüntüleyin ve düzenleyin
-        </p>
-      </div>
+    <>
+      <Metadata 
+        title="Hesap Ayarları - Fitmail"
+        description="Fitmail hesap ayarlarınızı yönetin. Profil bilgilerinizi, şifrenizi ve mail adresinizi düzenleyin."
+        keywords="hesap, account, ayarlar, settings, profil, şifre, fitmail"
+      />
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Hesap Ayarları</h1>
+          <p className="text-muted-foreground text-sm">
+            Hesap bilgilerinizi görüntüleyin ve düzenleyin
+          </p>
+        </div>
       <Separator className="my-6" />
 
       {/* Profile Section */}
@@ -938,5 +945,6 @@ export default function AccountSettingsPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   )
 }

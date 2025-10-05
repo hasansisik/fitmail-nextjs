@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import {
@@ -102,7 +103,7 @@ export default function SettingsLayout({
                       </TooltipContent>
                     </Tooltip>
                   ) : (
-                    <a
+                    <Link
                       key={index}
                       href={link.href}
                       className={cn(
@@ -113,7 +114,7 @@ export default function SettingsLayout({
                     >
                       <link.icon className="mr-2 h-4 w-4" />
                       {link.title}
-                    </a>
+                    </Link>
                   )
                 })}
               </nav>

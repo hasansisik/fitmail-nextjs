@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
+import { Metadata } from "@/components/metadata"
 import { Globe } from "lucide-react"
 import { useAppDispatch, useAppSelector } from "@/redux/hook"
 import { updateSettings } from "@/redux/actions/userActions"
@@ -50,14 +51,20 @@ export default function GeneralSettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Genel Ayarlar</h1>
-        <p className="text-muted-foreground text-sm">
-          Uygulama genelinde geçerli olan ayarları yönetin
-        </p>
-      </div>
-      <Separator className="my-6" />
+    <>
+      <Metadata 
+        title="Genel Ayarlar - Fitmail"
+        description="Fitmail genel ayarlarınızı yönetin. Dil, saat dilimi, tarih ve saat formatı ayarlarınızı düzenleyin."
+        keywords="ayarlar, settings, genel ayarlar, dil, saat dilimi, fitmail"
+      />
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Genel Ayarlar</h1>
+          <p className="text-muted-foreground text-sm">
+            Uygulama genelinde geçerli olan ayarları yönetin
+          </p>
+        </div>
+        <Separator className="my-6" />
 
       {/* Language & Region */}
       <div className="space-y-4">
@@ -138,5 +145,6 @@ export default function GeneralSettingsPage() {
         </Button>
       </div>
     </div>
+    </>
   )
 }
