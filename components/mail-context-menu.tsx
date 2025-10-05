@@ -111,6 +111,8 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
   const [open, setOpen] = React.useState(false)
   const [labelSearch, setLabelSearch] = React.useState("")
   const [moveSearch, setMoveSearch] = React.useState("")
+  const [menuPosition, setMenuPosition] = React.useState<{ x: number; y: number } | null>(null)
+  const [menuSide, setMenuSide] = React.useState<"top" | "bottom">("bottom")
 
   const handleAction = (action: string, data?: any) => {
     onAction(action, mail._id, data)
@@ -212,6 +214,8 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
       // Reset search when closing
       setLabelSearch("")
       setMoveSearch("")
+      setMenuPosition(null)
+      setMenuSide("bottom")
     }
   }
 
@@ -219,6 +223,16 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    
+    // Mouse pozisyonunu kaydet
+    const mouseY = e.clientY
+    const windowHeight = window.innerHeight
+    
+    // Eğer mouse ekranın alt yarısındaysa menüyü yukarı aç
+    const shouldOpenUp = mouseY > windowHeight / 2
+    
+    setMenuPosition({ x: e.clientX, y: mouseY })
+    setMenuSide(shouldOpenUp ? "top" : "bottom")
     setOpen(true)
   }
 
@@ -234,8 +248,19 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
           {children}
         </div>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-0" align="start">
-        <div className="flex flex-col">
+      <PopoverContent 
+        className="w-56 p-0 max-h-96 overflow-y-auto" 
+        align="start" 
+        side={menuSide}
+        sideOffset={5}
+        alignOffset={0}
+        avoidCollisions={true}
+        collisionPadding={50}
+        sticky="always"
+        hideWhenDetached={false}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <div className="flex flex-col max-h-96 overflow-y-auto">
           {/* Reply Actions */}
           <Button
             variant="ghost"

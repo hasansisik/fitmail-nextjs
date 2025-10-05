@@ -26,7 +26,7 @@ interface UserState {
 
 const initialState: UserState = {
   user: {},
-  loading: false,
+  loading: false, // Always start with loading false to avoid hydration mismatch
   error: null,
   isAuthenticated: false,
   isVerified: false,

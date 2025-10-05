@@ -18,6 +18,7 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isClient, setIsClient] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
   const { user, isAuthenticated, loading } = useAppSelector((state) => state.user)
@@ -57,15 +58,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return 'Fitmail - E-posta Yönetimi'
   }
 
+  // Set client flag on mount
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
   // Redirect unauthenticated users to login
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (isClient && !loading && !isAuthenticated) {
       router.push("/login")
     }
-  }, [isAuthenticated, loading, router])
+  }, [isAuthenticated, loading, router, isClient])
 
-  // Show loading state while checking authentication
-  if (loading) {
+  // Show loading state while checking authentication or before client hydration
+  if (!isClient || loading) {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
