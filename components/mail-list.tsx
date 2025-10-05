@@ -4,6 +4,16 @@ import { MailItem } from "@/components/mail-item"
 import { useRouter } from "next/navigation"
 import { useAppDispatch } from "@/redux/hook"
 import { getMailById } from "@/redux/actions/mailActions"
+import { useState } from "react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Button } from "@/components/ui/button"
+import { Trash2, Archive, Star, MoreHorizontal } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 // API'den gelen mail formatı
 interface ApiMail {
@@ -60,11 +70,57 @@ interface MailListProps {
   loading?: boolean
   error?: string | null
   categoryTitle?: string
+  isSelectMode?: boolean
+  onSelectModeChange?: (isSelectMode: boolean) => void
 }
 
-export function MailList({ items, loading = false, error = null, categoryTitle = "Gelen Kutusu" }: MailListProps) {
+export function MailList({ 
+  items, 
+  loading = false, 
+  error = null, 
+  categoryTitle = "Gelen Kutusu",
+  isSelectMode = false,
+  onSelectModeChange
+}: MailListProps) {
   const router = useRouter()
   const dispatch = useAppDispatch()
+  
+  // Çoktan seçmeli state
+  const [selectedMails, setSelectedMails] = useState<Set<string>>(new Set())
+  
+  // Çoktan seçmeli fonksiyonları
+  const toggleSelectMode = () => {
+    const newSelectMode = !isSelectMode
+    onSelectModeChange?.(newSelectMode)
+    if (!newSelectMode) {
+      setSelectedMails(new Set())
+    }
+  }
+  
+  const toggleSelectAll = () => {
+    if (selectedMails.size === items.length) {
+      setSelectedMails(new Set())
+    } else {
+      setSelectedMails(new Set(items.map(item => item._id)))
+    }
+  }
+  
+  const toggleSelectMail = (mailId: string) => {
+    const newSelected = new Set(selectedMails)
+    if (newSelected.has(mailId)) {
+      newSelected.delete(mailId)
+    } else {
+      newSelected.add(mailId)
+    }
+    setSelectedMails(newSelected)
+  }
+  
+  const handleBulkAction = (action: string) => {
+    console.log(`Bulk action: ${action}`, Array.from(selectedMails))
+    // TODO: Implement bulk actions
+    setSelectedMails(new Set())
+    onSelectModeChange?.(false)
+  }
   
   // Kategori başlığını URL slug'ına çevir
   const getCategorySlug = (title: string) => {
@@ -170,22 +226,105 @@ export function MailList({ items, loading = false, error = null, categoryTitle =
   return (
     <ScrollArea className="h-screen">
       <div className="flex flex-col gap-2 p-4 pt-0">
+        {/* Çoktan seçmeli header */}
+        {isSelectMode && (
+          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                checked={selectedMails.size === items.length && items.length > 0}
+                onCheckedChange={toggleSelectAll}
+                className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              />
+              <span className="text-sm font-medium">
+                {selectedMails.size > 0 
+                  ? `${selectedMails.size} mail seçildi` 
+                  : 'Tümünü seç'
+                }
+              </span>
+            </div>
+            
+            {selectedMails.size > 0 && (
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleBulkAction('delete')}
+                  className="h-8"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Sil
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleBulkAction('archive')}
+                  className="h-8"
+                >
+                  <Archive className="h-4 w-4 mr-1" />
+                  Arşivle
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleBulkAction('star')}
+                  className="h-8"
+                >
+                  <Star className="h-4 w-4 mr-1" />
+                  Yıldızla
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="outline" className="h-8">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleBulkAction('markAsRead')}>
+                      Okundu olarak işaretle
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleBulkAction('markAsUnread')}>
+                      Okunmadı olarak işaretle
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleBulkAction('moveToSpam')}>
+                      Spam'e taşı
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
+          </div>
+        )}
+        
         {items.length === 0 ? (
           <div className="flex items-center justify-center h-32">
             <div className="text-muted-foreground">Bu kategoride mail bulunamadı</div>
           </div>
         ) : (
           items.map((item, index) => (
-            <MailItem
-              key={item._id || `mail-${index}`}
-              mail={item}
-              onAction={handleMailAction}
-              onClick={() => {
-                // Kategori bilgisini al ve URL'ye yönlendir
-                const category = getCategorySlug(categoryTitle)
-                router.push(`/mail/${category}/${item._id}`)
-              }}
-            />
+            <div key={item._id || `mail-${index}`} className="flex items-center gap-3">
+              {isSelectMode && (
+                <Checkbox
+                  checked={selectedMails.has(item._id)}
+                  onCheckedChange={() => toggleSelectMail(item._id)}
+                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                />
+              )}
+              <div className="flex-1">
+                <MailItem
+                  mail={item}
+                  onAction={handleMailAction}
+                  onClick={() => {
+                    if (isSelectMode) {
+                      toggleSelectMail(item._id)
+                    } else {
+                      // Kategori bilgisini al ve URL'ye yönlendir
+                      const category = getCategorySlug(categoryTitle)
+                      router.push(`/mail/${category}/${item._id}`)
+                    }
+                  }}
+                />
+              </div>
+            </div>
           ))
         )}
       </div>

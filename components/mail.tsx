@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, Plus, ArrowLeft, X } from "lucide-react"
+import { Search, Plus, ArrowLeft, X, CheckSquare } from "lucide-react"
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -93,6 +93,7 @@ export function Mail({
   const [isMaximized, setIsMaximized] = React.useState(false)
   const [showSendDialog, setShowSendDialog] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
+  const [isSelectMode, setIsSelectMode] = React.useState(false)
   const [mail, { clearSelection }] = useMail()
   const dispatch = useAppDispatch()
   
@@ -143,6 +144,15 @@ export function Mail({
                 <h1 className="text-xl font-bold">{categoryTitle}</h1>
               </div>
               <div className="ml-auto flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsSelectMode(!isSelectMode)}
+                  className="h-8"
+                >
+                  <CheckSquare className="h-4 w-4 mr-2" />
+                  {isSelectMode ? 'Seçimi İptal' : 'Seç'}
+                </Button>
                 <Button
                   size="sm"
                   onClick={() => setShowSendDialog(true)}
@@ -203,6 +213,8 @@ export function Mail({
                 loading={mailsLoading}
                 error={mailsError}
                 categoryTitle={categoryTitle}
+                isSelectMode={isSelectMode}
+                onSelectModeChange={setIsSelectMode}
               />
             </TabsContent>
             <TabsContent value="unread" className="m-0">
@@ -211,6 +223,8 @@ export function Mail({
                 loading={mailsLoading}
                 error={mailsError}
                 categoryTitle={categoryTitle}
+                isSelectMode={isSelectMode}
+                onSelectModeChange={setIsSelectMode}
               />
             </TabsContent>
           </Tabs>
