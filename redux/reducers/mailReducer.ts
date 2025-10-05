@@ -16,6 +16,8 @@ import {
   snoozeMail,
   clearSelectedMail,
   clearMailError,
+  addReplyToMail,
+  cleanupTrash,
 } from "../actions/mailActions";
 
 interface MailState {
@@ -307,6 +309,34 @@ export const mailReducer = createReducer(initialState, (builder) => {
       state.mailsError = null;
       state.statsError = null;
       state.message = null;
+    })
+    // Add Reply to Mail
+    .addCase(addReplyToMail.pending, (state) => {
+      state.mailsLoading = true;
+      state.mailsError = null;
+    })
+    .addCase(addReplyToMail.fulfilled, (state, action) => {
+      state.mailsLoading = false;
+      state.message = action.payload.message;
+      state.mailsError = null;
+    })
+    .addCase(addReplyToMail.rejected, (state, action) => {
+      state.mailsLoading = false;
+      state.mailsError = action.payload as string;
+    })
+    // Cleanup Trash
+    .addCase(cleanupTrash.pending, (state) => {
+      state.mailsLoading = true;
+      state.mailsError = null;
+    })
+    .addCase(cleanupTrash.fulfilled, (state, action) => {
+      state.mailsLoading = false;
+      state.message = action.payload.message;
+      state.mailsError = null;
+    })
+    .addCase(cleanupTrash.rejected, (state, action) => {
+      state.mailsLoading = false;
+      state.mailsError = action.payload as string;
     });
 });
 

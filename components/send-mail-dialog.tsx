@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import React, { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,7 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useAppDispatch } from "@/redux/hook"
-import { sendMail, getMailsByCategory, getMailStats } from "@/redux/actions/mailActions"
+import { sendMail } from "@/redux/actions/mailActions"
 import { uploadFileToCloudinary } from "@/utils/cloudinary"
 import { toast } from "sonner"
 import { 
@@ -32,6 +32,9 @@ import {
 interface SendMailDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  replyMode?: 'reply' | 'replyAll' | 'forward' | null
+  originalMail?: any
+  onMailSent?: () => void
 }
 
 interface Attachment {
@@ -43,7 +46,7 @@ interface Attachment {
   url?: string | null
 }
 
-export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
+export function SendMailDialog({ open, onOpenChange, replyMode = null, originalMail = null, onMailSent }: SendMailDialogProps) {
   const dispatch = useAppDispatch()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -61,6 +64,57 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
   const [toRecipients, setToRecipients] = useState<string[]>([])
   const [ccRecipients, setCcRecipients] = useState<string[]>([])
   const [bccRecipients, setBccRecipients] = useState<string[]>([])
+
+  // Reply mode'a göre form verilerini otomatik doldur
+  React.useEffect(() => {
+    if (replyMode && originalMail && open) {
+      switch (replyMode) {
+        case 'reply':
+          // Sadece gönderene cevap ver
+          setToRecipients([originalMail.from?.email || ''])
+          setFormData(prev => ({
+            ...prev,
+            subject: originalMail.subject?.startsWith('Re:') ? originalMail.subject : `Re: ${originalMail.subject}`,
+            content: `\n\n--- Orijinal Mesaj ---\n${originalMail.content || originalMail.htmlContent || ''}`
+          }))
+          break
+        case 'replyAll':
+          // Gönderen + tüm alıcılara cevap ver
+          const allRecipients = [
+            originalMail.from?.email,
+            ...(originalMail.to?.map((r: any) => r.email) || []),
+            ...(originalMail.cc?.map((r: any) => r.email) || [])
+          ].filter(Boolean)
+          setToRecipients(allRecipients)
+          setFormData(prev => ({
+            ...prev,
+            subject: originalMail.subject?.startsWith('Re:') ? originalMail.subject : `Re: ${originalMail.subject}`,
+            content: `\n\n--- Orijinal Mesaj ---\n${originalMail.content || originalMail.htmlContent || ''}`
+          }))
+          break
+        case 'forward':
+          // İlet
+          setFormData(prev => ({
+            ...prev,
+            subject: originalMail.subject?.startsWith('Fwd:') ? originalMail.subject : `Fwd: ${originalMail.subject}`,
+            content: `\n\n--- İletilen Mesaj ---\nGönderen: ${originalMail.from?.name || 'Bilinmeyen'} <${originalMail.from?.email || 'Bilinmeyen'}>\nKonu: ${originalMail.subject}\n\n${originalMail.content || originalMail.htmlContent || ''}`
+          }))
+          break
+      }
+    } else if (!replyMode && open) {
+      // Yeni mail için formu temizle
+      setFormData({
+        to: "",
+        cc: "",
+        bcc: "",
+        subject: "",
+        content: ""
+      })
+      setToRecipients([])
+      setCcRecipients([])
+      setBccRecipients([])
+    }
+  }, [replyMode, originalMail, open])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -271,6 +325,8 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
       // Call Redux action for sending mail
       const result = await dispatch(sendMail(mailData)).unwrap()
       console.log("Mail sent successfully:", result)
+      console.log("Sent mail folder:", result.mail?.folder)
+      console.log("Sent mail status:", result.mail?.status)
       
       // Dismiss loading toast
       toast.dismiss(loadingToastId)
@@ -278,18 +334,9 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
       // Success
       toast.success("Mail başarıyla gönderildi!")
       
-      // Refresh mail list and stats
-      try {
-        await dispatch(getMailsByCategory({
-          folder: "inbox",
-          page: 1,
-          limit: 50
-        })).unwrap()
-        
-        await dispatch(getMailStats()).unwrap()
-      } catch (refreshError) {
-        console.error("Failed to refresh mail list:", refreshError)
-        // Don't show error to user as mail was sent successfully
+      // Callback ile parent component'e mail gönderildiğini bildir
+      if (onMailSent) {
+        onMailSent()
       }
       
       // Reset form and close dialog
@@ -347,10 +394,15 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Send className="h-5 w-5" />
-            Yeni Mail Gönder
+            {replyMode === 'reply' ? 'Cevapla' : 
+             replyMode === 'replyAll' ? 'Tümünü Cevapla' : 
+             replyMode === 'forward' ? 'İlet' : 'Yeni Mail Gönder'}
           </DialogTitle>
           <DialogDescription>
-            Mail göndermek için aşağıdaki bilgileri doldurun.
+            {replyMode === 'reply' ? 'Bu maili cevaplamak için aşağıdaki bilgileri doldurun.' :
+             replyMode === 'replyAll' ? 'Bu maili tüm alıcılara cevaplamak için aşağıdaki bilgileri doldurun.' :
+             replyMode === 'forward' ? 'Bu maili iletmek için aşağıdaki bilgileri doldurun.' :
+             'Mail göndermek için aşağıdaki bilgileri doldurun.'}
           </DialogDescription>
         </DialogHeader>
         

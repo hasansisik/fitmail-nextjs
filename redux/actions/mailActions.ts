@@ -434,3 +434,53 @@ export const clearMailError = createAsyncThunk(
     return null;
   }
 );
+
+// Add Reply to Mail Action
+export const addReplyToMail = createAsyncThunk(
+  "mail/addReplyToMail",
+  async ({ mailId, content }: { mailId: string; content: string }, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
+      }
+
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      const { data } = await axios.post(`${server}/mail/${mailId}/reply`, { content }, config);
+      return data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+// Cleanup Trash Action
+export const cleanupTrash = createAsyncThunk(
+  "mail/cleanupTrash",
+  async (_, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
+      }
+
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      const { data } = await axios.post(`${server}/mail/cleanup-trash`, {}, config);
+      return data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);

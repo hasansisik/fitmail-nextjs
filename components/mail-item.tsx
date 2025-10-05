@@ -1,5 +1,4 @@
 import { ComponentProps } from "react"
-import { formatDistanceToNow } from "date-fns/formatDistanceToNow"
 
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -118,22 +117,30 @@ export function MailItem({ mail, onAction, onClick }: MailItemProps) {
                   
                   if (isNaN(date.getTime())) return 'Geçersiz tarih'
                   
-                  // Türkçe format için
+                  // Detaylı zaman hesaplama
                   const now = new Date()
-                  const diffInHours = Math.abs(now.getTime() - date.getTime()) / (1000 * 60 * 60)
+                  const diffInMs = now.getTime() - date.getTime()
+                  const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
+                  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
+                  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
                   
-                  if (diffInHours < 1) {
+                  if (diffInMinutes < 1) {
                     return 'Az önce'
+                  } else if (diffInMinutes < 60) {
+                    return `${diffInMinutes} dakika önce`
                   } else if (diffInHours < 24) {
-                    return `${Math.floor(diffInHours)} saat önce`
-                  } else if (diffInHours < 168) { // 7 gün
-                    return `${Math.floor(diffInHours / 24)} gün önce`
+                    return `${diffInHours} saat önce`
+                  } else if (diffInDays < 7) {
+                    return `${diffInDays} gün önce`
+                  } else if (diffInDays < 30) {
+                    const weeks = Math.floor(diffInDays / 7)
+                    return `${weeks} hafta önce`
+                  } else if (diffInDays < 365) {
+                    const months = Math.floor(diffInDays / 30)
+                    return `${months} ay önce`
                   } else {
-                    return date.toLocaleDateString('tr-TR', { 
-                      day: '2-digit', 
-                      month: '2-digit', 
-                      year: '2-digit' 
-                    })
+                    const years = Math.floor(diffInDays / 365)
+                    return `${years} yıl önce`
                   }
                 } catch (error) {
                   return 'Tarih hatası'

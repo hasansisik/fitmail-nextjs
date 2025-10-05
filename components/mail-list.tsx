@@ -3,7 +3,7 @@ import { useMail } from "@/app/mail/use-mail"
 import { MailItem } from "@/components/mail-item"
 import { useRouter } from "next/navigation"
 import { useAppDispatch } from "@/redux/hook"
-import { getMailById } from "@/redux/actions/mailActions"
+import { getMailById, deleteMail, moveMailToFolder, markMailAsStarred } from "@/redux/actions/mailActions"
 import { useState } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { toast } from "sonner"
 
 // API'den gelen mail formatı
 interface ApiMail {
@@ -87,6 +88,7 @@ export function MailList({
   
   // Çoktan seçmeli state
   const [selectedMails, setSelectedMails] = useState<Set<string>>(new Set())
+  const [isBulkActionLoading, setIsBulkActionLoading] = useState(false)
   
   // Çoktan seçmeli fonksiyonları
   const toggleSelectMode = () => {
@@ -115,11 +117,76 @@ export function MailList({
     setSelectedMails(newSelected)
   }
   
-  const handleBulkAction = (action: string) => {
-    console.log(`Bulk action: ${action}`, Array.from(selectedMails))
-    // TODO: Implement bulk actions
-    setSelectedMails(new Set())
-    onSelectModeChange?.(false)
+  const handleBulkAction = async (action: string) => {
+    const selectedMailIds = Array.from(selectedMails)
+    console.log(`Bulk action: ${action}`, selectedMailIds)
+    
+    if (selectedMailIds.length === 0) {
+      toast.error("Hiç mail seçilmedi!")
+      return
+    }
+
+    setIsBulkActionLoading(true)
+    try {
+      switch (action) {
+        case 'delete':
+          // Her maili tek tek çöp kutusuna taşı
+          for (const mailId of selectedMailIds) {
+            await dispatch(deleteMail(mailId)).unwrap()
+          }
+          toast.success(`${selectedMailIds.length} mail çöp kutusuna taşındı!`)
+          break
+          
+        case 'archive':
+          // Her maili tek tek arşive taşı
+          for (const mailId of selectedMailIds) {
+            await dispatch(moveMailToFolder({ mailId, folder: 'archive' })).unwrap()
+          }
+          toast.success(`${selectedMailIds.length} mail arşivlendi!`)
+          break
+          
+        case 'star':
+          // Her maili tek tek yıldızla
+          for (const mailId of selectedMailIds) {
+            await dispatch(markMailAsStarred(mailId)).unwrap()
+          }
+          toast.success(`${selectedMailIds.length} mail yıldızlandı!`)
+          break
+          
+        case 'markAsRead':
+          // TODO: Implement mark as read bulk action
+          toast.info("Okundu olarak işaretleme özelliği yakında eklenecek!")
+          break
+          
+        case 'markAsUnread':
+          // TODO: Implement mark as unread bulk action
+          toast.info("Okunmadı olarak işaretleme özelliği yakında eklenecek!")
+          break
+          
+        case 'moveToSpam':
+          // Her maili tek tek spam'e taşı
+          for (const mailId of selectedMailIds) {
+            await dispatch(moveMailToFolder({ mailId, folder: 'spam' })).unwrap()
+          }
+          toast.success(`${selectedMailIds.length} mail spam'e taşındı!`)
+          break
+          
+        default:
+          toast.error("Bilinmeyen işlem!")
+          return
+      }
+      
+      // Seçimi temizle ve select mode'u kapat
+      setSelectedMails(new Set())
+      onSelectModeChange?.(false)
+      
+    } catch (error: any) {
+      console.error("Bulk action failed:", error)
+      const errorMessage = typeof error === 'string' ? error : error?.message || "İşlem sırasında bir hata oluştu"
+      toast.error(errorMessage)
+    } finally {
+      setIsBulkActionLoading(false)
+    }
   }
   
   // Kategori başlığını URL slug'ına çevir
@@ -249,6 +316,7 @@ export function MailList({
                   size="sm"
                   variant="outline"
                   onClick={() => handleBulkAction('delete')}
+                  disabled={isBulkActionLoading}
                   className="h-8"
                 >
                   <Trash2 className="h-4 w-4 mr-1" />
@@ -258,6 +326,7 @@ export function MailList({
                   size="sm"
                   variant="outline"
                   onClick={() => handleBulkAction('archive')}
+                  disabled={isBulkActionLoading}
                   className="h-8"
                 >
                   <Archive className="h-4 w-4 mr-1" />
@@ -267,6 +336,7 @@ export function MailList({
                   size="sm"
                   variant="outline"
                   onClick={() => handleBulkAction('star')}
+                  disabled={isBulkActionLoading}
                   className="h-8"
                 >
                   <Star className="h-4 w-4 mr-1" />
@@ -274,7 +344,7 @@ export function MailList({
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button size="sm" variant="outline" className="h-8">
+                    <Button size="sm" variant="outline" disabled={isBulkActionLoading} className="h-8">
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>

@@ -113,23 +113,28 @@ interface ApiMail {
     mailAddress: string
   }
 }
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useAppDispatch } from "@/redux/hook"
+import { addReplyToMail, getMailById, toggleMailReadStatus } from "@/redux/actions/mailActions"
 
 interface MailDisplayProps {
   mail: ApiMail | null
   isMaximized?: boolean
   onToggleMaximize?: () => void
+  onMailSent?: () => void
 }
 
-export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: MailDisplayProps) {
+export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMailSent }: MailDisplayProps) {
+  const dispatch = useAppDispatch()
   const today = new Date()
   const [isReplying, setIsReplying] = useState(false)
   const [replyText, setReplyText] = useState("")
   const [attachments, setAttachments] = useState<File[]>([])
-  const [showConversation, setShowConversation] = useState(false)
+  const [showConversation, setShowConversation] = useState(true) // Varsayılan olarak göster
   const [showArchiveDialog, setShowArchiveDialog] = useState(false)
   const [showTrashDialog, setShowTrashDialog] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
+  const [replySent, setReplySent] = useState(false) // Cevap gönderildi mi?
   const [mailStatus, setMailStatus] = useState<{
     isArchived: boolean
     isTrashed: boolean
@@ -146,6 +151,21 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
   // Reply olup olmadığını kontrol et
   const isReply = mail?.subject?.toLowerCase().startsWith('re:') || false
   const originalSubject = isReply ? mail?.subject?.replace(/^re:\s*/i, '') : mail?.subject
+
+  // Cevap gönderildikten sonra mail'i yeniden yükle
+  useEffect(() => {
+    if (replySent && mail?._id) {
+      const reloadMail = async () => {
+        try {
+          await dispatch(getMailById(mail._id)).unwrap()
+          setReplySent(false)
+        } catch (error) {
+          console.error("Failed to reload mail:", error)
+        }
+      }
+      reloadMail()
+    }
+  }, [replySent, mail?._id, dispatch])
 
   // Dosya boyutunu formatla
   const formatFileSize = (bytes: number) => {
@@ -269,13 +289,64 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
   }
 
   // Cevapla gönder
-  const handleSendReply = () => {
-    // Burada gerçek gönderme işlemi yapılacak
-    console.log('Reply:', replyText)
-    console.log('Attachments:', attachments)
-    setIsReplying(false)
-    setReplyText("")
-    setAttachments([])
+  const handleSendReply = async () => {
+    if (!mail || !replyText.trim()) {
+      toast.error("Cevap metni boş olamaz!")
+      return
+    }
+
+    try {
+      console.log("Sending reply to mail:", mail._id, "Content:", replyText)
+
+      // Yeni cevap ekleme sistemi - orijinal maile cevap ekle
+      const result = await dispatch(addReplyToMail({
+        mailId: mail._id,
+        content: replyText
+      })).unwrap()
+      
+      console.log("Reply added successfully:", result)
+      toast.success("Cevap başarıyla gönderildi ve mail'e eklendi!")
+      
+      // Mail'i yeniden yükle
+      setReplySent(true)
+      
+      // Callback ile parent component'e mail gönderildiğini bildir
+      if (onMailSent) {
+        onMailSent()
+      }
+      
+      // Formu temizle
+      setIsReplying(false)
+      setReplyText("")
+      setAttachments([])
+      
+    } catch (error: any) {
+      console.error("Send reply failed:", error)
+      const errorMessage = typeof error === 'string' ? error : error?.message || "Cevap gönderilirken bir hata oluştu"
+      toast.error(errorMessage)
+    }
+  }
+
+  // Okunmamış olarak işaretle
+  const handleMarkAsUnread = async () => {
+    if (!mail) return
+
+    try {
+      await dispatch(toggleMailReadStatus(mail._id)).unwrap()
+      toast.success("Mail okunmamış olarak işaretlendi!")
+      
+      // Mail'i yeniden yükle
+      await dispatch(getMailById(mail._id)).unwrap()
+      
+      // Parent component'i bilgilendir
+      if (onMailSent) {
+        onMailSent()
+      }
+    } catch (error: any) {
+      console.error("Mark as unread failed:", error)
+      const errorMessage = typeof error === 'string' ? error : error?.message || "Mail işaretlenirken bir hata oluştu"
+      toast.error(errorMessage)
+    }
   }
 
   // Arşivle dialog'unu aç
@@ -306,6 +377,12 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
   const handleStar = () => {
     setMailStatus(prev => ({ ...prev, isStarred: !prev.isStarred }))
     console.log('Mail starred:', !mailStatus.isStarred)
+  }
+
+  // Cevapla
+  const handleReply = () => {
+    setIsReplying(true)
+    setReplyText(`\n\n--- Orijinal Mesaj ---\n${mail?.content || mail?.htmlContent || ''}`)
   }
 
   // Cevapla Tümü
@@ -496,7 +573,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
                 variant="ghost" 
                 size="icon" 
                 disabled={!mail}
-                onClick={() => setIsReplying(true)}
+                onClick={handleReply}
               >
                 <Reply className="h-4 w-4" />
                 <span className="sr-only">Yanıtla</span>
@@ -542,10 +619,9 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>Okunmamış olarak işaretle</DropdownMenuItem>
-            <DropdownMenuItem>Konuyu yıldızla</DropdownMenuItem>
-            <DropdownMenuItem>Etiket ekle</DropdownMenuItem>
-            <DropdownMenuItem>Konuyu sustur</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleMarkAsUnread}>
+              Okunmamış olarak işaretle
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -581,13 +657,31 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
                     const date = new Date(dateValue)
                     if (isNaN(date.getTime())) return 'Geçersiz tarih'
                     
-                    return date.toLocaleDateString('tr-TR', {
-                      day: '2-digit',
-                      month: '2-digit', 
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })
+                    // Detaylı zaman hesaplama
+                    const now = new Date()
+                    const diffInMs = now.getTime() - date.getTime()
+                    const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
+                    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
+                    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
+                    
+                    if (diffInMinutes < 1) {
+                      return 'Az önce'
+                    } else if (diffInMinutes < 60) {
+                      return `${diffInMinutes} dakika önce`
+                    } else if (diffInHours < 24) {
+                      return `${diffInHours} saat önce`
+                    } else if (diffInDays < 7) {
+                      return `${diffInDays} gün önce`
+                    } else if (diffInDays < 30) {
+                      const weeks = Math.floor(diffInDays / 7)
+                      return `${weeks} hafta önce`
+                    } else if (diffInDays < 365) {
+                      const months = Math.floor(diffInDays / 30)
+                      return `${months} ay önce`
+                    } else {
+                      const years = Math.floor(diffInDays / 365)
+                      return `${years} yıl önce`
+                    }
                   } catch (error) {
                     return 'Tarih hatası'
                   }
@@ -624,7 +718,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">Konuşma Geçmişi</span>
-                    <span className="text-xs text-muted-foreground">({mail.conversation.length} mesaj)</span>
+                    <span className="text-xs text-muted-foreground">({mail.conversation.length} cevap)</span>
                   </div>
                   <Button
                     variant="ghost"
@@ -656,7 +750,40 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-sm font-medium">{message.sender}</span>
                             <span className="text-xs text-muted-foreground">
-                              {format(new Date(message.date), "HH:mm")}
+                              {(() => {
+                                try {
+                                  const date = new Date(message.date)
+                                  if (isNaN(date.getTime())) return 'Geçersiz tarih'
+                                  
+                                  // Detaylı zaman hesaplama
+                                  const now = new Date()
+                                  const diffInMs = now.getTime() - date.getTime()
+                                  const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
+                                  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
+                                  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
+                                  
+                                  if (diffInMinutes < 1) {
+                                    return 'Az önce'
+                                  } else if (diffInMinutes < 60) {
+                                    return `${diffInMinutes} dakika önce`
+                                  } else if (diffInHours < 24) {
+                                    return `${diffInHours} saat önce`
+                                  } else if (diffInDays < 7) {
+                                    return `${diffInDays} gün önce`
+                                  } else if (diffInDays < 30) {
+                                    const weeks = Math.floor(diffInDays / 7)
+                                    return `${weeks} hafta önce`
+                                  } else if (diffInDays < 365) {
+                                    const months = Math.floor(diffInDays / 30)
+                                    return `${months} ay önce`
+                                  } else {
+                                    const years = Math.floor(diffInDays / 365)
+                                    return `${years} yıl önce`
+                                  }
+                                } catch (error) {
+                                  return 'Tarih hatası'
+                                }
+                              })()}
                             </span>
                             {message.isFromMe && (
                               <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">
@@ -743,7 +870,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
             {!isReplying ? (
               <div className="flex items-center gap-2">
                 <Button
-                  onClick={() => setIsReplying(true)}
+                  onClick={handleReply}
                   variant="outline"
                   size="sm"
                   className="flex items-center gap-2"
@@ -912,6 +1039,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
     </div>
   )
 }

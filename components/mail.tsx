@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, Plus, ArrowLeft, X, CheckSquare } from "lucide-react"
+import { Search, Plus, ArrowLeft, X, CheckSquare, RefreshCw, Trash2 } from "lucide-react"
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -66,7 +66,9 @@ interface ApiMail {
 }
 import { useMail } from "@/app/mail/use-mail"
 import { useAppSelector, useAppDispatch } from "@/redux/hook"
-import { clearSelectedMail } from "@/redux/actions/mailActions"
+import { clearSelectedMail, getMailsByCategory, getMailsByLabelCategory, getMailStats, cleanupTrash } from "@/redux/actions/mailActions"
+import { usePathname } from "next/navigation"
+import { toast } from "sonner"
 
 interface MailProps {
   mails: ApiMail[]
@@ -94,8 +96,10 @@ export function Mail({
   const [showSendDialog, setShowSendDialog] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [isSelectMode, setIsSelectMode] = React.useState(false)
+  const [isRefreshing, setIsRefreshing] = React.useState(false)
   const [mail, { clearSelection }] = useMail()
   const dispatch = useAppDispatch()
+  const pathname = usePathname()
   
   // Redux'tan selectedMail'i al
   const selectedMail = useAppSelector((state) => state.mail.selectedMail)
@@ -133,6 +137,74 @@ export function Mail({
     )
   }, [mails, searchQuery])
 
+  // Yenileme fonksiyonu - pathname'e göre hangi kategoriyi yenileyeceğini belirle
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    
+    try {
+      // Pathname'den kategori/folder bilgisini al
+      const pathParts = pathname.split('/')
+      const categoryOrFolder = pathParts[2] // /mail/inbox veya /mail/social gibi
+      
+      if (!categoryOrFolder || categoryOrFolder === '') {
+        // Ana mail sayfası - inbox'ı yenile
+        await dispatch(getMailsByCategory({
+          folder: "inbox",
+          page: 1,
+          limit: 50
+        })).unwrap()
+      } else {
+        // Folder kategorileri (inbox, sent, drafts, spam, trash, archive)
+        const folderCategories = ['inbox', 'sent', 'drafts', 'spam', 'trash', 'archive']
+        
+        if (folderCategories.includes(categoryOrFolder)) {
+          await dispatch(getMailsByCategory({
+            folder: categoryOrFolder,
+            page: 1,
+            limit: 50
+          })).unwrap()
+        } else {
+          // Label kategorileri (social, updates, forums, shopping, promotions)
+          await dispatch(getMailsByLabelCategory({
+            category: categoryOrFolder,
+            page: 1,
+            limit: 50
+          })).unwrap()
+        }
+      }
+      
+      // Stats'ı da yenile
+      await dispatch(getMailStats()).unwrap()
+      
+      toast.success("Mail listesi yenilendi!")
+    } catch (error) {
+      console.error("Refresh failed:", error)
+      toast.error("Mail listesi yenilenemedi")
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
+  // Çöp kutusu temizleme fonksiyonu
+  const handleCleanupTrash = async () => {
+    try {
+      const result = await dispatch(cleanupTrash()).unwrap()
+      toast.success(result.message)
+      
+      // Çöp kutusu sayfasındaysak listeyi yenile
+      if (pathname.includes('/trash')) {
+        await dispatch(getMailsByCategory({ folder: "trash", page: 1, limit: 50 })).unwrap()
+      }
+      
+      // Mail istatistiklerini yenile
+      await dispatch(getMailStats()).unwrap()
+    } catch (error: any) {
+      console.error("Cleanup trash failed:", error)
+      const errorMessage = typeof error === 'string' ? error : error?.message || "Çöp kutusu temizlenemedi"
+      toast.error(errorMessage)
+    }
+  }
+
   return (
     <div className="h-full flex">
       {/* Mail Listesi - Sadece mail seçili değilse göster */}
@@ -144,6 +216,29 @@ export function Mail({
                 <h1 className="text-xl font-bold">{categoryTitle}</h1>
               </div>
               <div className="ml-auto flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleRefresh}
+                  disabled={isRefreshing || mailsLoading}
+                  className="h-8"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  Yenile
+                </Button>
+                {/* Çöp kutusu temizleme butonu - sadece trash sayfasında göster */}
+                {pathname.includes('/trash') && (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={handleCleanupTrash}
+                    disabled={mailsLoading}
+                    className="h-8"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Eski Mailleri Temizle
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant="outline"
@@ -255,6 +350,7 @@ export function Mail({
                 mail={selectedMail}
                 isMaximized={true}
                 onToggleMaximize={handleBackToList}
+                onMailSent={handleRefresh}
               />
             </div>
           </div>
@@ -265,6 +361,7 @@ export function Mail({
       <SendMailDialog
         open={showSendDialog}
         onOpenChange={setShowSendDialog}
+        onMailSent={handleRefresh}
       />
     </div>
   )
