@@ -672,18 +672,18 @@ export default function AccountSettingsPage() {
                   <div className="flex gap-2">
                     <Button
                       onClick={setupMailAddress}
-                      disabled={mailSetupStatus === 'setting'}
+                      disabled={false}
                       size="sm"
                     >
-                      {mailSetupStatus === 'setting' ? 'Ayarlanıyor...' : 'Ayarla (Route + Mailbox)'}
+                      Ayarla (Route + Mailbox)
                     </Button>
                     <Button
                       onClick={createMailbox}
-                      disabled={mailSetupStatus === 'setting'}
+                      disabled={false}
                       size="sm"
                       variant="outline"
                     >
-                      {mailSetupStatus === 'setting' ? 'Oluşturuluyor...' : 'Sadece Mailbox Oluştur'}
+                      Sadece Mailbox Oluştur
                     </Button>
                   </div>
                 </div>

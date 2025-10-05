@@ -28,6 +28,7 @@ interface ApiMail {
     url?: string
   }>
   labels: string[]
+  categories: string[]
   folder: string
   isRead: boolean
   isStarred: boolean
@@ -35,6 +36,13 @@ interface ApiMail {
   receivedAt: string
   createdAt: string
   updatedAt: string
+  conversation?: Array<{
+    id: string
+    sender: string
+    content: string
+    date: string
+    isFromMe: boolean
+  }>
   status: string
   mailgunId: string
   messageId: string

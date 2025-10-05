@@ -46,6 +46,13 @@ interface ApiMail {
   receivedAt: string
   createdAt: string
   updatedAt: string
+  conversation?: Array<{
+    id: string
+    sender: string
+    content: string
+    date: string
+    isFromMe: boolean
+  }>
   status: string
   mailgunId: string
   messageId: string
@@ -223,7 +230,7 @@ export function Mail({
               <div className="flex-1">
                 <h1 className="text-lg font-semibold truncate">{selectedMail.subject}</h1>
                 <p className="text-sm text-muted-foreground">
-                  Alıcı: {selectedMail.to?.map(recipient => `${recipient.name} <${recipient.email}>`).join(', ')}
+                  Alıcı: {selectedMail.to?.map((recipient: { name: string; email: string }) => `${recipient.name} <${recipient.email}>`).join(', ')}
                 </p>
               </div>
             </div>

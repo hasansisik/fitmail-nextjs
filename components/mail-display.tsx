@@ -95,6 +95,13 @@ interface ApiMail {
   receivedAt: string
   createdAt: string
   updatedAt: string
+  conversation?: Array<{
+    id: string
+    sender: string
+    content: string
+    date: string
+    isFromMe: boolean
+  }>
   status: string
   mailgunId: string
   messageId: string
@@ -657,7 +664,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
                               </span>
                             )}
                           </div>
-                          <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                         </div>
                       </div>
                     ))}
@@ -679,12 +686,12 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
                 <div className="grid gap-2">
                   {mail.attachments.map((attachment, index) => (
                     <div
-                      key={attachment.id || `attachment-${index}`}
+                      key={`attachment-${index}`}
                       className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
                     >
                       {getAttachmentIcon(attachment)}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{attachment.filename || attachment.name}</p>
+                        <p className="text-sm font-medium truncate">{attachment.filename}</p>
                         <div className="flex items-center gap-2">
                           <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
                           {attachment.url && (

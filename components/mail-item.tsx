@@ -36,6 +36,13 @@ interface ApiMail {
   receivedAt: string
   createdAt: string
   updatedAt: string
+  conversation?: Array<{
+    id: string
+    sender: string
+    content: string
+    date: string
+    isFromMe: boolean
+  }>
   status: string
   mailgunId: string
   messageId: string
