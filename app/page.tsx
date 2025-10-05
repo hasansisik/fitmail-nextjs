@@ -73,12 +73,12 @@ export default function HomePage() {
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button asChild size="lg" className="w-full sm:w-auto min-w-[140px]">
-              <Link href="/login">
+              <Link href="/giris">
                 Giriş Yap
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="w-full sm:w-auto min-w-[140px]">
-              <Link href="/register">
+              <Link href="/kayit-ol">
                 Kayıt Ol
               </Link>
             </Button>

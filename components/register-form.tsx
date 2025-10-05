@@ -320,7 +320,7 @@ export function RegisterForm({
         {renderStep()}
         <div className="text-center text-sm">
           Zaten hesabınız var mı?{" "}
-          <a href="/login" className="underline underline-offset-4">
+          <a href="/giris" className="underline underline-offset-4">
             Giriş yap
           </a>
         </div>

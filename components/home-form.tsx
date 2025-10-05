@@ -38,7 +38,7 @@ export function HomeForm({
       </div>
       <div className="text-center text-sm">
         Hesabınız yok mu?{" "}
-        <a href="/register" className="underline underline-offset-4">
+        <a href="/kayit-ol" className="underline underline-offset-4">
           Kayıt ol
         </a>
       </div>

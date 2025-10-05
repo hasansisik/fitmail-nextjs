@@ -229,7 +229,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
     try {
       await dispatch(logout()).unwrap()
       toast.success("Başarıyla çıkış yapıldı!")
-      router.push("/login")
+      router.push("/giris")
     } catch (error: any) {
       console.error("Logout failed:", error)
       toast.error("Çıkış yapılırken bir hata oluştu")

@@ -10,7 +10,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const pathname = usePathname()
 
   // Login/register sayfalarında sidebar gösterme
-  const isAuthPage = pathname === '/login' || pathname === '/register'
+  const isAuthPage = pathname === '/giris' || pathname === '/kayit-ol' || pathname === '/sifremi-unuttum' || pathname === '/sifre-sifirla'
 
   if (isAuthPage) {
     return <>{children}</>

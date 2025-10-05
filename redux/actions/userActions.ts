@@ -13,8 +13,8 @@ axios.interceptors.response.use(
       localStorage.removeItem("userEmail");
       
       // Redirect to login if not already there
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/giris')) {
+        window.location.href = '/giris';
       }
       
       return Promise.reject({

@@ -350,7 +350,7 @@ export default function AccountSettingsPage() {
       if (response.status === 401 || response.status === 403) {
         localStorage.removeItem('accessToken')
         localStorage.removeItem('userEmail')
-        window.location.href = '/login'
+        window.location.href = '/giris'
         return
       }
       
@@ -395,7 +395,7 @@ export default function AccountSettingsPage() {
       if (response.status === 401 || response.status === 403) {
         localStorage.removeItem('accessToken')
         localStorage.removeItem('userEmail')
-        window.location.href = '/login'
+        window.location.href = '/giris'
         return
       }
       

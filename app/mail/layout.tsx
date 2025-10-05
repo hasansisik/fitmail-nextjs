@@ -66,7 +66,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // Redirect unauthenticated users to login
   useEffect(() => {
     if (isClient && !loading && !isAuthenticated) {
-      router.push("/login")
+      router.push("/giris")
     }
   }, [isAuthenticated, loading, router, isClient])
 
