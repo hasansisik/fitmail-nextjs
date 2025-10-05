@@ -1,6 +1,9 @@
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useMail } from "@/app/dashboard/mail/use-mail"
 import { MailItem } from "@/components/mail-item"
+import { useRouter } from "next/navigation"
+import { useAppDispatch } from "@/redux/hook"
+import { getMailById } from "@/redux/actions/mailActions"
 
 // API'den gelen mail formatı
 interface ApiMail {
@@ -48,9 +51,31 @@ interface MailListProps {
   items: ApiMail[]
   loading?: boolean
   error?: string | null
+  categoryTitle?: string
 }
 
-export function MailList({ items, loading = false, error = null }: MailListProps) {
+export function MailList({ items, loading = false, error = null, categoryTitle = "Gelen Kutusu" }: MailListProps) {
+  const router = useRouter()
+  const dispatch = useAppDispatch()
+  
+  // Kategori başlığını URL slug'ına çevir
+  const getCategorySlug = (title: string) => {
+    const mapping: Record<string, string> = {
+      "Gelen Kutusu": "inbox",
+      "Gönderilenler": "sent",
+      "Taslaklar": "drafts",
+      "Spam": "spam",
+      "Çöp Kutusu": "trash",
+      "Arşiv": "archive",
+      "Sosyal": "social",
+      "Güncellemeler": "updates",
+      "Forumlar": "forums",
+      "Alışveriş": "shopping",
+      "Promosyonlar": "promotions"
+    }
+    return mapping[title] || "inbox"
+  }
+  
   const handleMailAction = (action: string, mailId: string, data?: any) => {
     console.log(`Action: ${action}, Mail ID: ${mailId}`, data)
     
@@ -147,6 +172,11 @@ export function MailList({ items, loading = false, error = null }: MailListProps
               key={item._id || `mail-${index}`}
               mail={item}
               onAction={handleMailAction}
+              onClick={() => {
+                // Kategori bilgisini al ve URL'ye yönlendir
+                const category = getCategorySlug(categoryTitle)
+                router.push(`/dashboard/mail/${category}/${item._id}`)
+              }}
             />
           ))
         )}

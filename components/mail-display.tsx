@@ -21,6 +21,7 @@ import {
   Eye,
   ExternalLink,
   X,
+  ArrowLeft,
 } from "lucide-react"
 
 import {
@@ -134,6 +135,10 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
     isStarred: false,
     isSnoozed: false
   })
+
+  // Reply olup olmadığını kontrol et
+  const isReply = mail?.subject?.toLowerCase().startsWith('re:') || false
+  const originalSubject = isReply ? mail?.subject?.replace(/^re:\s*/i, '') : mail?.subject
 
   // Dosya boyutunu formatla
   const formatFileSize = (bytes: number) => {
@@ -340,17 +345,13 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
                   variant="ghost" 
                   size="icon" 
                   onClick={onToggleMaximize}
-                  title={isMaximized ? "Küçült" : "Büyüt"}
+                  title="Geri"
                 >
-                  {isMaximized ? (
-                    <Minimize2 className="h-4 w-4" />
-                  ) : (
-                    <Maximize2 className="h-4 w-4" />
-                  )}
-                  <span className="sr-only">{isMaximized ? "Küçült" : "Büyüt"}</span>
+                  <ArrowLeft className="h-4 w-4" />
+                  <span className="sr-only">Geri</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{isMaximized ? "Küçült" : "Büyüt"}</TooltipContent>
+              <TooltipContent>Geri</TooltipContent>
             </Tooltip>
           )}
           <Tooltip>
@@ -547,19 +548,19 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
           <div className="flex items-start p-4">
             <div className="flex items-start gap-4 text-sm">
               <Avatar>
-                <AvatarImage alt={mail.from?.name || 'Gönderen'} />
+                <AvatarImage alt={mail.to?.[0]?.name || 'Alıcı'} />
                 <AvatarFallback>
-                  {(mail.from?.name || 'G')
+                  {(mail.to?.[0]?.name || 'A')
                     .split(" ")
                     .map((chunk) => chunk[0])
                     .join("")}
                 </AvatarFallback>
               </Avatar>
               <div className="grid gap-1">
-                <div className="font-semibold">{mail.from?.name || 'Bilinmeyen Gönderen'}</div>
+                <div className="font-semibold">Alıcı: {mail.to?.map(recipient => recipient.name).join(', ') || 'Bilinmeyen Alıcı'}</div>
                 <div className="line-clamp-1 text-xs">{mail.subject}</div>
                 <div className="line-clamp-1 text-xs">
-                  <span className="font-medium">Yanıt-Adresi:</span> {mail.from?.email || 'Bilinmeyen'}
+                  <span className="font-medium">Gönderen:</span> {mail.from?.name || 'Bilinmeyen'} &lt;{mail.from?.email || 'Bilinmeyen'}&gt;
                 </div>
               </div>
             </div>
@@ -588,6 +589,22 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize }: Mai
             )}
           </div>
           <Separator />
+          {/* Reply için konuşma geçmişi */}
+          {isReply && (
+            <>
+              <Separator />
+              <div className="p-4 bg-muted/30">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-sm font-medium text-blue-600 dark:text-blue-400">↳ Yanıt</span>
+                  <span className="text-xs text-muted-foreground">Orijinal konu: {originalSubject}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Bu mail, "{originalSubject}" konusundaki konuşmanın devamıdır.
+                </div>
+              </div>
+            </>
+          )}
+          
           <div className="flex-1 whitespace-pre-wrap p-4 text-sm">
             {mail.content || mail.htmlContent || 'İçerik yok'}
           </div>

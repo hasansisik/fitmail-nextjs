@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, Plus } from "lucide-react"
+import { Search, Plus, ArrowLeft, X } from "lucide-react"
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -58,6 +58,8 @@ interface ApiMail {
   }
 }
 import { useMail } from "@/app/dashboard/mail/use-mail"
+import { useAppSelector, useAppDispatch } from "@/redux/hook"
+import { clearSelectedMail } from "@/redux/actions/mailActions"
 
 interface MailProps {
   mails: ApiMail[]
@@ -67,6 +69,7 @@ interface MailProps {
   defaultCollapsed?: boolean
   navCollapsedSize: number
   categoryTitle?: string
+  listOnly?: boolean // Sadece liste modu
 }
 
 export function Mail({
@@ -77,17 +80,50 @@ export function Mail({
   defaultCollapsed = false,
   navCollapsedSize,
   categoryTitle = "Gelen Kutusu",
+  listOnly = false,
 }: MailProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
   const [isMaximized, setIsMaximized] = React.useState(false)
   const [showSendDialog, setShowSendDialog] = React.useState(false)
+  const [searchQuery, setSearchQuery] = React.useState("")
   const [mail, { clearSelection }] = useMail()
+  const dispatch = useAppDispatch()
+  
+  // Redux'tan selectedMail'i al
+  const selectedMail = useAppSelector((state) => state.mail.selectedMail)
 
-  // Kullanıcı bilgisi Redux'tan alınacak
+  // Seçili mail var mı kontrol et (listOnly modunda detay gösterme)
+  const showMailDetail = !listOnly && selectedMail !== null
 
-  // Seçili mail var mı kontrol et
-  const selectedMail = mails.find((item) => item._id === mail.selected)
-  const showMailDetail = selectedMail !== undefined
+  // Geri dönme fonksiyonu
+  const handleBackToList = () => {
+    clearSelection()
+    dispatch(clearSelectedMail())
+  }
+
+  // Arama fonksiyonu
+  const handleSearch = (query: string) => {
+    setSearchQuery(query)
+  }
+
+  // Mail filtreleme fonksiyonu
+  const filteredMails = React.useMemo(() => {
+    if (!searchQuery.trim()) {
+      return mails
+    }
+    
+    const query = searchQuery.toLowerCase()
+    return mails.filter(mail => 
+      mail.subject.toLowerCase().includes(query) ||
+      mail.content.toLowerCase().includes(query) ||
+      mail.from?.name?.toLowerCase().includes(query) ||
+      mail.from?.email?.toLowerCase().includes(query) ||
+      mail.to?.some(recipient => 
+        recipient.name?.toLowerCase().includes(query) ||
+        recipient.email?.toLowerCase().includes(query)
+      )
+    )
+  }, [mails, searchQuery])
 
   return (
     <div className="h-full flex">
@@ -129,22 +165,45 @@ export function Mail({
               <form>
                 <div className="relative">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Ara" className="pl-8" />
+                  <Input 
+                    placeholder="Ara" 
+                    className="pl-8 pr-8" 
+                    value={searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                  />
+                  {searchQuery && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1 h-6 w-6 p-0"
+                      onClick={() => handleSearch("")}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
+                {searchQuery && (
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    {filteredMails.length} sonuç bulundu
+                  </div>
+                )}
               </form>
             </div>
             <TabsContent value="all" className="m-0">
               <MailList 
-                items={mails} 
+                items={filteredMails} 
                 loading={mailsLoading}
                 error={mailsError}
+                categoryTitle={categoryTitle}
               />
             </TabsContent>
             <TabsContent value="unread" className="m-0">
               <MailList 
-                items={mails.filter((item) => !item.isRead)} 
+                items={filteredMails.filter((item) => !item.isRead)} 
                 loading={mailsLoading}
                 error={mailsError}
+                categoryTitle={categoryTitle}
               />
             </TabsContent>
           </Tabs>
@@ -152,14 +211,29 @@ export function Mail({
       )}
       
       {/* Mail Detayı - Sadece mail seçili ise göster */}
-      {showMailDetail && (
+      {showMailDetail && selectedMail && (
         <div className="w-full">
           <div className="flex h-full flex-col">
-            <div className="flex-1">
+            {/* Header with back button */}
+            <div className="flex items-center gap-4 p-4 border-b">
+              <Button onClick={handleBackToList} variant="outline" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Geri
+              </Button>
+              <div className="flex-1">
+                <h1 className="text-lg font-semibold truncate">{selectedMail.subject}</h1>
+                <p className="text-sm text-muted-foreground">
+                  Alıcı: {selectedMail.to?.map(recipient => `${recipient.name} <${recipient.email}>`).join(', ')}
+                </p>
+              </div>
+            </div>
+            
+            {/* Mail Content */}
+            <div className="flex-1 overflow-hidden">
               <MailDisplay
                 mail={selectedMail}
                 isMaximized={true}
-                onToggleMaximize={clearSelection}
+                onToggleMaximize={handleBackToList}
               />
             </div>
           </div>

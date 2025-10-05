@@ -3,7 +3,6 @@ import { formatDistanceToNow } from "date-fns/formatDistanceToNow"
 
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
-import { useMail } from "@/app/dashboard/mail/use-mail"
 import { MailContextMenu } from "@/components/mail-context-menu"
 
 // API'den gelen mail formatı
@@ -52,17 +51,20 @@ interface ApiMail {
 interface MailItemProps {
   mail: ApiMail
   onAction: (action: string, mailId: string, data?: any) => void
+  onClick?: () => void
 }
 
-export function MailItem({ mail, onAction }: MailItemProps) {
-  const [mailState, { selectMail }] = useMail()
-
+export function MailItem({ mail, onAction, onClick }: MailItemProps) {
   const handleClick = (e: React.MouseEvent) => {
     // Sadece sol tık için mail seç
     e.preventDefault()
     e.stopPropagation()
-    selectMail(mail._id)
+    onClick?.()
   }
+
+  // Reply olup olmadığını kontrol et
+  const isReply = mail.subject.toLowerCase().startsWith('re:')
+  const originalSubject = isReply ? mail.subject.replace(/^re:\s*/i, '') : mail.subject
 
   return (
     <MailContextMenu
@@ -72,7 +74,7 @@ export function MailItem({ mail, onAction }: MailItemProps) {
       <div
         className={cn(
           "flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent w-full cursor-pointer",
-          mailState.selected === mail._id && "bg-muted"
+          isReply && "border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20"
         )}
         onClick={handleClick}
       >
@@ -83,13 +85,15 @@ export function MailItem({ mail, onAction }: MailItemProps) {
               {!mail.isRead && (
                 <span className="flex h-2 w-2 rounded-full bg-blue-600" />
               )}
+              {isReply && (
+                <Badge variant="outline" className="text-xs px-2 py-0.5">
+                  Yanıt
+                </Badge>
+              )}
             </div>
             <div
               className={cn(
-                "ml-auto text-xs",
-                mailState.selected === mail._id
-                  ? "text-foreground"
-                  : "text-muted-foreground"
+                "ml-auto text-xs text-muted-foreground"
               )}
             >
               {(() => {
@@ -130,7 +134,17 @@ export function MailItem({ mail, onAction }: MailItemProps) {
               })()}
             </div>
           </div>
-          <div className="text-xs font-medium">{mail.subject}</div>
+          <div className="text-xs font-medium">
+            {isReply ? (
+              <div className="flex items-center gap-2">
+                <span className="text-blue-600 dark:text-blue-400">↳</span>
+                <span className="text-muted-foreground">Yanıt:</span>
+                <span>{originalSubject}</span>
+              </div>
+            ) : (
+              mail.subject
+            )}
+          </div>
         </div>
         <div className="line-clamp-2 text-xs text-muted-foreground">
           {mail.content ? mail.content.substring(0, 200) + (mail.content.length > 200 ? '...' : '') : 'İçerik yok'}

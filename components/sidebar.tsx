@@ -15,6 +15,17 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
@@ -37,6 +48,7 @@ import {
 } from "lucide-react"
 import { useAppSelector } from "@/redux/hook"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { SendMailDialog } from "@/components/send-mail-dialog"
 
 // Dinamik navigation array'leri - mail stats kullanacak
 const getMainNav = (mailStats: any) => [
@@ -164,6 +176,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
   const { mailStats, statsLoading, statsError } = useAppSelector((state) => state.mail)
   
   const [internalIsCollapsed, setInternalIsCollapsed] = useState(false)
+  const [isSendDialogOpen, setIsSendDialogOpen] = useState(false)
   
   const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : internalIsCollapsed
   const setIsCollapsed = onCollapse || setInternalIsCollapsed
@@ -224,17 +237,85 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
 
   const renderNavItem = (link: any, index: number, isActive: boolean) => {
     const isLogout = link.isLogout
+    const isSettings = link.href?.includes('/settings')
 
     return isLogout ? (
       isCollapsed ? (
         <Tooltip key={index} delayDuration={0}>
           <TooltipTrigger asChild>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "icon" }),
+                    "h-9 w-9 mx-auto cursor-pointer",
+                    "hover:bg-transparent hover:text-foreground"
+                  )}
+                >
+                  <link.icon className="h-4 w-4" />
+                  <span className="sr-only">{link.title}</span>
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Çıkış Yap</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Çıkış yapmak istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>İptal</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleLogout}>
+                    Çıkış Yap
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="flex items-center gap-4">
+            {link.title}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <AlertDialog key={index}>
+          <AlertDialogTrigger asChild>
             <button
-              onClick={handleLogout}
               className={cn(
-                buttonVariants({ variant: "ghost", size: "icon" }),
+                buttonVariants({ variant: "ghost", size: "sm" }),
+                "hover:bg-transparent hover:text-foreground",
+                "justify-start w-full cursor-pointer"
+              )}
+            >
+              <link.icon className="mr-2 h-4 w-4" />
+              {link.title}
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Çıkış Yap</AlertDialogTitle>
+              <AlertDialogDescription>
+                Çıkış yapmak istediğinizden emin misiniz? Bu işlem geri alınamaz.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>İptal</AlertDialogCancel>
+              <AlertDialogAction onClick={handleLogout}>
+                Çıkış Yap
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )
+    ) : isSettings ? (
+      isCollapsed ? (
+        <Tooltip key={index} delayDuration={0}>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => router.push(link.href)}
+              className={cn(
+                buttonVariants({ variant: isActive ? "default" : "ghost", size: "icon" }),
                 "h-9 w-9 mx-auto cursor-pointer",
-                "hover:bg-transparent hover:text-foreground"
+                !isActive && "hover:bg-transparent hover:text-foreground"
               )}
             >
               <link.icon className="h-4 w-4" />
@@ -248,10 +329,10 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       ) : (
         <button
           key={index}
-          onClick={handleLogout}
+          onClick={() => router.push(link.href)}
           className={cn(
-            buttonVariants({ variant: "ghost", size: "sm" }),
-            "hover:bg-transparent hover:text-foreground",
+            buttonVariants({ variant: isActive ? "default" : "ghost", size: "sm" }),
+            !isActive && "hover:bg-transparent hover:text-foreground",
             "justify-start w-full cursor-pointer"
           )}
         >
@@ -318,11 +399,11 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
   }
 
   return (
-    <div className="flex h-screen w-full flex-col bg-background transition-all duration-300 ease-in-out relative z-10">
+    <div className="flex h-screen w-full flex-col bg-background transition-all duration-300 ease-in-out relative z-10 overflow-hidden">
       {/* User Account Section */}
       {!isCollapsed && (
-        <div className="flex h-16 items-center justify-center px-4">
-          <div className="flex items-center gap-3">
+        <div className="px-2 py-3">
+          <div className="flex items-center gap-3 mb-8">
             <Avatar className="h-8 w-8">
               <AvatarImage src="" alt={`${user?.name} ${user?.surname}`} />
               <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
@@ -334,22 +415,50 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
               <span className="text-xs text-muted-foreground">{user?.email}</span>
             </div>
           </div>
+          
+          {/* Mail Gönderme Butonu */}
+          <button
+            onClick={() => setIsSendDialogOpen(true)}
+            className="w-full flex items-center gap-2 px-3 py-2 mb-4 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+          >
+            <Send className="h-4 w-4" />
+            Yeni Mail
+          </button>
         </div>
       )}
       
       {isCollapsed && (
-        <div className="flex h-16 items-center justify-center px-2">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src="" alt={`${user?.name} ${user?.surname}`} />
-            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
-              {userInitials}
-            </AvatarFallback>
-          </Avatar>
+        <div className="py-3">
+          <div className="flex flex-col items-center gap-2">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src="" alt={`${user?.name} ${user?.surname}`} />
+              <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
+                {userInitials}
+              </AvatarFallback>
+            </Avatar>
+            
+            {/* Collapsed Mail Gönderme Butonu */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setIsSendDialogOpen(true)}
+                    className="flex items-center justify-center w-8 h-8 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                  >
+                    <Send className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Yeni Mail</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
       )}
       
-      {/* Main Navigation and Category Navigation Combined - Scrollable */}
-      <div className="flex flex-1 flex-col gap-4 py-2 overflow-y-auto">
+      {/* Main Navigation and Category Navigation Combined */}
+      <div className="flex flex-1 flex-col gap-4 py-2 overflow-hidden">
         {/* Main Navigation */}
         <nav className={cn(
           "grid gap-1 pointer-events-auto",
@@ -386,6 +495,12 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
         </nav>
 
       </div>
+      
+      {/* Send Mail Dialog */}
+      <SendMailDialog 
+        open={isSendDialogOpen} 
+        onOpenChange={setIsSendDialogOpen} 
+      />
     </div>
   )
 }

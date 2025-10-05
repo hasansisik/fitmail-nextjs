@@ -395,6 +395,38 @@ export const snoozeMail = createAsyncThunk(
   }
 );
 
+// Get Mail by ID Action
+export const getMailById = createAsyncThunk(
+  "mail/getMailById",
+  async (mailId: string, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
+      }
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      const { data } = await axios.get(`${server}/mail/${mailId}`, config);
+      return data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+// Clear Selected Mail Action
+export const clearSelectedMail = createAsyncThunk(
+  "mail/clearSelectedMail",
+  async () => {
+    return null;
+  }
+);
+
 // Clear Mail Error Action
 export const clearMailError = createAsyncThunk(
   "mail/clearMailError",

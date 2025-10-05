@@ -20,7 +20,7 @@ import { User, Mail, Calendar, Shield, Trash2, Eye, EyeOff, Edit, CheckCircle, A
 import { useAppDispatch, useAppSelector } from "@/redux/hook"
 import { editProfile, changePassword, verifyPassword } from "@/redux/actions/userActions"
 import { toast } from "sonner"
-import { uploadImageToCloudinary } from "@/utils/cloudinary"
+import { uploadFileToCloudinary } from "@/utils/cloudinary"
 import ReactCrop, { centerCrop, makeAspectCrop, Crop, PixelCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 
@@ -182,7 +182,7 @@ export default function AccountSettingsPage() {
         type: 'image/jpeg',
       })
 
-      const uploadedUrl = await uploadImageToCloudinary(croppedFile)
+      const uploadedUrl = await uploadFileToCloudinary(croppedFile)
       setAvatarUrl(uploadedUrl)
       
       // Otomatik olarak profile güncelle

@@ -1,10 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import { buttonVariants } from "@/components/ui/button"
 import {
   ResizableHandle,
@@ -46,17 +44,13 @@ export default function SettingsLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   return (
     <TooltipProvider delayDuration={0}>
       <ResizablePanelGroup
         direction="horizontal"
-        onLayout={(sizes: number[]) => {
-          document.cookie = `react-resizable-panels:layout:settings=${JSON.stringify(
-            sizes
-          )}`
-        }}
         className="h-screen items-stretch"
       >
         <ResizablePanel
@@ -65,77 +59,70 @@ export default function SettingsLayout({
           collapsible={true}
           minSize={15}
           maxSize={30}
-          onCollapse={() => {
-            setIsCollapsed(true)
-            document.cookie = `react-resizable-panels:collapsed:settings=${JSON.stringify(
-              true
-            )}`
-          }}
-          onResize={() => {
-            setIsCollapsed(false)
-            document.cookie = `react-resizable-panels:collapsed:settings=${JSON.stringify(
-              false
-            )}`
-          }}
-          className={cn(
-            isCollapsed &&
-              "min-w-[50px] transition-all duration-300 ease-in-out",
-            "border-r"
-          )}
+          onCollapse={() => setIsCollapsed(true)}
+          onResize={() => setIsCollapsed(false)}
+          className="border-r"
         >
-          <div className="p-6">
-            {!isCollapsed && (
-              <>
-                <h1 className="text-2xl font-bold mb-2">Ayarlar</h1>
-                <p className="text-muted-foreground text-sm mb-6">
-                  Hesap ayarlarınızı yönetin ve e-posta tercihlerinizi belirleyin.
-                </p>
-              </>
-            )}
-            
-            <nav className="space-y-1">
-              {settingsNav.map((link, index) => {
-                const isActive = pathname === link.href
-                return isCollapsed ? (
-                  <Tooltip key={index} delayDuration={0}>
-                    <TooltipTrigger asChild>
-                      <a
-                        href={link.href}
-                        className={cn(
-                          buttonVariants({ variant: isActive ? "default" : "ghost", size: "icon" }),
-                          "h-9 w-9",
-                          !isActive && "hover:bg-transparent hover:text-foreground"
-                        )}
-                      >
-                        <link.icon className="h-4 w-4" />
-                        <span className="sr-only">{link.title}</span>
-                      </a>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="flex items-center gap-4">
+          <div className="h-screen overflow-hidden">
+            <div className={cn(
+              isCollapsed ? "p-2 h-full flex flex-col" : "p-6"
+            )}>
+              {!isCollapsed && (
+                <>
+                  <h1 className="text-2xl font-bold mb-2">Ayarlar</h1>
+                  <p className="text-muted-foreground text-sm mb-6">
+                    Hesap ayarlarınızı yönetin ve e-posta tercihlerinizi belirleyin.
+                  </p>
+                </>
+              )}
+              
+              <nav className={cn(
+                "space-y-1",
+                isCollapsed ? "flex flex-col items-center justify-center flex-1" : ""
+              )}>
+                {settingsNav.map((link, index) => {
+                  const isActive = pathname === link.href
+                  return isCollapsed ? (
+                    <Tooltip key={index} delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => router.push(link.href)}
+                          className={cn(
+                            buttonVariants({ variant: isActive ? "default" : "ghost", size: "icon" }),
+                            "h-9 w-9 cursor-pointer",
+                            !isActive && "hover:bg-transparent hover:text-foreground"
+                          )}
+                        >
+                          <link.icon className="h-4 w-4" />
+                          <span className="sr-only">{link.title}</span>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="flex items-center gap-4">
+                        {link.title}
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    <a
+                      key={index}
+                      href={link.href}
+                      className={cn(
+                        buttonVariants({ variant: isActive ? "default" : "ghost", size: "sm" }),
+                        !isActive && "hover:bg-transparent hover:text-foreground",
+                        "justify-start w-full"
+                      )}
+                    >
+                      <link.icon className="mr-2 h-4 w-4" />
                       {link.title}
-                    </TooltipContent>
-                  </Tooltip>
-                ) : (
-                  <a
-                    key={index}
-                    href={link.href}
-                    className={cn(
-                      buttonVariants({ variant: isActive ? "default" : "ghost", size: "sm" }),
-                      !isActive && "hover:bg-transparent hover:text-foreground",
-                      "justify-start w-full"
-                    )}
-                  >
-                    <link.icon className="mr-2 h-4 w-4" />
-                    {link.title}
-                  </a>
-                )
-              })}
-            </nav>
+                    </a>
+                  )
+                })}
+              </nav>
+            </div>
           </div>
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={80} minSize={30}>
-          <div className="h-full overflow-auto">
+          <div className="h-screen overflow-auto">
             <div className="p-6">
               {children}
             </div>

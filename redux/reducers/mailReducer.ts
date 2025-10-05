@@ -4,6 +4,7 @@ import {
   getMailsByCategory,
   getMailsByLabelCategory,
   getMailStats,
+  getMailById,
   moveMailToCategory,
   removeMailFromCategory,
   toggleMailReadStatus,
@@ -13,6 +14,7 @@ import {
   markMailAsImportant,
   markMailAsStarred,
   snoozeMail,
+  clearSelectedMail,
   clearMailError,
 } from "../actions/mailActions";
 
@@ -25,6 +27,7 @@ interface MailState {
   mailStats: any;
   statsLoading: boolean;
   statsError: string | null;
+  selectedMail: any | null;
   message: string | null;
 }
 
@@ -37,6 +40,7 @@ const initialState: MailState = {
   mailStats: null,
   statsLoading: false,
   statsError: null,
+  selectedMail: null,
   message: null,
 };
 
@@ -278,6 +282,25 @@ export const mailReducer = createReducer(initialState, (builder) => {
     .addCase(snoozeMail.rejected, (state, action) => {
       state.mailsLoading = false;
       state.mailsError = action.payload as string;
+    })
+    // Get Mail by ID
+    .addCase(getMailById.pending, (state) => {
+      state.mailsLoading = true;
+      state.mailsError = null;
+    })
+    .addCase(getMailById.fulfilled, (state, action) => {
+      state.mailsLoading = false;
+      state.selectedMail = action.payload.mail;
+      state.mailsError = null;
+    })
+    .addCase(getMailById.rejected, (state, action) => {
+      state.mailsLoading = false;
+      state.mailsError = action.payload as string;
+      state.selectedMail = null;
+    })
+    // Clear Selected Mail
+    .addCase(clearSelectedMail.fulfilled, (state) => {
+      state.selectedMail = null;
     })
     // Clear Mail Error
     .addCase(clearMailError.fulfilled, (state) => {

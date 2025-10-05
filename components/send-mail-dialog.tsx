@@ -24,9 +24,7 @@ import {
   Send, 
   X, 
   Paperclip, 
-  Image as ImageIcon, 
   FileText, 
-  Save,
   Plus,
   Trash2
 } from "lucide-react"
@@ -49,7 +47,6 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
   const dispatch = useAppDispatch()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [isSavingDraft, setIsSavingDraft] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [showCC, setShowCC] = useState(false)
   const [showBCC, setShowBCC] = useState(false)
@@ -130,36 +127,6 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
-  const saveDraft = async () => {
-    if (!formData.subject && !formData.content) {
-      toast.error("Taslak kaydetmek için en az konu veya içerik gerekli!")
-      return
-    }
-
-    setIsSavingDraft(true)
-    try {
-      // TODO: Implement draft saving API call
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
-      toast.success("Taslak kaydedildi!")
-      
-      // Refresh mail list and stats after saving draft
-      try {
-        await dispatch(getMailsByCategory({
-          folder: "drafts",
-          page: 1,
-          limit: 50
-        })).unwrap()
-        
-        await dispatch(getMailStats()).unwrap()
-      } catch (refreshError) {
-        console.error("Failed to refresh mail list after draft save:", refreshError)
-      }
-    } catch (error) {
-      toast.error("Taslak kaydedilemedi!")
-    } finally {
-      setIsSavingDraft(false)
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -247,7 +214,7 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
   }
 
   const handleClose = () => {
-    if (!isLoading && !isSavingDraft) {
+    if (!isLoading) {
       setFormData({
         to: "",
         cc: "",
@@ -286,7 +253,7 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
                 value={formData.to}
                 onChange={(e) => handleInputChange("to", e.target.value)}
                 required
-                disabled={isLoading || isSavingDraft}
+                disabled={isLoading || false}
               />
               <p className="text-xs text-muted-foreground">
                 Birden fazla alıcı için virgül ile ayırın
@@ -302,7 +269,7 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
                     id="cc-toggle"
                     checked={showCC}
                     onCheckedChange={setShowCC}
-                    disabled={isLoading || isSavingDraft}
+                    disabled={isLoading || false}
                   />
                   <Label htmlFor="cc-toggle" className="text-sm">
                     {showCC ? 'Gizle' : 'Göster'}
@@ -315,7 +282,7 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
                   placeholder="kopya@email.com"
                   value={formData.cc}
                   onChange={(e) => handleInputChange("cc", e.target.value)}
-                  disabled={isLoading || isSavingDraft}
+                  disabled={isLoading || false}
                 />
               )}
             </div>
@@ -329,7 +296,7 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
                     id="bcc-toggle"
                     checked={showBCC}
                     onCheckedChange={setShowBCC}
-                    disabled={isLoading || isSavingDraft}
+                    disabled={isLoading || false}
                   />
                   <Label htmlFor="bcc-toggle" className="text-sm">
                     {showBCC ? 'Gizle' : 'Göster'}
@@ -342,7 +309,7 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
                   placeholder="gizli@email.com"
                   value={formData.bcc}
                   onChange={(e) => handleInputChange("bcc", e.target.value)}
-                  disabled={isLoading || isSavingDraft}
+                  disabled={isLoading || false}
                 />
               )}
             </div>
@@ -356,44 +323,43 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
                 value={formData.subject}
                 onChange={(e) => handleInputChange("subject", e.target.value)}
                 required
-                disabled={isLoading || isSavingDraft}
+                disabled={isLoading || false}
               />
             </div>
 
-            {/* Attachments Field */}
+            {/* Content Field */}
             <div className="space-y-2">
+              <Label htmlFor="content">İçerik *</Label>
+              <Textarea
+                id="content"
+                placeholder="Mail içeriğinizi yazın..."
+                value={formData.content}
+                onChange={(e) => handleInputChange("content", e.target.value)}
+                required
+                disabled={isLoading || false}
+                rows={8}
+                className="resize-none"
+              />
+            </div>
+
+                        {/* Attachments Field */}
+                        <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Ekler</Label>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isLoading || isSavingDraft || isUploading}
-                  >
-                    {isUploading ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Paperclip className="h-4 w-4 mr-2" />
-                    )}
-                    {isUploading ? 'Yükleniyor...' : 'Dosya Ekle'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isLoading || isSavingDraft || isUploading}
-                  >
-                    {isUploading ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <ImageIcon className="h-4 w-4 mr-2" />
-                    )}
-                    {isUploading ? 'Yükleniyor...' : 'Fotoğraf'}
-                  </Button>
-                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading || false || isUploading}
+                >
+                  {isUploading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Paperclip className="h-4 w-4 mr-2" />
+                  )}
+                  {isUploading ? 'Yükleniyor...' : 'Dosya Ekle'}
+                </Button>
               </div>
               
               <input
@@ -432,7 +398,7 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => removeAttachment(attachment.id)}
-                        disabled={isLoading || isSavingDraft}
+                        disabled={isLoading || false}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -441,21 +407,6 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
                 </div>
               )}
             </div>
-
-            {/* Content Field */}
-            <div className="space-y-2">
-              <Label htmlFor="content">İçerik *</Label>
-              <Textarea
-                id="content"
-                placeholder="Mail içeriğinizi yazın..."
-                value={formData.content}
-                onChange={(e) => handleInputChange("content", e.target.value)}
-                required
-                disabled={isLoading || isSavingDraft}
-                rows={8}
-                className="resize-none"
-              />
-            </div>
           </div>
 
           <DialogFooter className="flex gap-2">
@@ -463,34 +414,16 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={isLoading || isSavingDraft}
+              disabled={isLoading || false}
             >
               <X className="h-4 w-4 mr-2" />
               İptal
             </Button>
             
-            <Button
-              type="button"
-              variant="outline"
-              onClick={saveDraft}
-              disabled={isLoading || isSavingDraft || (!formData.subject && !formData.content)}
-            >
-              {isSavingDraft ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Kaydediliyor...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Taslak Kaydet
-                </>
-              )}
-            </Button>
             
             <Button
               type="submit"
-              disabled={isLoading || isSavingDraft || !formData.to || !formData.subject || !formData.content}
+              disabled={isLoading || false || !formData.to || !formData.subject || !formData.content}
             >
               {isLoading ? (
                 <>
