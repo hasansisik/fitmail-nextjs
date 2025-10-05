@@ -56,7 +56,7 @@ export function Step6Terms({
           {/* Policy preview text */}
           <div className="text-xs text-gray-600 dark:text-gray-400 space-y-2">
             <p><strong>1. Hizmet Tanımı</strong></p>
-            <p>Gözde Dijital, kullanıcılara e-posta hizmeti sunan bir platformdur...</p>
+            <p>Fitmail, kullanıcılara e-posta hizmeti sunan bir platformdur...</p>
             <p><strong>2. Hesap Sorumluluğu</strong></p>
             <p>Hesabınızı oluştururken doğru ve güncel bilgiler vermeniz gerekmektedir...</p>
             <p className="font-bold text-gray-500 hover:text-gray-700 cursor-pointer" onClick={() => onPolicyClick('terms')}>

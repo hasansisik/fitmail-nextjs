@@ -9,7 +9,7 @@ export default function HomePage() {
         {/* Logo/Title */}
         <div className="space-y-4">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-            Gözde Dijital
+            Fitmail
           </h1>
           <div className="w-16 h-1 bg-primary mx-auto rounded-full"></div>
         </div>
@@ -20,7 +20,7 @@ export default function HomePage() {
             Hızlı, Güvenli ve Akıllı E-posta
           </h2>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            Gözde Dijital ile e-postalarınızı yönetin, organize edin ve iletişiminizi güçlendirin. 
+            Fitmail ile e-postalarınızı yönetin, organize edin ve iletişiminizi güçlendirin. 
             Modern arayüzü ve güçlü özellikleriyle e-posta deneyiminizi yeniden tanımlayın.
           </p>
         </div>

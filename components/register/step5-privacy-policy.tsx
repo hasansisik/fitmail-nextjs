@@ -56,7 +56,7 @@ export function Step5PrivacyPolicy({
           {/* Policy preview text */}
           <div className="text-xs text-gray-600 dark:text-gray-400 space-y-2">
             <p><strong>1. Kişisel Verilerin Toplanması</strong></p>
-            <p>Gözde Dijital olarak, hizmetlerimizi sunabilmek için belirli kişisel verilerinizi topluyoruz...</p>
+            <p>Fitmail olarak, hizmetlerimizi sunabilmek için belirli kişisel verilerinizi topluyoruz...</p>
             <p><strong>2. Verilerin Kullanımı</strong></p>
             <p>Topladığımız kişisel verileri aşağıdaki amaçlarla kullanırız...</p>
             <p className="font-bold text-gray-500 hover:text-gray-700 cursor-pointer" onClick={() => onPolicyClick('privacy')}>
