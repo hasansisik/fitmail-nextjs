@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { useAppDispatch } from "@/redux/hook"
 import { logout } from "@/redux/actions/userActions"
-import { getMailsByCategory, getMailsByLabelCategory, getMailStats } from "@/redux/actions/mailActions"
+import { getMailsByCategory, getMailsByLabelCategory, getMailStats, clearSelectedMail } from "@/redux/actions/mailActions"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { toast } from "sonner"
@@ -190,11 +190,14 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
   }, [dispatch, user, mailStats])
 
   // Kategori tıklama handler'ı
-  const handleCategoryClick = (category: string, e?: React.MouseEvent) => {
+  const handleCategoryClick = async (category: string, e?: React.MouseEvent) => {
     e?.preventDefault()
     e?.stopPropagation()
     
     console.log(`Kategori tıklandı: ${category}`)
+    
+    // Önce seçili maili temizle (mail detay sayfasından çıkarken)
+    await dispatch(clearSelectedMail())
     
     // Kategori sayfaları için label category kullan
     if (['social', 'updates', 'forums', 'shopping', 'promotions'].includes(category)) {
@@ -212,8 +215,9 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       }))
     }
     
-    // Sayfa yönlendirmesi de yapalım
-    router.push(`/dashboard/mail${category === 'inbox' ? '' : `/${category}`}`)
+    // Sayfa yönlendirmesi - mail detay sayfasından çıkıp kategori listesine git
+    const targetUrl = `/dashboard/mail${category === 'inbox' ? '' : `/${category}`}`
+    router.push(targetUrl)
   }
   
   // Dinamik navigation array'leri
