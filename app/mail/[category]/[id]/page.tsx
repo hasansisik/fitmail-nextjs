@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/hook"
 import { getMailById } from "@/redux/actions/mailActions"
 import { MailDisplay } from "@/components/mail-display"
 import { Button } from "@/components/ui/button"
+import { Metadata } from "@/components/metadata"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -37,7 +38,7 @@ export default function MailDetailPage() {
 
   const handleBack = () => {
     // Kategori sayfasına dön
-    router.push(`/dashboard/mail/${category}`)
+    router.push(`/mail/${category}`)
   }
 
   if (isLoading || mailsLoading) {
@@ -82,25 +83,32 @@ export default function MailDetailPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center gap-4 p-4 border-b">
-        <Button onClick={handleBack} variant="outline" size="sm">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Geri
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-lg font-semibold truncate">{selectedMail.subject}</h1>
-          <p className="text-sm text-muted-foreground">
-            Alıcı: {selectedMail.to?.map((recipient: { name: string; email: string }) => `${recipient.name} <${recipient.email}>`).join(', ')}
-          </p>
+    <>
+      <Metadata 
+        title={`${selectedMail.subject} - Fitmail`}
+        description={`${selectedMail.subject} - Fitmail ile e-posta okuyun`}
+        keywords="email, e-posta, mail, fitmail"
+      />
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="flex items-center gap-4 p-4 border-b">
+          <Button onClick={handleBack} variant="outline" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Geri
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-lg font-semibold truncate">{selectedMail.subject}</h1>
+            <p className="text-sm text-muted-foreground">
+              Alıcı: {selectedMail.to?.map((recipient: { name: string; email: string }) => `${recipient.name} <${recipient.email}>`).join(', ')}
+            </p>
+          </div>
+        </div>
+
+        {/* Mail Content */}
+        <div className="flex-1 overflow-hidden">
+          <MailDisplay mail={selectedMail} />
         </div>
       </div>
-
-      {/* Mail Content */}
-      <div className="flex-1 overflow-hidden">
-        <MailDisplay mail={selectedMail} />
-      </div>
-    </div>
+    </>
   )
 }

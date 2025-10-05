@@ -57,7 +57,7 @@ const getMainNav = (mailStats: any) => [
     label: (mailStats?.inbox || 0).toString(),
     icon: Inbox,
     variant: "default" as const,
-    href: "/dashboard/mail",
+    href: "/mail",
     category: "inbox"
   },
   {
@@ -65,7 +65,7 @@ const getMainNav = (mailStats: any) => [
     label: (mailStats?.drafts || 0).toString(),
     icon: File,
     variant: "ghost" as const,
-    href: "/dashboard/mail/drafts",
+    href: "/mail/drafts",
     category: "drafts"
   },
   {
@@ -73,7 +73,7 @@ const getMainNav = (mailStats: any) => [
     label: (mailStats?.sent || 0).toString(),
     icon: Send,
     variant: "ghost" as const,
-    href: "/dashboard/mail/sent",
+    href: "/mail/sent",
     category: "sent"
   },
   {
@@ -81,7 +81,7 @@ const getMainNav = (mailStats: any) => [
     label: (mailStats?.spam || 0).toString(),
     icon: ArchiveX,
     variant: "ghost" as const,
-    href: "/dashboard/mail/spam",
+    href: "/mail/spam",
     category: "spam"
   },
   {
@@ -89,7 +89,7 @@ const getMainNav = (mailStats: any) => [
     label: (mailStats?.trash || 0).toString(),
     icon: Trash2,
     variant: "ghost" as const,
-    href: "/dashboard/mail/trash",
+    href: "/mail/trash",
     category: "trash"
   },
   {
@@ -97,7 +97,7 @@ const getMainNav = (mailStats: any) => [
     label: (mailStats?.archive || 0).toString(),
     icon: Archive,
     variant: "ghost" as const,
-    href: "/dashboard/mail/archive",
+    href: "/mail/archive",
     category: "archive"
   },
 ]
@@ -108,7 +108,7 @@ const getCategoryNav = (mailStats: any) => [
     label: (mailStats?.social || 0).toString(),
     icon: Users2,
     variant: "ghost" as const,
-    href: "/dashboard/mail/social",
+    href: "/mail/social",
     category: "social"
   },
   {
@@ -116,7 +116,7 @@ const getCategoryNav = (mailStats: any) => [
     label: (mailStats?.updates || 0).toString(),
     icon: AlertCircle,
     variant: "ghost" as const,
-    href: "/dashboard/mail/updates",
+    href: "/mail/updates",
     category: "updates"
   },
   {
@@ -124,7 +124,7 @@ const getCategoryNav = (mailStats: any) => [
     label: (mailStats?.forums || 0).toString(),
     icon: MessagesSquare,
     variant: "ghost" as const,
-    href: "/dashboard/mail/forums",
+    href: "/mail/forums",
     category: "forums"
   },
   {
@@ -132,7 +132,7 @@ const getCategoryNav = (mailStats: any) => [
     label: (mailStats?.shopping || 0).toString(),
     icon: ShoppingCart,
     variant: "ghost" as const,
-    href: "/dashboard/mail/shopping",
+    href: "/mail/shopping",
     category: "shopping"
   },
   {
@@ -140,7 +140,7 @@ const getCategoryNav = (mailStats: any) => [
     label: (mailStats?.promotions || 0).toString(),
     icon: Archive,
     variant: "ghost" as const,
-    href: "/dashboard/mail/promotions",
+    href: "/mail/promotions",
     category: "promotions"
   },
 ]
@@ -151,7 +151,7 @@ const settingsNav = [
     label: "",
     icon: Settings,
     variant: "ghost" as const,
-    href: "/dashboard/settings/account"
+    href: "/mail/settings/account"
   },
   {
     title: "Çıkış Yap",
@@ -216,7 +216,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
     }
     
     // Sayfa yönlendirmesi - mail detay sayfasından çıkıp kategori listesine git
-    const targetUrl = `/dashboard/mail${category === 'inbox' ? '' : `/${category}`}`
+    const targetUrl = `/mail${category === 'inbox' ? '' : `/${category}`}`
     router.push(targetUrl)
   }
   
@@ -469,7 +469,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
           isCollapsed ? "px-1" : "px-2"
         )}>
           {mainNav.map((link, index) => {
-            const isActive = pathname === link.href || (pathname === "/dashboard/mail" && link.title === "Gelen Kutusu")
+            const isActive = pathname === link.href || (pathname === "/mail" && link.title === "Gelen Kutusu")
             return renderNavItem(link, index, isActive)
           })}
         </nav>

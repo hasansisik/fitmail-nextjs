@@ -64,7 +64,7 @@ interface ApiMail {
     mailAddress: string
   }
 }
-import { useMail } from "@/app/dashboard/mail/use-mail"
+import { useMail } from "@/app/mail/use-mail"
 import { useAppSelector, useAppDispatch } from "@/redux/hook"
 import { clearSelectedMail } from "@/redux/actions/mailActions"
 

@@ -33,7 +33,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
             <Tooltip key={index} delayDuration={0}>
               <TooltipTrigger asChild>
                 <Link
-                  href={link.title === "Ayarlar" ? "/dashboard/settings" : "#"}
+                  href={link.title === "Ayarlar" ? "/mail/settings" : "#"}
                   className={cn(
                     buttonVariants({ variant: link.variant, size: "icon" }),
                     "h-9 w-9",
@@ -57,7 +57,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
           ) : (
             <Link
               key={index}
-              href={link.title === "Ayarlar" ? "/dashboard/settings" : "#"}
+              href={link.title === "Ayarlar" ? "/mail/settings" : "#"}
               className={cn(
                 buttonVariants({ variant: link.variant, size: "sm" }),
                 link.variant === "default" &&

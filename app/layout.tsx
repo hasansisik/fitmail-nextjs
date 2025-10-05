@@ -8,6 +8,7 @@ import { Providers } from "@/redux/provider";
 import { Toaster } from "sonner";
 import { useAppDispatch } from "@/redux/hook";
 import { loadUser } from "@/redux/actions/userActions";
+import { Metadata } from "@/components/metadata";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,9 +29,16 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   }, [dispatch]);
 
   return (
-    <MainLayout>
-      {children}
-    </MainLayout>
+    <>
+      <Metadata 
+        title="Fitmail - Hızlı, Güvenli ve Akıllı E-posta"
+        description="Fitmail ile e-postalarınızı yönetin, organize edin ve iletişiminizi güçlendirin. Modern arayüzü ve güçlü özellikleriyle e-posta deneyiminizi yeniden tanımlayın."
+        keywords="email, e-posta, mail, güvenli email, hızlı email, akıllı email, fitmail"
+      />
+      <MainLayout>
+        {children}
+      </MainLayout>
+    </>
   );
 }
 

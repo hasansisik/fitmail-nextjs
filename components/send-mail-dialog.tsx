@@ -58,9 +58,86 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
     subject: "",
     content: ""
   })
+  const [toRecipients, setToRecipients] = useState<string[]>([])
+  const [ccRecipients, setCcRecipients] = useState<string[]>([])
+  const [bccRecipients, setBccRecipients] = useState<string[]>([])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  // Email validation function
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email.trim())
+  }
+
+  // Parse emails from input and update recipients
+  const parseEmails = (input: string, field: 'to' | 'cc' | 'bcc') => {
+    const emails = input.split(',').map(email => email.trim()).filter(Boolean)
+    const validEmails = emails.filter(isValidEmail)
+    
+    switch (field) {
+      case 'to':
+        setToRecipients(validEmails)
+        break
+      case 'cc':
+        setCcRecipients(validEmails)
+        break
+      case 'bcc':
+        setBccRecipients(validEmails)
+        break
+    }
+  }
+
+  // Handle input change with email parsing
+  const handleEmailInputChange = (field: 'to' | 'cc' | 'bcc', value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  // Handle Enter key press to add emails as tags
+  const handleEmailKeyPress = (e: React.KeyboardEvent<HTMLInputElement>, field: 'to' | 'cc' | 'bcc') => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      const inputValue = formData[field].trim()
+      
+      if (inputValue) {
+        // Parse emails from current input
+        const emails = inputValue.split(',').map(email => email.trim()).filter(Boolean)
+        const validEmails = emails.filter(isValidEmail)
+        
+        // Add valid emails to recipient list
+        switch (field) {
+          case 'to':
+            setToRecipients(prev => [...new Set([...prev, ...validEmails])]) // Remove duplicates
+            break
+          case 'cc':
+            setCcRecipients(prev => [...new Set([...prev, ...validEmails])])
+            break
+          case 'bcc':
+            setBccRecipients(prev => [...new Set([...prev, ...validEmails])])
+            break
+        }
+        
+        // Clear the input field
+        setFormData(prev => ({ ...prev, [field]: '' }))
+      }
+    }
+  }
+
+  // Remove recipient from list
+  const removeRecipient = (email: string, field: 'to' | 'cc' | 'bcc') => {
+    switch (field) {
+      case 'to':
+        setToRecipients(prev => prev.filter(e => e !== email))
+        break
+      case 'cc':
+        setCcRecipients(prev => prev.filter(e => e !== email))
+        break
+      case 'bcc':
+        setBccRecipients(prev => prev.filter(e => e !== email))
+        break
+    }
   }
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,7 +208,7 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.to || !formData.subject || !formData.content) {
+    if (toRecipients.length === 0 || !formData.subject || !formData.content) {
       toast.error("Alıcı, konu ve içerik alanları zorunludur!")
       return
     }
@@ -151,9 +228,9 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
 
       // Prepare mail data
       const mailData = {
-        to: formData.to.split(',').map(email => email.trim()).filter(Boolean),
-        cc: formData.cc ? formData.cc.split(',').map(email => email.trim()).filter(Boolean) : undefined,
-        bcc: formData.bcc ? formData.bcc.split(',').map(email => email.trim()).filter(Boolean) : undefined,
+        to: toRecipients,
+        cc: ccRecipients.length > 0 ? ccRecipients : undefined,
+        bcc: bccRecipients.length > 0 ? bccRecipients : undefined,
         subject: formData.subject,
         content: formData.content,
         htmlContent: formData.content.replace(/\n/g, '<br>'),
@@ -194,6 +271,9 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
         subject: "",
         content: ""
       })
+      setToRecipients([])
+      setCcRecipients([])
+      setBccRecipients([])
       setAttachments([])
       setShowCC(false)
       setShowBCC(false)
@@ -222,6 +302,9 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
         subject: "",
         content: ""
       })
+      setToRecipients([])
+      setCcRecipients([])
+      setBccRecipients([])
       setAttachments([])
       setShowCC(false)
       setShowBCC(false)
@@ -249,15 +332,36 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
               <Label htmlFor="to">Alıcı *</Label>
               <Input
                 id="to"
-                placeholder="ornek@email.com, diger@email.com"
+                placeholder="ornek@email.com (Enter'a basın)"
                 value={formData.to}
-                onChange={(e) => handleInputChange("to", e.target.value)}
+                onChange={(e) => handleEmailInputChange("to", e.target.value)}
+                onKeyPress={(e) => handleEmailKeyPress(e, "to")}
                 required
                 disabled={isLoading || false}
               />
               <p className="text-xs text-muted-foreground">
-                Birden fazla alıcı için virgül ile ayırın
+                Mail adresini yazıp Enter'a basın veya virgül ile ayırın
               </p>
+              {/* To Recipients Chips */}
+              {toRecipients.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {toRecipients.map((email) => (
+                    <div key={email} className="inline-flex items-center gap-2 bg-secondary text-secondary-foreground rounded-full px-3 py-1.5 text-sm">
+                      <span>{email}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 w-5 p-0 rounded-full hover:bg-muted-foreground/20"
+                        onClick={() => removeRecipient(email, 'to')}
+                        disabled={isLoading || false}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* CC Field */}
@@ -277,13 +381,36 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
                 </div>
               </div>
               {showCC && (
-                <Input
-                  id="cc"
-                  placeholder="kopya@email.com"
-                  value={formData.cc}
-                  onChange={(e) => handleInputChange("cc", e.target.value)}
-                  disabled={isLoading || false}
-                />
+                <>
+                  <Input
+                    id="cc"
+                    placeholder="kopya@email.com (Enter'a basın)"
+                    value={formData.cc}
+                    onChange={(e) => handleEmailInputChange("cc", e.target.value)}
+                    onKeyPress={(e) => handleEmailKeyPress(e, "cc")}
+                    disabled={isLoading || false}
+                  />
+                  {/* CC Recipients Chips */}
+                  {ccRecipients.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {ccRecipients.map((email) => (
+                        <div key={email} className="inline-flex items-center gap-2 bg-secondary text-secondary-foreground rounded-full px-3 py-1.5 text-sm">
+                          <span>{email}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 w-5 p-0 rounded-full hover:bg-muted-foreground/20"
+                            onClick={() => removeRecipient(email, 'cc')}
+                            disabled={isLoading || false}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -304,13 +431,36 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
                 </div>
               </div>
               {showBCC && (
-                <Input
-                  id="bcc"
-                  placeholder="gizli@email.com"
-                  value={formData.bcc}
-                  onChange={(e) => handleInputChange("bcc", e.target.value)}
-                  disabled={isLoading || false}
-                />
+                <>
+                  <Input
+                    id="bcc"
+                    placeholder="gizli@email.com (Enter'a basın)"
+                    value={formData.bcc}
+                    onChange={(e) => handleEmailInputChange("bcc", e.target.value)}
+                    onKeyPress={(e) => handleEmailKeyPress(e, "bcc")}
+                    disabled={isLoading || false}
+                  />
+                  {/* BCC Recipients Chips */}
+                  {bccRecipients.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {bccRecipients.map((email) => (
+                        <div key={email} className="inline-flex items-center gap-2 bg-secondary text-secondary-foreground rounded-full px-3 py-1.5 text-sm">
+                          <span>{email}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 w-5 p-0 rounded-full hover:bg-muted-foreground/20"
+                            onClick={() => removeRecipient(email, 'bcc')}
+                            disabled={isLoading || false}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -423,7 +573,7 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
             
             <Button
               type="submit"
-              disabled={isLoading || false || !formData.to || !formData.subject || !formData.content}
+              disabled={isLoading || false || toRecipients.length === 0 || !formData.subject || !formData.content}
             >
               {isLoading ? (
                 <>

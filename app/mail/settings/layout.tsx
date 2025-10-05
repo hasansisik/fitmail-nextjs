@@ -26,13 +26,13 @@ import {
 const settingsNav = [
   {
     title: "Hesap",
-    href: "/dashboard/settings/account",
+    href: "/mail/settings/account",
     icon: User,
     variant: "ghost" as const,
   },
   {
     title: "Genel Ayarlar",
-    href: "/dashboard/settings/general",
+    href: "/mail/settings/general",
     icon: Settings,
     variant: "ghost" as const,
   }

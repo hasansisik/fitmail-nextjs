@@ -1,5 +1,5 @@
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useMail } from "@/app/dashboard/mail/use-mail"
+import { useMail } from "@/app/mail/use-mail"
 import { MailItem } from "@/components/mail-item"
 import { useRouter } from "next/navigation"
 import { useAppDispatch } from "@/redux/hook"
@@ -183,7 +183,7 @@ export function MailList({ items, loading = false, error = null, categoryTitle =
               onClick={() => {
                 // Kategori bilgisini al ve URL'ye yönlendir
                 const category = getCategorySlug(categoryTitle)
-                router.push(`/dashboard/mail/${category}/${item._id}`)
+                router.push(`/mail/${category}/${item._id}`)
               }}
             />
           ))
