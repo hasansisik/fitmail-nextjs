@@ -14,6 +14,13 @@ interface Step1Props {
 }
 
 export function Step1PersonalInfo({ formData, onInputChange, onNext }: Step1Props) {
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      onNext()
+    }
+  }
+
   return (
     <div className="grid gap-6">
       <div className="grid grid-cols-2 gap-3">
@@ -25,6 +32,7 @@ export function Step1PersonalInfo({ formData, onInputChange, onNext }: Step1Prop
             placeholder="Ahmet" 
             value={formData.firstName}
             onChange={(e) => onInputChange("firstName", e.target.value)}
+            onKeyPress={handleKeyPress}
             required 
           />
         </div>
@@ -36,6 +44,7 @@ export function Step1PersonalInfo({ formData, onInputChange, onNext }: Step1Prop
             placeholder="Yılmaz" 
             value={formData.lastName}
             onChange={(e) => onInputChange("lastName", e.target.value)}
+            onKeyPress={handleKeyPress}
             required 
           />
         </div>

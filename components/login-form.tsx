@@ -64,6 +64,21 @@ export function LoginForm({
     }
   }
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      // Create a synthetic form event for handleSubmit
+      const form = e.currentTarget.closest('form')
+      if (form) {
+        const syntheticEvent = {
+          preventDefault: () => {},
+          currentTarget: form
+        } as React.FormEvent<HTMLFormElement>
+        handleSubmit(syntheticEvent)
+      }
+    }
+  }
+
   return (
     <form className={cn("flex flex-col gap-6", className)} onSubmit={handleSubmit} {...props}>
       <div className="flex flex-col items-center gap-2 text-center">
@@ -75,7 +90,14 @@ export function LoginForm({
       <div className="grid gap-6">
         <div className="grid gap-3">
           <Label htmlFor="email">E-posta</Label>
-          <Input id="email" name="email" type="email" placeholder="ornek@email.com" required />
+          <Input 
+            id="email" 
+            name="email" 
+            type="email" 
+            placeholder="ornek@email.com" 
+            required 
+            onKeyPress={handleKeyPress}
+          />
         </div>
         <div className="grid gap-3">
           <div className="flex items-center">
@@ -87,7 +109,13 @@ export function LoginForm({
               Şifrenizi mi unuttunuz?
             </a>
           </div>
-          <Input id="password" name="password" type="password" required />
+          <Input 
+            id="password" 
+            name="password" 
+            type="password" 
+            required 
+            onKeyPress={handleKeyPress}
+          />
         </div>
         <Button type="submit" className="w-full">
           Giriş Yap

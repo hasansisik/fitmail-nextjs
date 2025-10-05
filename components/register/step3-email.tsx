@@ -24,6 +24,13 @@ export function Step3Email({ formData, onInputChange, onNext, onBack }: Step3Pro
     onInputChange("email", value);
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      onNext()
+    }
+  }
+
   return (
     <div className="grid gap-6">
       <div className="grid gap-3">
@@ -35,6 +42,7 @@ export function Step3Email({ formData, onInputChange, onNext, onBack }: Step3Pro
             placeholder="mail" 
             value={formData.email}
             onChange={handleEmailChange}
+            onKeyPress={handleKeyPress}
             className="rounded-r-none h-10"
             required 
           />
@@ -54,6 +62,7 @@ export function Step3Email({ formData, onInputChange, onNext, onBack }: Step3Pro
           placeholder="ornek@gmail.com" 
           value={formData.recoveryEmail}
           onChange={(e) => onInputChange("recoveryEmail", e.target.value)}
+          onKeyPress={handleKeyPress}
         />
         <p className="text-xs text-muted-foreground">
           Hesabınızı kurtarmak için kullanılacak e-posta adresi

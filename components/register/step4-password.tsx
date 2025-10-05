@@ -26,7 +26,8 @@ const PasswordInput = ({
   value, 
   onChange, 
   showPassword, 
-  setShowPassword 
+  setShowPassword,
+  onKeyPress
 }: {
   id: string
   label: string
@@ -34,6 +35,7 @@ const PasswordInput = ({
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   showPassword: boolean
   setShowPassword: (show: boolean) => void
+  onKeyPress?: (e: React.KeyboardEvent) => void
 }) => {
   return (
     <div className="grid gap-3">
@@ -44,6 +46,7 @@ const PasswordInput = ({
           type={showPassword ? "text" : "password"}
           value={value}
           onChange={onChange}
+          onKeyPress={onKeyPress}
           className="pr-10"
           required
         />
@@ -73,6 +76,13 @@ export function Step4Password({
   showConfirmPassword, 
   setShowConfirmPassword 
 }: Step4Props) {
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      onNext()
+    }
+  }
+
   return (
     <div className="grid gap-6">
       <PasswordInput
@@ -82,6 +92,7 @@ export function Step4Password({
         onChange={(e) => onInputChange("password", e.target.value)}
         showPassword={showPassword}
         setShowPassword={setShowPassword}
+        onKeyPress={handleKeyPress}
       />
       <PasswordInput
         id="confirm-password"
@@ -90,6 +101,7 @@ export function Step4Password({
         onChange={(e) => onInputChange("confirmPassword", e.target.value)}
         showPassword={showConfirmPassword}
         setShowPassword={setShowConfirmPassword}
+        onKeyPress={handleKeyPress}
       />
       <div className="flex gap-3">
         <Button type="button" variant="outline" onClick={onBack} className="flex-1">
