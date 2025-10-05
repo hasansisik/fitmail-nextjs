@@ -54,7 +54,7 @@ import { SendMailDialog } from "@/components/send-mail-dialog"
 const getMainNav = (mailStats: any) => [
   {
     title: "Gelen Kutusu",
-    label: (mailStats?.inbox || 0).toString(),
+    label: (mailStats?.inbox || 0) > 0 ? (mailStats?.inbox || 0).toString() : "",
     icon: Inbox,
     variant: "default" as const,
     href: "/mail",
@@ -62,7 +62,7 @@ const getMainNav = (mailStats: any) => [
   },
   {
     title: "Taslaklar",
-    label: (mailStats?.drafts || 0).toString(),
+    label: (mailStats?.drafts || 0) > 0 ? (mailStats?.drafts || 0).toString() : "",
     icon: File,
     variant: "ghost" as const,
     href: "/mail/drafts",
@@ -70,7 +70,7 @@ const getMainNav = (mailStats: any) => [
   },
   {
     title: "Gönderilenler",
-    label: (mailStats?.sent || 0).toString(),
+    label: (mailStats?.sent || 0) > 0 ? (mailStats?.sent || 0).toString() : "",
     icon: Send,
     variant: "ghost" as const,
     href: "/mail/sent",
@@ -78,7 +78,7 @@ const getMainNav = (mailStats: any) => [
   },
   {
     title: "Spam",
-    label: (mailStats?.spam || 0).toString(),
+    label: (mailStats?.spam || 0) > 0 ? (mailStats?.spam || 0).toString() : "",
     icon: ArchiveX,
     variant: "ghost" as const,
     href: "/mail/spam",
@@ -86,7 +86,7 @@ const getMainNav = (mailStats: any) => [
   },
   {
     title: "Çöp Kutusu",
-    label: (mailStats?.trash || 0).toString(),
+    label: (mailStats?.trash || 0) > 0 ? (mailStats?.trash || 0).toString() : "",
     icon: Trash2,
     variant: "ghost" as const,
     href: "/mail/trash",
@@ -94,7 +94,7 @@ const getMainNav = (mailStats: any) => [
   },
   {
     title: "Arşiv",
-    label: (mailStats?.archive || 0).toString(),
+    label: (mailStats?.archive || 0) > 0 ? (mailStats?.archive || 0).toString() : "",
     icon: Archive,
     variant: "ghost" as const,
     href: "/mail/archive",
@@ -105,7 +105,7 @@ const getMainNav = (mailStats: any) => [
 const getCategoryNav = (mailStats: any) => [
   {
     title: "Sosyal",
-    label: (mailStats?.social || 0).toString(),
+    label: (mailStats?.social || 0) > 0 ? (mailStats?.social || 0).toString() : "",
     icon: Users2,
     variant: "ghost" as const,
     href: "/mail/social",
@@ -113,7 +113,7 @@ const getCategoryNav = (mailStats: any) => [
   },
   {
     title: "Güncellemeler",
-    label: (mailStats?.updates || 0).toString(),
+    label: (mailStats?.updates || 0) > 0 ? (mailStats?.updates || 0).toString() : "",
     icon: AlertCircle,
     variant: "ghost" as const,
     href: "/mail/updates",
@@ -121,7 +121,7 @@ const getCategoryNav = (mailStats: any) => [
   },
   {
     title: "Forumlar",
-    label: (mailStats?.forums || 0).toString(),
+    label: (mailStats?.forums || 0) > 0 ? (mailStats?.forums || 0).toString() : "",
     icon: MessagesSquare,
     variant: "ghost" as const,
     href: "/mail/forums",
@@ -129,7 +129,7 @@ const getCategoryNav = (mailStats: any) => [
   },
   {
     title: "Alışveriş",
-    label: (mailStats?.shopping || 0).toString(),
+    label: (mailStats?.shopping || 0) > 0 ? (mailStats?.shopping || 0).toString() : "",
     icon: ShoppingCart,
     variant: "ghost" as const,
     href: "/mail/shopping",
@@ -137,7 +137,7 @@ const getCategoryNav = (mailStats: any) => [
   },
   {
     title: "Promosyon",
-    label: (mailStats?.promotions || 0).toString(),
+    label: (mailStats?.promotions || 0) > 0 ? (mailStats?.promotions || 0).toString() : "",
     icon: Archive,
     variant: "ghost" as const,
     href: "/mail/promotions",
