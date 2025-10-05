@@ -183,9 +183,9 @@ export function RegisterForm({
       toast.dismiss(loadingToastId)
       
       // Registration successful
-      toast.success("Kayıt başarılı! Giriş yapabilirsiniz.")
-      // Redirect to login page
-      router.push("/login")
+      toast.success("Kayıt başarılı! Hoş geldiniz.")
+      // Redirect to mail page (user is already authenticated)
+      router.push("/mail")
     } catch (error: any) {
       console.error("Registration failed:", error)
       

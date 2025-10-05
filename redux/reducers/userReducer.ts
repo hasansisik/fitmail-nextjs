@@ -39,10 +39,11 @@ export const userReducer = createReducer(initialState, (builder) => {
     .addCase(register.pending, (state) => {
       state.loading = true;
     })
-    .addCase(register.fulfilled, (state) => {
+    .addCase(register.fulfilled, (state, action) => {
       state.loading = false;
-      state.isAuthenticated = false;
-      state.isVerified = false; // User needs to verify email
+      state.isAuthenticated = true;
+      state.isVerified = true; // Register successful means user is verified
+      state.user = action.payload;
       state.message = null;
       state.error = null;
     })
