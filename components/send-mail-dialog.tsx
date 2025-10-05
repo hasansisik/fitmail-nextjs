@@ -95,6 +95,35 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
+  // Handle blur event to add emails when leaving input
+  const handleEmailBlur = (field: 'to' | 'cc' | 'bcc') => {
+    const inputValue = formData[field].trim()
+    
+    if (inputValue) {
+      // Parse emails from current input
+      const emails = inputValue.split(',').map(email => email.trim()).filter(Boolean)
+      const validEmails = emails.filter(isValidEmail)
+      
+      // Add valid emails to recipient list
+      switch (field) {
+        case 'to':
+          setToRecipients(prev => [...new Set([...prev, ...validEmails])]) // Remove duplicates
+          break
+        case 'cc':
+          setCcRecipients(prev => [...new Set([...prev, ...validEmails])])
+          break
+        case 'bcc':
+          setBccRecipients(prev => [...new Set([...prev, ...validEmails])])
+          break
+      }
+      
+      // Clear the input field if emails were added
+      if (validEmails.length > 0) {
+        setFormData(prev => ({ ...prev, [field]: '' }))
+      }
+    }
+  }
+
   // Handle Enter key press to add emails as tags
   const handleEmailKeyPress = (e: React.KeyboardEvent<HTMLInputElement>, field: 'to' | 'cc' | 'bcc') => {
     if (e.key === 'Enter' || e.key === ',') {
@@ -332,15 +361,16 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
               <Label htmlFor="to">Alıcı *</Label>
               <Input
                 id="to"
-                placeholder="ornek@email.com (Enter'a basın)"
+                placeholder="ornek@email.com (Enter/Tab ile ekle)"
                 value={formData.to}
                 onChange={(e) => handleEmailInputChange("to", e.target.value)}
                 onKeyPress={(e) => handleEmailKeyPress(e, "to")}
+                onBlur={() => handleEmailBlur("to")}
                 required
                 disabled={isLoading || false}
               />
               <p className="text-xs text-muted-foreground">
-                Mail adresini yazıp Enter'a basın veya virgül ile ayırın
+                Mail adresini yazıp Enter'a basın, Tab ile geçin veya virgül ile ayırın
               </p>
               {/* To Recipients Chips */}
               {toRecipients.length > 0 && (
@@ -384,10 +414,11 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
                 <>
                   <Input
                     id="cc"
-                    placeholder="kopya@email.com (Enter'a basın)"
+                    placeholder="kopya@email.com (Enter/Tab ile ekle)"
                     value={formData.cc}
                     onChange={(e) => handleEmailInputChange("cc", e.target.value)}
                     onKeyPress={(e) => handleEmailKeyPress(e, "cc")}
+                    onBlur={() => handleEmailBlur("cc")}
                     disabled={isLoading || false}
                   />
                   {/* CC Recipients Chips */}
@@ -434,10 +465,11 @@ export function SendMailDialog({ open, onOpenChange }: SendMailDialogProps) {
                 <>
                   <Input
                     id="bcc"
-                    placeholder="gizli@email.com (Enter'a basın)"
+                    placeholder="gizli@email.com (Enter/Tab ile ekle)"
                     value={formData.bcc}
                     onChange={(e) => handleEmailInputChange("bcc", e.target.value)}
                     onKeyPress={(e) => handleEmailKeyPress(e, "bcc")}
+                    onBlur={() => handleEmailBlur("bcc")}
                     disabled={isLoading || false}
                   />
                   {/* BCC Recipients Chips */}

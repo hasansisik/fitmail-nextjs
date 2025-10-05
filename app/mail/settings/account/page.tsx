@@ -89,7 +89,13 @@ export default function AccountSettingsPage() {
       toast.success(message)
     }
     if (error) {
-      toast.error(error)
+      // Check if it's a token expiration error
+      if (error.includes('Oturum süreniz dolmuş') || error.includes('requiresLogout')) {
+        toast.error('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.')
+        // Redirect will be handled by axios interceptor
+      } else {
+        toast.error(error)
+      }
     }
   }, [message, error])
 
@@ -325,14 +331,28 @@ export default function AccountSettingsPage() {
     setMailError('')
     
     try {
+      const token = localStorage.getItem('accessToken')
+      if (!token) {
+        setMailSetupStatus('error')
+        setMailError('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.')
+        return
+      }
+
       const response = await fetch('/api/v1/mail/check-address', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ email: mailAddress })
       })
+      
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('userEmail')
+        window.location.href = '/login'
+        return
+      }
       
       const data = await response.json()
       
@@ -356,14 +376,28 @@ export default function AccountSettingsPage() {
     setMailError('')
     
     try {
+      const token = localStorage.getItem('accessToken')
+      if (!token) {
+        setMailSetupStatus('error')
+        setMailError('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.')
+        return
+      }
+
       const response = await fetch('/api/v1/mail/setup-address', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ email: mailAddress })
       })
+      
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('userEmail')
+        window.location.href = '/login'
+        return
+      }
       
       const data = await response.json()
       

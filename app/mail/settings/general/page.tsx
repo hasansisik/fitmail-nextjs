@@ -38,7 +38,13 @@ export default function GeneralSettingsPage() {
       toast.success(message)
     }
     if (error) {
-      toast.error(error)
+      // Check if it's a token expiration error
+      if (error.includes('Oturum süreniz dolmuş') || error.includes('requiresLogout')) {
+        toast.error('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.')
+        // Redirect will be handled by axios interceptor
+      } else {
+        toast.error(error)
+      }
     }
   }, [message, error])
 

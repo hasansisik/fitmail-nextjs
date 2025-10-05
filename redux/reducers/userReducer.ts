@@ -173,7 +173,15 @@ export const userReducer = createReducer(initialState, (builder) => {
     })
     .addCase(editProfile.rejected, (state, action) => {
       state.loading = false;
-      state.error = action.payload as string;
+      // Handle token expiration case
+      if (action.payload && typeof action.payload === 'object' && 'requiresLogout' in action.payload) {
+        state.isAuthenticated = false;
+        state.isVerified = false;
+        state.user = null;
+        state.error = (action.payload as any).message;
+      } else {
+        state.error = action.payload as string;
+      }
     })
     // Change Password
     .addCase(changePassword.pending, (state) => {
@@ -185,7 +193,15 @@ export const userReducer = createReducer(initialState, (builder) => {
     })
     .addCase(changePassword.rejected, (state, action) => {
       state.loading = false;
-      state.error = action.payload as string;
+      // Handle token expiration case
+      if (action.payload && typeof action.payload === 'object' && 'requiresLogout' in action.payload) {
+        state.isAuthenticated = false;
+        state.isVerified = false;
+        state.user = null;
+        state.error = (action.payload as any).message;
+      } else {
+        state.error = action.payload as string;
+      }
     })
     // Update Settings
     .addCase(updateSettings.pending, (state) => {
@@ -200,7 +216,15 @@ export const userReducer = createReducer(initialState, (builder) => {
     })
     .addCase(updateSettings.rejected, (state, action) => {
       state.loading = false;
-      state.error = action.payload as string;
+      // Handle token expiration case
+      if (action.payload && typeof action.payload === 'object' && 'requiresLogout' in action.payload) {
+        state.isAuthenticated = false;
+        state.isVerified = false;
+        state.user = null;
+        state.error = (action.payload as any).message;
+      } else {
+        state.error = action.payload as string;
+      }
     })
     // Update Theme - No loading state for instant UI updates
     .addCase(updateTheme.pending, (state) => {
