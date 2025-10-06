@@ -438,22 +438,66 @@ export const clearMailError = createAsyncThunk(
 // Add Reply to Mail Action
 export const addReplyToMail = createAsyncThunk(
   "mail/addReplyToMail",
-  async ({ mailId, content }: { mailId: string; content: string }, thunkAPI) => {
+  async ({ 
+    mailId, 
+    content, 
+    attachments 
+  }: { 
+    mailId: string; 
+    content: string;
+    attachments?: Array<{
+      filename: string;
+      data: File;
+      contentType: string;
+      size: number;
+      url?: string;
+    }>;
+  }, thunkAPI) => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
         return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
       }
 
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      };
+      // Eğer attachment varsa FormData kullan, yoksa JSON
+      if (attachments && attachments.length > 0) {
+        const formData = new FormData();
+        formData.append('content', content);
+        
+        // Add attachments
+        const attachmentNames = attachments.map(att => att.filename);
+        const attachmentTypes = attachments.map(att => att.contentType);
+        const attachmentUrls = attachments.map(att => att.url || '');
+        
+        attachments.forEach((attachment) => {
+          formData.append(`attachments`, attachment.data);
+        });
+        
+        formData.append('attachmentNames', JSON.stringify(attachmentNames));
+        formData.append('attachmentTypes', JSON.stringify(attachmentTypes));
+        formData.append('attachmentUrls', JSON.stringify(attachmentUrls));
+        
+        const config = {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
+          },
+        };
 
-      const { data } = await axios.post(`${server}/mail/${mailId}/reply`, { content }, config);
-      return data;
+        const { data } = await axios.post(`${server}/mail/${mailId}/reply`, formData, config);
+        return data;
+      } else {
+        // Attachment yoksa JSON gönder
+        const config = {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        };
+
+        const { data } = await axios.post(`${server}/mail/${mailId}/reply`, { content }, config);
+        return data;
+      }
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
     }

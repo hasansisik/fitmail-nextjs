@@ -1005,7 +1005,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                             <div className="flex items-center gap-2">
                               <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
                               {attachment.url && (
-                                <span className="text-xs text-green-600 font-medium">✓ Cloudinary'de</span>
+                                <span className="text-xs text-green-600 font-medium">✓ Yüklendi</span>
                               )}
                               {!attachment.url && (
                                 <span className="text-xs text-orange-600 font-medium">⚠ Yüklenemedi</span>
