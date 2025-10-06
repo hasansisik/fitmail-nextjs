@@ -13,15 +13,15 @@ import { useState } from "react"
 export function ForgotPasswordForm({
   className,
   ...props
-}: React.ComponentProps<"form">) {
+}: React.ComponentProps<"div">) {
   const router = useRouter()
   const dispatch = useAppDispatch()
   const [isSubmitted, setIsSubmitted] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
-    const formData = new FormData(e.currentTarget as HTMLFormElement)
+    const formData = new FormData(e.currentTarget)
     const email = formData.get("email") as string
     
     // Validate input
@@ -108,8 +108,10 @@ export function ForgotPasswordForm({
     )
   }
 
+  const { onSubmit, ...formProps } = props as any;
+  
   return (
-    <form className={cn("flex flex-col gap-6", className)} onSubmit={handleSubmit} {...props}>
+    <form className={cn("flex flex-col gap-6", className)} onSubmit={handleSubmit} {...formProps}>
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-bold">Şifremi Unuttum</h1>
         <p className="text-muted-foreground text-sm text-balance">
