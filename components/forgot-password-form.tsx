@@ -16,13 +16,10 @@ export function ForgotPasswordForm({
 }: React.ComponentProps<"div">) {
   const router = useRouter()
   const dispatch = useAppDispatch()
-  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [email, setEmail] = useState('')
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleEmailSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    
-    const formData = new FormData(e.currentTarget)
-    const email = formData.get("email") as string
     
     // Validate input
     if (!email || email.trim() === '') {
@@ -47,9 +44,10 @@ export function ForgotPasswordForm({
       // Dismiss loading toast
       toast.dismiss(loadingToastId)
       
-      // Success
+      // Success - redirect to reset password page
       toast.success("Şifre sıfırlama kodu kurtarıcı e-posta adresinize gönderildi!")
-      setIsSubmitted(true)
+      // Redirect to reset password page with email parameter
+      router.push(`/sifre-sifirla?email=${encodeURIComponent(cleanEmail)}`)
     } catch (error: any) {
       console.error("Forgot password failed:", error)
       
@@ -62,59 +60,9 @@ export function ForgotPasswordForm({
     }
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      // Create a synthetic form event for handleSubmit
-      const form = e.currentTarget.closest('form')
-      if (form) {
-        const syntheticEvent = {
-          preventDefault: () => {},
-          currentTarget: form
-        } as React.FormEvent<HTMLFormElement>
-        handleSubmit(syntheticEvent)
-      }
-    }
-  }
 
-  if (isSubmitted) {
-    return (
-      <div className={cn("flex flex-col gap-6 text-center", className)} {...props}>
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-4">
-            <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold">E-posta Gönderildi!</h1>
-          <p className="text-muted-foreground text-sm text-balance">
-            Şifre sıfırlama kodu kurtarıcı e-posta adresinize gönderildi. 
-            Lütfen e-posta kutunuzu kontrol edin ve kodu kullanarak şifrenizi sıfırlayın.
-          </p>
-        </div>
-        <div className="flex flex-col gap-3">
-          <Button 
-            onClick={() => router.push("/giris")}
-            className="w-full"
-          >
-            Giriş Sayfasına Dön
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={() => setIsSubmitted(false)}
-            className="w-full"
-          >
-            Tekrar Dene
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
-  const { onSubmit, ...formProps } = props as any;
-  
   return (
-    <form className={cn("flex flex-col gap-6", className)} onSubmit={handleSubmit} {...formProps}>
+    <form className={cn("flex flex-col gap-6", className)} onSubmit={handleEmailSubmit}>
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-bold">Şifremi Unuttum</h1>
         <p className="text-muted-foreground text-sm text-balance">
@@ -130,8 +78,9 @@ export function ForgotPasswordForm({
               name="email" 
               type="text" 
               placeholder="mail" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required 
-              onKeyPress={handleKeyPress}
               className="rounded-r-none h-10"
             />
             <span className="bg-muted border border-l-0 border-input px-3 h-10 flex items-center text-sm text-muted-foreground rounded-r-md">

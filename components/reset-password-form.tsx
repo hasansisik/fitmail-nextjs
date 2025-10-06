@@ -4,11 +4,11 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useAppDispatch } from "@/redux/hook"
 import { resetPassword } from "@/redux/actions/userActions"
 import { toast } from "sonner"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export function ResetPasswordForm({
   className,
@@ -16,13 +16,22 @@ export function ResetPasswordForm({
 }: React.ComponentProps<"div">) {
   const router = useRouter()
   const dispatch = useAppDispatch()
+  const searchParams = useSearchParams()
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [email, setEmail] = useState('')
+
+  // Get email from URL parameters
+  useEffect(() => {
+    const emailParam = searchParams.get('email')
+    if (emailParam) {
+      setEmail(emailParam)
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
     const formData = new FormData(e.currentTarget)
-    const email = formData.get("email") as string
     const passwordToken = formData.get("passwordToken") as string
     const newPassword = formData.get("newPassword") as string
     const confirmPassword = formData.get("confirmPassword") as string
@@ -43,8 +52,9 @@ export function ResetPasswordForm({
       return
     }
     
-    // Add @gozdedijital.xyz domain if not present
-    const fullEmail = email.includes("@") ? email : `${email}@gozdedijital.xyz`
+    // Remove @ symbol if user tries to type it and add @gozdedijital.xyz domain
+    const cleanEmail = email.replace('@', '').trim()
+    const fullEmail = `${cleanEmail}@gozdedijital.xyz`
     
     const resetData = {
       email: fullEmail,
@@ -66,6 +76,11 @@ export function ResetPasswordForm({
       // Success
       toast.success("Şifreniz başarıyla sıfırlandı!")
       setIsSubmitted(true)
+      
+      // Redirect to login page after 2 seconds
+      setTimeout(() => {
+        router.push("/giris")
+      }, 2000)
     } catch (error: any) {
       console.error("Reset password failed:", error)
       
@@ -104,7 +119,7 @@ export function ResetPasswordForm({
           </div>
           <h1 className="text-2xl font-bold">Şifre Sıfırlandı!</h1>
           <p className="text-muted-foreground text-sm text-balance">
-            Şifreniz başarıyla sıfırlandı. Artık yeni şifrenizle giriş yapabilirsiniz.
+            Şifreniz başarıyla sıfırlandı. Giriş sayfasına yönlendiriliyorsunuz...
           </p>
         </div>
         <div className="flex flex-col gap-3">
@@ -131,15 +146,24 @@ export function ResetPasswordForm({
       </div>
       <div className="grid gap-6">
         <div className="grid gap-3">
-          <Label htmlFor="email">E-posta Adresi</Label>
-          <Input 
-            id="email" 
-            name="email" 
-            type="email" 
-            placeholder="ornek@email.com" 
-            required 
-            onKeyPress={handleKeyPress}
-          />
+          <Label htmlFor="email">Fitmail E-posta Adresiniz</Label>
+          <div className="flex items-center">
+            <Input 
+              id="email" 
+              name="email" 
+              type="text" 
+              placeholder="mail" 
+              value={email}
+              disabled
+              className="rounded-r-none h-10 bg-muted"
+            />
+            <span className="bg-muted border border-l-0 border-input px-3 h-10 flex items-center text-sm text-muted-foreground rounded-r-md">
+              @gozdedijital.xyz
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            E-posta adresiniz otomatik olarak dolduruldu
+          </p>
         </div>
         <div className="grid gap-3">
           <Label htmlFor="passwordToken">Doğrulama Kodu</Label>
@@ -147,10 +171,14 @@ export function ResetPasswordForm({
             id="passwordToken" 
             name="passwordToken" 
             type="number" 
-            placeholder="123456" 
+            placeholder="1234" 
+            maxLength={4}
             required 
             onKeyPress={handleKeyPress}
           />
+          <p className="text-xs text-muted-foreground">
+            Kurtarıcı e-postanıza gönderilen 4 haneli kodu girin
+          </p>
         </div>
         <div className="grid gap-3">
           <Label htmlFor="newPassword">Yeni Şifre</Label>
