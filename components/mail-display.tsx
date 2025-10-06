@@ -667,20 +667,6 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
             </TooltipTrigger>
             <TooltipContent>Hepsine yanıtla</TooltipContent>
           </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                disabled={!mail}
-                onClick={handleForward}
-              >
-                <Forward className="h-4 w-4" />
-                <span className="sr-only">İlet</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>İlet</TooltipContent>
-          </Tooltip>
         </div>
         <Separator orientation="vertical" className="mx-2 h-6" />
         <DropdownMenu>
@@ -959,15 +945,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                   <ReplyAll className="h-4 w-4" />
                   Cevapla Tümü
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                  onClick={handleForward}
-                >
-                  <Forward className="h-4 w-4" />
-                  İlet
-                </Button>
+               
               </div>
             ) : (
               <div className="space-y-4">
