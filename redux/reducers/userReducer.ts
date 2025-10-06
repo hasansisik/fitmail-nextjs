@@ -12,6 +12,7 @@ import {
   changePassword,
   updateSettings,
   updateTheme,
+  checkEmailAvailability,
   clearError,
 } from "../actions/userActions";
 
@@ -22,6 +23,11 @@ interface UserState {
   isAuthenticated?: boolean;
   isVerified?: boolean;
   message?: string | null;
+  emailCheck: {
+    loading: boolean;
+    available: boolean | null;
+    message: string | null;
+  };
 }
 
 const initialState: UserState = {
@@ -31,6 +37,11 @@ const initialState: UserState = {
   isAuthenticated: false,
   isVerified: false,
   message: null,
+  emailCheck: {
+    loading: false,
+    available: null,
+    message: null,
+  },
 };
 
 export const userReducer = createReducer(initialState, (builder) => {
@@ -238,6 +249,22 @@ export const userReducer = createReducer(initialState, (builder) => {
     })
     .addCase(updateTheme.rejected, (state, action) => {
       // Silent fail - don't show error to user
+    })
+    // Check Email Availability
+    .addCase(checkEmailAvailability.pending, (state) => {
+      state.emailCheck.loading = true;
+      state.emailCheck.available = null;
+      state.emailCheck.message = null;
+    })
+    .addCase(checkEmailAvailability.fulfilled, (state, action) => {
+      state.emailCheck.loading = false;
+      state.emailCheck.available = action.payload.available;
+      state.emailCheck.message = action.payload.message;
+    })
+    .addCase(checkEmailAvailability.rejected, (state, action) => {
+      state.emailCheck.loading = false;
+      state.emailCheck.available = false;
+      state.emailCheck.message = action.payload as string;
     })
     // Clear Error
     .addCase(clearError.fulfilled, (state) => {

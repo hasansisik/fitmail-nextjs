@@ -124,6 +124,10 @@ export interface UpdateSettingsPayload {
   timeFormat?: string;
 }
 
+export interface CheckEmailPayload {
+  email: string;
+}
+
 
 export const register = createAsyncThunk(
   "user/register",
@@ -432,6 +436,19 @@ export const updateTheme = createAsyncThunk(
 );
 
 // Clear Error Action
+//Check Email Availability Action
+export const checkEmailAvailability = createAsyncThunk(
+  "user/checkEmailAvailability",
+  async (payload: CheckEmailPayload, thunkAPI) => {
+    try {
+      const { data } = await axios.post(`${server}/auth/check-email`, payload);
+      return data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
 export const clearError = createAsyncThunk(
   "user/clearError",
   async () => {

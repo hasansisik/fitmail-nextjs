@@ -12,9 +12,14 @@ interface Step3Props {
   onInputChange: (field: string, value: string) => void
   onNext: () => void
   onBack: () => void
+  emailCheck?: {
+    loading: boolean
+    available: boolean | null
+    message: string | null
+  }
 }
 
-export function Step3Email({ formData, onInputChange, onNext, onBack }: Step3Props) {
+export function Step3Email({ formData, onInputChange, onNext, onBack, emailCheck }: Step3Props) {
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
     // Remove @ symbol if user tries to type it
@@ -38,23 +43,41 @@ export function Step3Email({ formData, onInputChange, onNext, onBack }: Step3Pro
       <div className="grid gap-3">
         <Label htmlFor="email">E-posta</Label>
         <div className="flex items-center">
-          <Input 
-            id="email" 
-            type="text" 
-            placeholder="kullaniciadi" 
-            value={formData.email}
-            onChange={handleEmailChange}
-            onKeyPress={handleKeyPress}
-            className="rounded-r-none h-10"
-            required 
-          />
+          <div className="relative flex-1">
+            <Input 
+              id="email" 
+              type="text" 
+              placeholder="kullaniciadi" 
+              value={formData.email}
+              onChange={handleEmailChange}
+              onKeyPress={handleKeyPress}
+              className="rounded-r-none h-10 pr-8"
+              required 
+            />
+            {emailCheck?.loading && (
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+              </div>
+            )}
+          </div>
           <span className="bg-muted border border-l-0 border-input px-3 h-10 flex items-center text-sm text-muted-foreground rounded-r-md">
             @gozdedijital.xyz
           </span>
         </div>
         <p className="text-xs text-muted-foreground">
-          Sadece harf, rakam, nokta, alt çizgi ve tire kullanabilirsiniz. @gmail.com gibi yaygın e-posta servisleri kullanılamaz.
+          Sadece harf, rakam, nokta, alt çizgi ve tire kullanabilirsiniz.
         </p>
+        {emailCheck?.message && (
+          <p className={`text-xs ${
+            emailCheck.available === true 
+              ? 'text-green-600' 
+              : emailCheck.available === false 
+                ? 'text-red-600' 
+                : 'text-muted-foreground'
+          }`}>
+            {emailCheck.message}
+          </p>
+        )}
       </div>
       <div className="grid gap-3">
         <Label htmlFor="recoveryEmail">Kurtarıcı E-posta</Label>

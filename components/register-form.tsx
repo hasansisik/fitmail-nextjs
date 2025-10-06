@@ -1,10 +1,10 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { useAppDispatch } from "@/redux/hook"
-import { register } from "@/redux/actions/userActions"
+import { useAppDispatch, useAppSelector } from "@/redux/hook"
+import { register, checkEmailAvailability } from "@/redux/actions/userActions"
 import { toast } from "sonner"
 import { Step1PersonalInfo } from "./register/step1-personal-info"
 import { Step2BasicInfo } from "./register/step2-basic-info"
@@ -20,6 +20,7 @@ export function RegisterForm({
 }: React.ComponentProps<"form">) {
   const router = useRouter()
   const dispatch = useAppDispatch()
+  const { emailCheck } = useAppSelector((state) => state.user)
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState({
     firstName: "",
@@ -40,6 +41,29 @@ export function RegisterForm({
   const [showPolicyDialog, setShowPolicyDialog] = useState(false)
   const [policyType, setPolicyType] = useState<'privacy' | 'terms'>('privacy')
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false)
+
+  // Debounced email check function
+  const debouncedEmailCheck = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout;
+      return (email: string) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          if (email && email.length >= 3) {
+            dispatch(checkEmailAvailability({ email: `${email}@gozdedijital.xyz` }));
+          }
+        }, 500);
+      };
+    })(),
+    [dispatch]
+  );
+
+  // Check email availability when email changes
+  useEffect(() => {
+    if (formData.email && formData.email.length >= 3) {
+      debouncedEmailCheck(formData.email);
+    }
+  }, [formData.email, debouncedEmailCheck]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -126,6 +150,16 @@ export function RegisterForm({
       // Check if email contains invalid characters
       if (!/^[a-zA-Z0-9._-]+$/.test(formData.email)) {
         toast.error("E-posta adresi sadece harf, rakam, nokta, alt çizgi ve tire içerebilir!")
+        return
+      }
+      // Check if email is available
+      if (emailCheck?.available === false) {
+        toast.error("Bu e-posta adresi zaten kullanılıyor!")
+        return
+      }
+      // Check if email is still being checked
+      if (emailCheck?.loading) {
+        toast.error("E-posta adresi kontrol ediliyor, lütfen bekleyin!")
         return
       }
       // Check recovery email
@@ -256,6 +290,7 @@ export function RegisterForm({
             onInputChange={handleInputChange}
             onNext={handleNext}
             onBack={handleBack}
+            emailCheck={emailCheck}
           />
         )
       
