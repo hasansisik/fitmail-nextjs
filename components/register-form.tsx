@@ -239,6 +239,15 @@ export function RegisterForm({
       // Dismiss loading toast
       toast.dismiss(loadingToastId)
       
+      // Check if token was stored properly
+      const token = localStorage.getItem("accessToken")
+      if (!token) {
+        console.error("Token not stored after registration")
+        toast.error("Kayıt başarılı ama oturum açılamadı. Lütfen giriş yapın.")
+        router.push("/giris")
+        return
+      }
+      
       // Registration successful
       toast.success("Kayıt başarılı! Hoş geldiniz.")
       // Redirect to mail page (user is already authenticated)

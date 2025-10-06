@@ -134,6 +134,9 @@ export const register = createAsyncThunk(
   async (payload: RegisterPayload, thunkAPI) => {
     try {
       const { data } = await axios.post(`${server}/auth/register`, payload);
+      // Store token and email in localStorage like login does
+      localStorage.setItem("accessToken", data.user.token);
+      localStorage.setItem("userEmail", data.user.email);
       return data.user;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response.data.message);
