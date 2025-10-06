@@ -174,7 +174,7 @@ export const loadUser = createAsyncThunk(
       const token = localStorage.getItem("accessToken");
       
       if (!token) {
-        throw new Error("No token found");
+        throw new Error("");
       }
       
       const { data } = await axios.get(`${server}/auth/me`, {
