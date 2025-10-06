@@ -1,7 +1,7 @@
 "use client"
 
 import { GalleryVerticalEnd } from "lucide-react"
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/redux/hook";
 import { Metadata } from "@/components/metadata";
@@ -77,7 +77,13 @@ export default function ResetPasswordPage() {
           </div>
           <div className="flex flex-1 items-center justify-center">
             <div className="w-full max-w-xs">
-              <ResetPasswordForm />
+              <Suspense fallback={
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              }>
+                <ResetPasswordForm />
+              </Suspense>
             </div>
           </div>
         </div>
