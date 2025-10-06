@@ -4,6 +4,29 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { MailContextMenu } from "@/components/mail-context-menu"
 
+// Label translation function
+function translateLabel(label: string): string {
+  const translations: Record<string, string> = {
+    'promotions': 'Promosyonlar',
+    'forums': 'Forumlar',
+    'social': 'Sosyal',
+    'updates': 'Güncellemeler',
+    'shopping': 'Alışveriş',
+    'work': 'İş',
+    'personal': 'Kişisel',
+    'important': 'Önemli',
+    'starred': 'Yıldızlı',
+    'draft': 'Taslak',
+    'sent': 'Gönderilen',
+    'inbox': 'Gelen Kutusu',
+    'spam': 'Spam',
+    'trash': 'Çöp Kutusu',
+    'archive': 'Arşiv'
+  }
+  
+  return translations[label.toLowerCase()] || label
+}
+
 // API'den gelen mail formatı
 interface ApiMail {
   _id: string
@@ -167,7 +190,7 @@ export function MailItem({ mail, onAction, onClick }: MailItemProps) {
           <div className="flex items-center gap-2">
             {mail.labels.map((label) => (
               <Badge key={label} variant={getBadgeVariantFromLabel(label)}>
-                {label}
+                {translateLabel(label)}
               </Badge>
             ))}
           </div>
