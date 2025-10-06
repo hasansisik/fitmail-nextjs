@@ -116,6 +116,17 @@ export function RegisterForm({
         toast.error("E-posta adresi sadece harf, rakam, nokta, alt çizgi ve tire içerebilir!")
         return
       }
+      // Check recovery email
+      if (!formData.recoveryEmail || formData.recoveryEmail.trim() === '') {
+        toast.error("Kurtarıcı e-posta adresi gereklidir!")
+        return
+      }
+      // Basic email format validation for recovery email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.recoveryEmail)) {
+        toast.error("Geçerli bir kurtarıcı e-posta adresi girin!")
+        return
+      }
     }
     
     // Check password match on step 4
@@ -164,7 +175,7 @@ export function RegisterForm({
       name: formData.firstName,
       surname: formData.lastName,
       email: `${formData.email}@gozdedijital.xyz`,
-      recoveryEmail: formData.recoveryEmail || undefined,
+      recoveryEmail: formData.recoveryEmail,
       password: formData.password,
       birthDate: birthDate.toISOString(),
       age: actualAge,

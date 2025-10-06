@@ -55,7 +55,7 @@ export function Step3Email({ formData, onInputChange, onNext, onBack }: Step3Pro
         </p>
       </div>
       <div className="grid gap-3">
-        <Label htmlFor="recoveryEmail">Kurtarıcı E-posta (İsteğe Bağlı)</Label>
+        <Label htmlFor="recoveryEmail">Kurtarıcı E-posta</Label>
         <Input 
           id="recoveryEmail" 
           type="email" 
@@ -63,9 +63,10 @@ export function Step3Email({ formData, onInputChange, onNext, onBack }: Step3Pro
           value={formData.recoveryEmail}
           onChange={(e) => onInputChange("recoveryEmail", e.target.value)}
           onKeyPress={handleKeyPress}
+          required
         />
         <p className="text-xs text-muted-foreground">
-          Hesabınızı kurtarmak için kullanılacak e-posta adresi
+          Şifrenizi unuttuğunuzda kullanılacak e-posta adresi
         </p>
       </div>
       <div className="flex gap-3">

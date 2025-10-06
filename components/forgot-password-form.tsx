@@ -25,16 +25,19 @@ export function ForgotPasswordForm({
     const email = formData.get("email") as string
     
     // Validate input
-    if (!email) {
+    if (!email || email.trim() === '') {
       toast.error("Lütfen e-posta adresinizi girin!")
       return
     }
     
-    // Add @gozdedijital.xyz domain if not present
-    const fullEmail = email.includes("@") ? email : `${email}@gozdedijital.xyz`
+    // Remove @ symbol if user tries to type it
+    const cleanEmail = email.replace('@', '').trim()
+    
+    // Add @gozdedijital.xyz domain
+    const fullEmail = `${cleanEmail}@gozdedijital.xyz`
     
     console.log("Forgot password email:", fullEmail)
-    const loadingToastId = toast.loading("Şifre sıfırlama e-postası gönderiliyor...")
+    const loadingToastId = toast.loading("Şifre sıfırlama kodu gönderiliyor...")
     
     try {
       // Call Redux action for forgot password
@@ -45,7 +48,7 @@ export function ForgotPasswordForm({
       toast.dismiss(loadingToastId)
       
       // Success
-      toast.success("Şifre sıfırlama e-postası gönderildi!")
+      toast.success("Şifre sıfırlama kodu kurtarıcı e-posta adresinize gönderildi!")
       setIsSubmitted(true)
     } catch (error: any) {
       console.error("Forgot password failed:", error)
@@ -85,8 +88,8 @@ export function ForgotPasswordForm({
           </div>
           <h1 className="text-2xl font-bold">E-posta Gönderildi!</h1>
           <p className="text-muted-foreground text-sm text-balance">
-            Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. 
-            Lütfen e-posta kutunuzu kontrol edin ve bağlantıya tıklayarak şifrenizi sıfırlayın.
+            Şifre sıfırlama kodu kurtarıcı e-posta adresinize gönderildi. 
+            Lütfen e-posta kutunuzu kontrol edin ve kodu kullanarak şifrenizi sıfırlayın.
           </p>
         </div>
         <div className="flex flex-col gap-3">
@@ -115,23 +118,32 @@ export function ForgotPasswordForm({
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-bold">Şifremi Unuttum</h1>
         <p className="text-muted-foreground text-sm text-balance">
-          E-posta adresinizi girerek şifre sıfırlama bağlantısı alın
+          E-posta adresinizi girerek kurtarıcı e-postanıza şifre sıfırlama kodu alın
         </p>
       </div>
       <div className="grid gap-6">
         <div className="grid gap-3">
-          <Label htmlFor="email">E-posta Adresi</Label>
-          <Input 
-            id="email" 
-            name="email" 
-            type="email" 
-            placeholder="ornek@email.com" 
-            required 
-            onKeyPress={handleKeyPress}
-          />
+          <Label htmlFor="email">Fitmail E-posta Adresiniz</Label>
+          <div className="flex items-center">
+            <Input 
+              id="email" 
+              name="email" 
+              type="text" 
+              placeholder="mail" 
+              required 
+              onKeyPress={handleKeyPress}
+              className="rounded-r-none h-10"
+            />
+            <span className="bg-muted border border-l-0 border-input px-3 h-10 flex items-center text-sm text-muted-foreground rounded-r-md">
+              @gozdedijital.xyz
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Şifre sıfırlama kodu kurtarıcı e-posta adresinize gönderilecektir
+          </p>
         </div>
         <Button type="submit" className="w-full">
-          Şifre Sıfırlama Bağlantısı Gönder
+          Şifre Sıfırlama Kodu Gönder
         </Button>
       </div>
       <div className="text-center text-sm">
