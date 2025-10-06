@@ -22,6 +22,9 @@ import {
   ExternalLink,
   X,
   ArrowLeft,
+  Loader2,
+  Plus,
+  Trash2 as TrashIcon,
 } from "lucide-react"
 
 import {
@@ -113,9 +116,10 @@ interface ApiMail {
     mailAddress: string
   }
 }
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useAppDispatch } from "@/redux/hook"
 import { addReplyToMail, getMailById, toggleMailReadStatus } from "@/redux/actions/mailActions"
+import { uploadFileToCloudinary } from "@/utils/cloudinary"
 
 interface MailDisplayProps {
   mail: ApiMail | null
@@ -124,12 +128,23 @@ interface MailDisplayProps {
   onMailSent?: () => void
 }
 
+interface Attachment {
+  id: string
+  name: string
+  type: string
+  size: number
+  file: File
+  url?: string | null
+}
+
 export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMailSent }: MailDisplayProps) {
   const dispatch = useAppDispatch()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const today = new Date()
   const [isReplying, setIsReplying] = useState(false)
   const [replyText, setReplyText] = useState("")
-  const [attachments, setAttachments] = useState<File[]>([])
+  const [attachments, setAttachments] = useState<Attachment[]>([])
+  const [isUploading, setIsUploading] = useState(false)
   const [showConversation, setShowConversation] = useState(true) // Varsayılan olarak göster
   const [showArchiveDialog, setShowArchiveDialog] = useState(false)
   const [showTrashDialog, setShowTrashDialog] = useState(false)
@@ -277,15 +292,62 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
            type.includes('presentation')
   }
 
-  // Dosya ekleme
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || [])
-    setAttachments(prev => [...prev, ...files])
+  // Dosya seçme ve Cloudinary'ye yükleme
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files) {
+      setIsUploading(true)
+      const fileArray = Array.from(files)
+      
+      try {
+        const uploadPromises = fileArray.map(async (file) => {
+          try {
+            // Cloudinary'ye yükle
+            const cloudinaryUrl = await uploadFileToCloudinary(file)
+            
+            return {
+              id: Math.random().toString(36).substr(2, 9),
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              file: file,
+              url: cloudinaryUrl // Cloudinary URL'sini ekle
+            }
+          } catch (error) {
+            console.error('File upload error:', error)
+            toast.error(`${file.name} yüklenemedi: ${error}`)
+            
+            // Hata durumunda sadece local file bilgisi
+            return {
+              id: Math.random().toString(36).substr(2, 9),
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              file: file,
+              url: null
+            }
+          }
+        })
+
+        const newAttachments = await Promise.all(uploadPromises)
+        setAttachments(prev => [...prev, ...newAttachments])
+        
+        const successCount = newAttachments.filter(att => att.url).length
+        if (successCount > 0) {
+          toast.success(`Dosya yüklendi`)
+        }
+      } catch (error) {
+        console.error('Batch upload error:', error)
+        toast.error('Dosyalar yüklenirken hata oluştu')
+      } finally {
+        setIsUploading(false)
+      }
+    }
   }
 
   // Attachment silme
-  const removeAttachment = (index: number) => {
-    setAttachments(prev => prev.filter((_, i) => i !== index))
+  const removeAttachment = (id: string) => {
+    setAttachments(prev => prev.filter(att => att.id !== id))
   }
 
   // Cevapla gönder
@@ -298,10 +360,20 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
     try {
       console.log("Sending reply to mail:", mail._id, "Content:", replyText)
 
+      // Attachment'ları hazırla
+      const attachmentsData = attachments.map(attachment => ({
+        filename: attachment.name,
+        data: attachment.file,
+        contentType: attachment.type,
+        size: attachment.size,
+        url: attachment.url || undefined
+      }));
+
       // Yeni cevap ekleme sistemi - orijinal maile cevap ekle
       const result = await dispatch(addReplyToMail({
         mailId: mail._id,
-        content: replyText
+        content: replyText,
+        attachments: attachmentsData.length > 0 ? attachmentsData : undefined
       })).unwrap()
       
       console.log("Reply added successfully:", result)
@@ -922,22 +994,30 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                   <div className="space-y-2">
                     <span className="text-sm font-medium">Yeni Ekler:</span>
                     <div className="grid gap-2">
-                      {attachments.map((file, index) => (
+                      {attachments.map((attachment) => (
                         <div
-                          key={index}
+                          key={attachment.id}
                           className="flex items-center gap-3 p-2 border rounded-lg bg-muted/50"
                         >
-                          {getAttachmentIcon(file.type)}
+                          {getAttachmentIcon(attachment.type)}
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{file.name}</p>
-                            <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                            <p className="text-sm font-medium truncate">{attachment.name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
+                              {attachment.url && (
+                                <span className="text-xs text-green-600 font-medium">✓ Cloudinary'de</span>
+                              )}
+                              {!attachment.url && (
+                                <span className="text-xs text-orange-600 font-medium">⚠ Yüklenemedi</span>
+                              )}
+                            </div>
                           </div>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => removeAttachment(index)}
+                            onClick={() => removeAttachment(attachment.id)}
                           >
-                            <X className="h-4 w-4" />
+                            <TrashIcon className="h-4 w-4" />
                           </Button>
                         </div>
                       ))}
@@ -948,20 +1028,27 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <input
+                      ref={fileInputRef}
                       type="file"
-                      id="file-upload"
                       multiple
-                      onChange={handleFileUpload}
+                      onChange={handleFileSelect}
                       className="hidden"
+                      accept="*/*"
                     />
                     <Button
+                      type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => document.getElementById('file-upload')?.click()}
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
                       className="flex items-center gap-2"
                     >
-                      <Paperclip className="h-4 w-4" />
-                      Dosya Ekle
+                      {isUploading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Paperclip className="h-4 w-4" />
+                      )}
+                      {isUploading ? 'Yükleniyor...' : 'Dosya Ekle'}
                     </Button>
                   </div>
                   
@@ -976,11 +1063,15 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                     <Button
                       onClick={handleSendReply}
                       size="sm"
-                      disabled={!replyText.trim()}
+                      disabled={!replyText.trim() || isUploading}
                       className="flex items-center gap-2"
                     >
-                      <Send className="h-4 w-4" />
-                      Gönder
+                      {isUploading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                      {isUploading ? 'Yükleniyor...' : 'Gönder'}
                     </Button>
                   </div>
                 </div>

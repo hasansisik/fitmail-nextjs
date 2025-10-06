@@ -264,7 +264,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
         
         const successCount = newAttachments.filter(att => att.url).length
         if (successCount > 0) {
-          toast.success(`${successCount} dosya başarıyla Cloudinary'ye yüklendi`)
+          toast.success(`Dosya yüklendi`)
         }
       } catch (error) {
         console.error('Batch upload error:', error)
@@ -291,8 +291,18 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (toRecipients.length === 0 || !formData.subject || !formData.content) {
-      toast.error("Alıcı, konu ve içerik alanları zorunludur!")
+    if (toRecipients.length === 0) {
+      toast.error("Lütfen en az bir alıcı seçin!")
+      return
+    }
+    
+    if (!formData.subject.trim()) {
+      toast.error("Lütfen mail konusunu girin!")
+      return
+    }
+    
+    if (!formData.content.trim()) {
+      toast.error("Lütfen mail içeriğini girin!")
       return
     }
 
@@ -418,12 +428,18 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                 onChange={(e) => handleEmailInputChange("to", e.target.value)}
                 onKeyPress={(e) => handleEmailKeyPress(e, "to")}
                 onBlur={() => handleEmailBlur("to")}
-                required
+                required={toRecipients.length === 0}
                 disabled={isLoading || false}
+                className={toRecipients.length > 0 ? "border-green-500" : ""}
               />
               <p className="text-xs text-muted-foreground">
                 Mail adresini yazıp Enter'a basın, Tab ile geçin veya virgül ile ayırın
               </p>
+              {toRecipients.length > 0 && (
+                <p className="text-xs text-green-600 font-medium">
+                  ✓ {toRecipients.length} alıcı seçildi
+                </p>
+              )}
               {/* To Recipients Chips */}
               {toRecipients.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
