@@ -549,7 +549,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center p-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {onToggleMaximize && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -597,7 +597,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
             <TooltipContent>{mailStatus.isTrashed ? "Çöp kutusundan çıkar" : "Çöp kutusuna taşı"}</TooltipContent>
           </Tooltip>
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1 sm:gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
@@ -627,7 +627,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
             <TooltipContent>Hepsine yanıtla</TooltipContent>
           </Tooltip>
         </div>
-        <Separator orientation="vertical" className="mx-2 h-6" />
+        <Separator orientation="vertical" className="mx-1 sm:mx-2 h-6" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" disabled={!mail}>
@@ -645,8 +645,8 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
       <Separator />
       {mail ? (
         <div className="flex flex-1 flex-col">
-          <div className="flex items-start p-4">
-            <div className="flex items-start gap-4 text-sm">
+          <div className="flex items-start p-2 sm:p-4">
+            <div className="flex items-start gap-2 sm:gap-4 text-sm">
               <Avatar>
                 <AvatarImage alt={mail.to?.[0]?.name || 'Alıcı'} />
                 <AvatarFallback>
@@ -665,7 +665,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
               </div>
             </div>
             {(mail.receivedAt || mail.createdAt) && (
-              <div className="ml-auto text-xs text-muted-foreground">
+              <div className="ml-auto text-xs text-muted-foreground hidden sm:block">
                 {(() => {
                   try {
                     const dateValue = mail.receivedAt || mail.createdAt
@@ -723,7 +723,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
             </>
           )}
           
-          <div className="flex-1 whitespace-pre-wrap p-4 text-sm">
+          <div className="flex-1 whitespace-pre-wrap p-2 sm:p-4 text-sm">
             {mail.content || mail.htmlContent || 'İçerik yok'}
           </div>
           
@@ -731,7 +731,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
           {mail.conversation && mail.conversation.length > 0 && (
             <>
               <Separator />
-              <div className="p-4">
+              <div className="p-2 sm:p-4">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">Konuşma Geçmişi</span>
@@ -822,7 +822,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
           {mail.attachments && mail.attachments.length > 0 && (
             <>
               <Separator />
-              <div className="p-4">
+              <div className="p-2 sm:p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Paperclip className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium">Ekler ({mail.attachments.length})</span>
@@ -883,9 +883,9 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
           <Separator className="mt-auto" />
           
           {/* Gmail benzeri cevapla kısmı */}
-          <div className="p-4">
+          <div className="p-2 sm:p-4">
             {!isReplying ? (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   onClick={handleReply}
                   variant="outline"
@@ -893,7 +893,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                   className="flex items-center gap-2"
                 >
                   <Reply className="h-4 w-4" />
-                  Cevapla
+                  <span className="hidden sm:inline">Cevapla</span>
                 </Button>
                 <Button
                   variant="outline"
@@ -902,7 +902,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                   onClick={handleReplyAll}
                 >
                   <ReplyAll className="h-4 w-4" />
-                  Cevapla Tümü
+                  <span className="hidden sm:inline">Cevapla Tümü</span>
                 </Button>
                
               </div>
@@ -962,7 +962,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                   </div>
                 )}
                 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <input
                       ref={fileInputRef}
@@ -985,11 +985,11 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                       ) : (
                         <Paperclip className="h-4 w-4" />
                       )}
-                      {isUploading ? 'Yükleniyor...' : 'Dosya Ekle'}
+                      <span className="hidden sm:inline">{isUploading ? 'Yükleniyor...' : 'Dosya Ekle'}</span>
                     </Button>
                   </div>
                   
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
                     <Label
                       htmlFor="mute"
                       className="flex items-center gap-2 text-xs font-normal"

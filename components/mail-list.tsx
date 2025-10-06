@@ -291,11 +291,11 @@ export function MailList({
   }
 
   return (
-    <ScrollArea className="h-screen">
-      <div className="flex flex-col gap-2 p-4 pt-0">
+    <ScrollArea className="h-full">
+      <div className="flex flex-col gap-2 p-2 sm:p-4 pt-0">
         {/* Çoktan seçmeli header */}
         {isSelectMode && (
-          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-muted/50 rounded-lg border gap-2">
             <div className="flex items-center gap-3">
               <Checkbox
                 checked={selectedMails.size === items.length && items.length > 0}
@@ -311,7 +311,7 @@ export function MailList({
             </div>
             
             {selectedMails.size > 0 && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <Button
                   size="sm"
                   variant="outline"
@@ -319,8 +319,8 @@ export function MailList({
                   disabled={isBulkActionLoading}
                   className="h-8"
                 >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Sil
+                  <Trash2 className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Sil</span>
                 </Button>
                 <Button
                   size="sm"
@@ -329,8 +329,8 @@ export function MailList({
                   disabled={isBulkActionLoading}
                   className="h-8"
                 >
-                  <Archive className="h-4 w-4 mr-1" />
-                  Arşivle
+                  <Archive className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Arşivle</span>
                 </Button>
                 <Button
                   size="sm"
@@ -339,8 +339,8 @@ export function MailList({
                   disabled={isBulkActionLoading}
                   className="h-8"
                 >
-                  <Star className="h-4 w-4 mr-1" />
-                  Yıldızla
+                  <Star className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Yıldızla</span>
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

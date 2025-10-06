@@ -76,35 +76,17 @@ export default function MailCategoryPage({ params }: MailCategoryPageProps) {
   }, [dispatch, user, params])
 
   return (
-    <>
-      <div className="md:hidden">
-        <Image
-          src="/examples/mail-dark.png"
-          width={1280}
-          height={727}
-          alt="Mail"
-          className="hidden dark:block"
-        />
-        <Image
-          src="/examples/mail-light.png"
-          width={1280}
-          height={727}
-          alt="Mail"
-          className="block dark:hidden"
-        />
-      </div>
-      <div className="hidden flex-col md:flex">
-        <Mail
-          mails={mails}
-          mailsLoading={mailsLoading}
-          mailsError={mailsError}
-          defaultLayout={undefined}
-          defaultCollapsed={false}
-          navCollapsedSize={4}
-          categoryTitle={categoryTitle}
-          listOnly={true}
-        />
-      </div>
-    </>
+    <div className="h-full flex flex-col">
+      <Mail
+        mails={mails}
+        mailsLoading={mailsLoading}
+        mailsError={mailsError}
+        defaultLayout={undefined}
+        defaultCollapsed={false}
+        navCollapsedSize={4}
+        categoryTitle={categoryTitle}
+        listOnly={true}
+      />
+    </div>
   )
 }

@@ -63,14 +63,14 @@ export default function GeneralSettingsPage() {
         description="Fitmail genel ayarlarınızı yönetin. Dil, saat dilimi, tarih ve saat formatı ayarlarınızı düzenleyin."
         keywords="ayarlar, settings, genel ayarlar, dil, saat dilimi, fitmail"
       />
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Genel Ayarlar</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Genel Ayarlar</h1>
           <p className="text-muted-foreground text-sm">
             Uygulama genelinde geçerli olan ayarları yönetin
           </p>
         </div>
-        <Separator className="my-6" />
+        <Separator className="my-4 sm:my-6" />
 
       {/* Language & Region */}
       <div className="space-y-4">
@@ -84,7 +84,7 @@ export default function GeneralSettingsPage() {
           </p>
         </div>
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="language">Dil</Label>
               <Select value={settings.language} onValueChange={(value) => setSettings({...settings, language: value})}>
@@ -146,7 +146,7 @@ export default function GeneralSettingsPage() {
       </div>
 
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={loading}>
+        <Button onClick={handleSave} disabled={loading} className="w-full sm:w-auto">
           {loading ? "Kaydediliyor..." : "Ayarları Kaydet"}
         </Button>
       </div>

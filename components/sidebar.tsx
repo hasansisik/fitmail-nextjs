@@ -403,7 +403,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
   }
 
   return (
-    <div className="flex h-screen w-full flex-col bg-background transition-all duration-300 ease-in-out relative z-10 overflow-hidden">
+    <div className="flex h-full w-full flex-col bg-background transition-all duration-300 ease-in-out relative z-10 overflow-hidden">
       {/* User Account Section */}
       {!isCollapsed && (
         <div className="px-2 py-3">

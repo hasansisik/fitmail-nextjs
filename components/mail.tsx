@@ -206,16 +206,16 @@ export function Mail({
   }
 
   return (
-    <div className="h-full flex">
+    <div className="h-full flex flex-col lg:flex-row">
       {/* Mail Listesi - Sadece mail seçili değilse göster */}
       {!showMailDetail && (
-        <div className="w-full">
+        <div className="w-full flex-1">
           <Tabs defaultValue="all">
-            <div className="flex items-center px-4 py-2">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center px-4 py-2 gap-2">
               <div className="flex items-center gap-3">
-                <h1 className="text-xl font-bold">{categoryTitle}</h1>
+                <h1 className="text-lg sm:text-xl font-bold">{categoryTitle}</h1>
               </div>
-              <div className="ml-auto flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
                 <Button
                   size="sm"
                   variant="outline"
@@ -223,8 +223,8 @@ export function Mail({
                   disabled={isRefreshing || mailsLoading}
                   className="h-8"
                 >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  Yenile
+                  <RefreshCw className={`h-4 w-4 sm:mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">Yenile</span>
                 </Button>
                 {/* Çöp kutusu temizleme butonu - sadece trash sayfasında göster */}
                 {pathname.includes('/trash') && (
@@ -235,8 +235,8 @@ export function Mail({
                     disabled={mailsLoading}
                     className="h-8"
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Eski Mailleri Temizle
+                    <Trash2 className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Eski Mailleri Temizle</span>
                   </Button>
                 )}
                 <Button
@@ -245,27 +245,28 @@ export function Mail({
                   onClick={() => setIsSelectMode(!isSelectMode)}
                   className="h-8"
                 >
-                  <CheckSquare className="h-4 w-4 mr-2" />
-                  {isSelectMode ? 'Seçimi İptal' : 'Seç'}
+                  <CheckSquare className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">{isSelectMode ? 'Seçimi İptal' : 'Seç'}</span>
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => setShowSendDialog(true)}
                   className="h-8"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Yeni Mail
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Yeni Mail</span>
                 </Button>
-                <TabsList>
+                <TabsList className="w-full sm:w-auto">
                   <TabsTrigger
                     value="all"
-                    className="text-zinc-600 dark:text-zinc-200"
+                    className="text-zinc-600 dark:text-zinc-200 flex-1 sm:flex-none"
                   >
-                    Tüm E-postalar
+                    <span className="hidden sm:inline">Tüm E-postalar</span>
+                    <span className="sm:hidden">Tümü</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="unread"
-                    className="text-zinc-600 dark:text-zinc-200"
+                    className="text-zinc-600 dark:text-zinc-200 flex-1 sm:flex-none"
                   >
                     Okunmamış
                   </TabsTrigger>
@@ -328,17 +329,17 @@ export function Mail({
       
       {/* Mail Detayı - Sadece mail seçili ise göster */}
       {showMailDetail && selectedMail && (
-        <div className="w-full">
+        <div className="w-full flex-1">
           <div className="flex h-full flex-col">
             {/* Header with back button */}
-            <div className="flex items-center gap-4 p-4 border-b">
+            <div className="flex items-center gap-2 sm:gap-4 p-2 sm:p-4 border-b">
               <Button onClick={handleBackToList} variant="outline" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Geri
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Geri</span>
               </Button>
-              <div className="flex-1">
-                <h1 className="text-lg font-semibold truncate">{selectedMail.subject}</h1>
-                <p className="text-sm text-muted-foreground">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-base sm:text-lg font-semibold truncate">{selectedMail.subject}</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">
                   Alıcı: {selectedMail.to?.map((recipient: { name: string; email: string }) => `${recipient.name} <${recipient.email}>`).join(', ')}
                 </p>
               </div>

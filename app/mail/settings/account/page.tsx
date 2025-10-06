@@ -461,14 +461,14 @@ export default function AccountSettingsPage() {
         description="Fitmail hesap ayarlarınızı yönetin. Profil bilgilerinizi, şifrenizi ve mail adresinizi düzenleyin."
         keywords="hesap, account, ayarlar, settings, profil, şifre, fitmail"
       />
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Hesap Ayarları</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Hesap Ayarları</h1>
           <p className="text-muted-foreground text-sm">
             Hesap bilgilerinizi görüntüleyin ve düzenleyin
           </p>
         </div>
-      <Separator className="my-6" />
+      <Separator className="my-4 sm:my-6" />
 
       {/* Profile Section */}
       <div className="space-y-4">
@@ -519,7 +519,7 @@ export default function AccountSettingsPage() {
             {/* Kişisel Bilgiler */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-muted-foreground">Kişisel Bilgiler</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Ad</Label>
                   <Input
@@ -575,7 +575,7 @@ export default function AccountSettingsPage() {
             {/* Kişisel Detaylar */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-muted-foreground">Kişisel Detaylar</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="birthDate">Doğum Tarihi</Label>
                   <Input
@@ -607,7 +607,7 @@ export default function AccountSettingsPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="location">Konum</Label>
                   <Input
                     id="location"
@@ -623,25 +623,25 @@ export default function AccountSettingsPage() {
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             {isEditing ? (
               <>
-                <Button onClick={handleSave} disabled={loading}>
+                <Button onClick={handleSave} disabled={loading} className="w-full sm:w-auto">
                   {loading ? "Kaydediliyor..." : "Kaydet"}
                 </Button>
-                <Button variant="outline" onClick={handleCancel} disabled={loading}>
+                <Button variant="outline" onClick={handleCancel} disabled={loading} className="w-full sm:w-auto">
                   İptal
                 </Button>
               </>
             ) : (
-              <Button onClick={() => setIsEditing(true)} disabled={loading}>
+              <Button onClick={() => setIsEditing(true)} disabled={loading} className="w-full sm:w-auto">
                 Düzenle
               </Button>
             )}
           </div>
         </div>
       </div>
-      <Separator className="my-6" />
+      <Separator className="my-4 sm:my-6" />
 
       {/* Mail Address Section */}
       <div className="space-y-4">
@@ -675,7 +675,7 @@ export default function AccountSettingsPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="mailAddress">Mail Adresi</Label>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Input
                     id="mailAddress"
                     type="email"
@@ -689,6 +689,7 @@ export default function AccountSettingsPage() {
                     onClick={checkMailAddress}
                     disabled={!mailAddress || mailSetupStatus === 'checking' || mailSetupStatus === 'setting'}
                     variant="outline"
+                    className="w-full sm:w-auto"
                   >
                     {mailSetupStatus === 'checking' ? 'Kontrol Ediliyor...' : 'Kontrol Et'}
                   </Button>
@@ -710,11 +711,12 @@ export default function AccountSettingsPage() {
                       Bu adresi ayarlayabilirsiniz
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Button
                       onClick={setupMailAddress}
                       disabled={false}
                       size="sm"
+                      className="w-full sm:w-auto"
                     >
                       Ayarla (Route + Mailbox)
                     </Button>
@@ -723,6 +725,7 @@ export default function AccountSettingsPage() {
                       disabled={false}
                       size="sm"
                       variant="outline"
+                      className="w-full sm:w-auto"
                     >
                       Sadece Mailbox Oluştur
                     </Button>
@@ -761,7 +764,7 @@ export default function AccountSettingsPage() {
           )}
         </div>
       </div>
-      <Separator className="my-6" />
+      <Separator className="my-4 sm:my-6" />
 
       {/* Security Section */}
       <div className="space-y-4">
@@ -775,17 +778,17 @@ export default function AccountSettingsPage() {
           </p>
         </div>
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div>
               <h4 className="font-medium">Şifre</h4>
               <p className="text-sm text-muted-foreground">Son değişiklik: 3 ay önce</p>
             </div>
-            <Button variant="outline" size="sm" onClick={handlePasswordChange}>Değiştir</Button>
+            <Button variant="outline" size="sm" onClick={handlePasswordChange} className="w-full sm:w-auto">Değiştir</Button>
           </div>
 
         </div>
       </div>
-      <Separator className="my-6" />
+      <Separator className="my-4 sm:my-6" />
 
       {/* Danger Zone */}
       <div className="space-y-4">
@@ -799,14 +802,14 @@ export default function AccountSettingsPage() {
           </p>
         </div>
         <div>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div>
               <h4 className="font-medium">Hesabı Sil</h4>
               <p className="text-sm text-muted-foreground">
                 Hesabınızı ve tüm verilerinizi kalıcı olarak silin
               </p>
             </div>
-            <Button variant="destructive" size="sm">Hesabı Sil</Button>
+            <Button variant="destructive" size="sm" className="w-full sm:w-auto">Hesabı Sil</Button>
           </div>
         </div>
       </div>

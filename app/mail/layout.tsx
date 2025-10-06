@@ -92,31 +92,46 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         keywords="email, e-posta, mail, güvenli email, hızlı email, akıllı email, fitmail"
       />
       <TooltipProvider delayDuration={0}>
-        <ResizablePanelGroup
-          direction="horizontal"
-          className="h-screen items-stretch"
-        >
-          <ResizablePanel
-            defaultSize={15}
-            collapsedSize={4}
-            collapsible={true}
-            minSize={15}
-            maxSize={20}
-            onCollapse={() => setIsCollapsed(true)}
-            onResize={() => setIsCollapsed(false)}
-            className="border-r"
-          >
-            <div className="h-screen overflow-hidden">
-              <Sidebar isCollapsed={isCollapsed} onCollapse={setIsCollapsed} />
-            </div>
-          </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={82} minSize={30}>
-            <div className="h-full overflow-auto">
-              {children}
-            </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+        <div className="h-screen flex flex-row">
+          {/* Mobile Sidebar - Left side on mobile */}
+          <div className="lg:hidden w-16 border-r">
+            <Sidebar isCollapsed={true} onCollapse={setIsCollapsed} />
+          </div>
+          
+          {/* Desktop Resizable Layout */}
+          <div className="hidden lg:flex flex-1">
+            <ResizablePanelGroup
+              direction="horizontal"
+              className="h-screen items-stretch"
+            >
+              <ResizablePanel
+                defaultSize={15}
+                collapsedSize={4}
+                collapsible={true}
+                minSize={10}
+                maxSize={25}
+                onCollapse={() => setIsCollapsed(true)}
+                onResize={() => setIsCollapsed(false)}
+                className="border-r"
+              >
+                <div className="h-screen overflow-hidden">
+                  <Sidebar isCollapsed={isCollapsed} onCollapse={setIsCollapsed} />
+                </div>
+              </ResizablePanel>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={82} minSize={30}>
+                <div className="h-full overflow-auto">
+                  {children}
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          </div>
+          
+          {/* Mobile Content - Remaining width on mobile */}
+          <div className="lg:hidden flex-1 overflow-auto">
+            {children}
+          </div>
+        </div>
       </TooltipProvider>
     </>
   )
