@@ -69,6 +69,18 @@ export function RegisterForm({
 
 
   const handleNext = () => {
+    // Check first step validation
+    if (currentStep === 1) {
+      if (!formData.firstName || formData.firstName.trim() === '') {
+        toast.error("Lütfen adınızı girin!")
+        return
+      }
+      if (!formData.lastName || formData.lastName.trim() === '') {
+        toast.error("Lütfen soyadınızı girin!")
+        return
+      }
+    }
+    
     // Check age validation on step 2
     if (currentStep === 2) {
       if (!formData.day || !formData.month || !formData.year) {
@@ -203,6 +215,13 @@ export function RegisterForm({
       // Dismiss loading toast
       toast.dismiss(loadingToastId)
       
+      // Check if it's a token expiration error (should not happen during registration)
+      if (error?.message?.includes('Oturum süreniz dolmuş') || error?.message?.includes('requiresLogout')) {
+        // This shouldn't happen during registration, but just in case
+        window.location.href = '/giris'
+        return
+      }
+      
       // Show error message
       const errorMessage = typeof error === 'string' ? error : error?.message || "Kayıt olurken bir hata oluştu"
       toast.error(errorMessage)
@@ -288,7 +307,7 @@ export function RegisterForm({
       case 2:
         return "Temel Bilgiler"
       case 3:
-        return "E-posta adresiniz nedir?"
+        return "Ne oluşturmak istiyorsunuz?"
       case 4:
         return "Şifre oluşturun"
       case 5:
@@ -307,7 +326,7 @@ export function RegisterForm({
       case 2:
         return "Doğum tarihinizi ve cinsiyetinizi seçin"
       case 3:
-        return "E-posta adresinizi girin"
+        return "E-posta adresinizi oluşturun"
       case 4:
         return "Güvenli bir şifre seçin"
       case 5:

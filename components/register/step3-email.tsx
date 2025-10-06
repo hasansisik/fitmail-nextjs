@@ -19,6 +19,8 @@ export function Step3Email({ formData, onInputChange, onNext, onBack }: Step3Pro
     let value = e.target.value;
     // Remove @ symbol if user tries to type it
     value = value.replace('@', '');
+    // Remove gmail, google, yahoo, hotmail, outlook if user tries to type them
+    value = value.replace(/gmail|google|yahoo|hotmail|outlook/gi, '');
     // Only allow alphanumeric characters, dots, underscores, and hyphens
     value = value.replace(/[^a-zA-Z0-9._-]/g, '');
     onInputChange("email", value);
@@ -39,7 +41,7 @@ export function Step3Email({ formData, onInputChange, onNext, onBack }: Step3Pro
           <Input 
             id="email" 
             type="text" 
-            placeholder="mail" 
+            placeholder="kullaniciadi" 
             value={formData.email}
             onChange={handleEmailChange}
             onKeyPress={handleKeyPress}
@@ -51,7 +53,7 @@ export function Step3Email({ formData, onInputChange, onNext, onBack }: Step3Pro
           </span>
         </div>
         <p className="text-xs text-muted-foreground">
-          Sadece harf, rakam, nokta, alt çizgi ve tire kullanabilirsiniz
+          Sadece harf, rakam, nokta, alt çizgi ve tire kullanabilirsiniz. @gmail.com gibi yaygın e-posta servisleri kullanılamaz.
         </p>
       </div>
       <div className="grid gap-3">

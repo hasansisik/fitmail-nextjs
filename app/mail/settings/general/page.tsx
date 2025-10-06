@@ -41,7 +41,8 @@ export default function GeneralSettingsPage() {
       // Check if it's a token expiration error
       if (error.includes('Oturum süreniz dolmuş') || error.includes('requiresLogout')) {
         toast.error('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.')
-        // Redirect will be handled by axios interceptor
+        // Redirect to login page
+        window.location.href = '/giris'
       } else {
         toast.error(error)
       }

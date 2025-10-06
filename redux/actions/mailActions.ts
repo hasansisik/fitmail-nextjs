@@ -2,6 +2,32 @@ import axios from "axios";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { server } from "@/config";
 
+// Add axios interceptor to handle token errors and redirect to login
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Handle token expiration/authentication errors
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      // Clear invalid token
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("userEmail");
+      
+      // Redirect to login if not already there
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/giris')) {
+        window.location.href = '/giris';
+      }
+      
+      return Promise.reject({
+        ...error,
+        message: 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.',
+        requiresLogout: true
+      });
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
 // Send Mail Action
 export const sendMail = createAsyncThunk(
   "mail/sendMail",
