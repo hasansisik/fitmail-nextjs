@@ -322,14 +322,7 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
             <MailOpen className="mr-2 h-4 w-4" />
             {mail.isRead ? 'Okunmadı olarak işaretle' : 'Okundu olarak işaretle'}
           </Button>
-          <Button
-            variant="ghost"
-            className="justify-start h-8 px-2"
-            onClick={() => handleMailAction("snooze")}
-          >
-            <Clock className="mr-2 h-4 w-4" />
-            Ertele
-          </Button>
+         
           <Button
             variant="ghost"
             className="justify-start h-8 px-2"

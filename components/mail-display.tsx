@@ -118,7 +118,7 @@ interface ApiMail {
 }
 import { useState, useEffect, useRef } from "react"
 import { useAppDispatch } from "@/redux/hook"
-import { addReplyToMail, getMailById, toggleMailReadStatus } from "@/redux/actions/mailActions"
+import { addReplyToMail, getMailById, toggleMailReadStatus, moveMailToFolder, deleteMail } from "@/redux/actions/mailActions"
 import { uploadFileToCloudinary } from "@/utils/cloudinary"
 
 interface MailDisplayProps {
@@ -427,10 +427,30 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
   }
 
   // Arşivle onayı
-  const confirmArchive = () => {
-    setMailStatus(prev => ({ ...prev, isArchived: !prev.isArchived }))
-    console.log('Mail archived:', !mailStatus.isArchived)
-    setShowArchiveDialog(false)
+  const confirmArchive = async () => {
+    if (!mail) return
+    
+    try {
+      const newFolder = mail.folder === 'archive' ? 'inbox' : 'archive'
+      await dispatch(moveMailToFolder({ mailId: mail._id, folder: newFolder })).unwrap()
+      
+      toast.success(newFolder === 'archive' ? 'Mail arşivlendi!' : 'Mail gelen kutusuna taşındı!')
+      setMailStatus(prev => ({ ...prev, isArchived: newFolder === 'archive' }))
+      setShowArchiveDialog(false)
+      
+      // Parent component'i bilgilendir
+      if (onMailSent) {
+        onMailSent()
+      }
+      
+      // Mail'i yeniden yükle
+      await dispatch(getMailById(mail._id)).unwrap()
+    } catch (error: any) {
+      console.error("Archive failed:", error)
+      const errorMessage = typeof error === 'string' ? error : error?.message || "Arşivleme sırasında bir hata oluştu"
+      toast.error(errorMessage)
+      setShowArchiveDialog(false)
+    }
   }
 
   // Çöp kutusu dialog'unu aç
@@ -439,10 +459,46 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
   }
 
   // Çöp kutusu onayı
-  const confirmTrash = () => {
-    setMailStatus(prev => ({ ...prev, isTrashed: !prev.isTrashed }))
-    console.log('Mail trashed:', !mailStatus.isTrashed)
-    setShowTrashDialog(false)
+  const confirmTrash = async () => {
+    if (!mail) return
+    
+    try {
+      if (mail.folder === 'trash') {
+        // Çöp kutusundan kalıcı olarak sil
+        await dispatch(deleteMail(mail._id)).unwrap()
+        toast.success('Mail kalıcı olarak silindi!')
+        setShowTrashDialog(false)
+        
+        // Parent component'i bilgilendir
+        if (onMailSent) {
+          onMailSent()
+        }
+        
+        // Mail silindiği için geri dön
+        if (onToggleMaximize) {
+          onToggleMaximize()
+        }
+      } else {
+        // Çöp kutusuna taşı
+        await dispatch(moveMailToFolder({ mailId: mail._id, folder: 'trash' })).unwrap()
+        toast.success('Mail çöp kutusuna taşındı. 30 gün sonra otomatik olarak silinecek.')
+        setMailStatus(prev => ({ ...prev, isTrashed: true }))
+        setShowTrashDialog(false)
+        
+        // Parent component'i bilgilendir
+        if (onMailSent) {
+          onMailSent()
+        }
+        
+        // Mail'i yeniden yükle
+        await dispatch(getMailById(mail._id)).unwrap()
+      }
+    } catch (error: any) {
+      console.error("Trash failed:", error)
+      const errorMessage = typeof error === 'string' ? error : error?.message || "Silme sırasında bir hata oluştu"
+      toast.error(errorMessage)
+      setShowTrashDialog(false)
+    }
   }
 
   // Yıldızla
@@ -539,103 +595,6 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
               </Button>
             </TooltipTrigger>
             <TooltipContent>{mailStatus.isTrashed ? "Çöp kutusundan çıkar" : "Çöp kutusuna taşı"}</TooltipContent>
-          </Tooltip>
-          <Separator orientation="vertical" className="mx-1 h-6" />
-          <Tooltip>
-            <Popover>
-              <PopoverTrigger asChild>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    disabled={!mail}
-                    className={mailStatus.isSnoozed ? "bg-orange-100 text-orange-600" : ""}
-                  >
-                    <Clock className="h-4 w-4" />
-                    <span className="sr-only">Ertle</span>
-                  </Button>
-                </TooltipTrigger>
-              </PopoverTrigger>
-              <PopoverContent className="flex w-[535px] p-0">
-                <div className="flex flex-col gap-2 border-r px-2 py-4">
-                  <div className="px-4 text-sm font-medium">Şu zamana kadar ertle</div>
-                  <div className="grid min-w-[250px] gap-1">
-                    <Button
-                      variant="ghost"
-                      className="justify-start font-normal"
-                      onClick={() => handleSnooze(addHours(today, 4), "Bugün daha sonra")}
-                    >
-                      Bugün daha sonra{" "}
-                      <span className="ml-auto text-muted-foreground">
-                        {format(addHours(today, 4), "E, h:m b")}
-                      </span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="justify-start font-normal"
-                      onClick={() => handleSnooze(addDays(today, 1), "Yarın")}
-                    >
-                      Yarın
-                      <span className="ml-auto text-muted-foreground">
-                        {format(addDays(today, 1), "E, h:m b")}
-                      </span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="justify-start font-normal"
-                      onClick={() => handleSnooze(nextSaturday(today), "Bu hafta sonu")}
-                    >
-                      Bu hafta sonu
-                      <span className="ml-auto text-muted-foreground">
-                        {format(nextSaturday(today), "E, h:m b")}
-                      </span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="justify-start font-normal"
-                      onClick={() => handleSnooze(addDays(today, 7), "Gelecek hafta")}
-                    >
-                      Gelecek hafta
-                      <span className="ml-auto text-muted-foreground">
-                        {format(addDays(today, 7), "E, h:m b")}
-                      </span>
-                    </Button>
-                    {mailStatus.isSnoozed && (
-                      <Button
-                        variant="ghost"
-                        className="justify-start font-normal text-red-600 hover:text-red-700"
-                        onClick={handleUnsnooze}
-                      >
-                        Ertelemeyi iptal et
-                        <span className="ml-auto text-muted-foreground">
-                          {mailStatus.snoozeDate && format(new Date(mailStatus.snoozeDate), "E, h:m b")}
-                        </span>
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                <div className="p-2">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={(date) => {
-                      if (date) {
-                        setSelectedDate(date)
-                        handleSnooze(date, format(date, "E, MMM d, yyyy"))
-                      }
-                    }}
-                    disabled={(date) => date < today}
-                    initialFocus
-                  />
-                </div>
-              </PopoverContent>
-            </Popover>
-            <TooltipContent>
-              {mailStatus.isSnoozed 
-                ? `Ertelendi: ${mailStatus.snoozeDate ? format(new Date(mailStatus.snoozeDate), "E, h:m b") : ""}` 
-                : "Ertle"
-              }
-            </TooltipContent>
           </Tooltip>
         </div>
         <div className="ml-auto flex items-center gap-2">
@@ -1068,10 +1027,10 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {mailStatus.isArchived ? "Arşivden Çıkar" : "Arşivle"}
+              {mail?.folder === 'archive' ? "Arşivden Çıkar" : "Arşivle"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {mailStatus.isArchived 
+              {mail?.folder === 'archive'
                 ? "Bu maili arşivden çıkarmak istediğinizden emin misiniz? Mail gelen kutusuna geri dönecektir."
                 : "Bu maili arşivlemek istediğinizden emin misiniz? Mail arşiv klasörüne taşınacaktır."
               }
@@ -1080,7 +1039,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
           <AlertDialogFooter>
             <AlertDialogCancel>İptal</AlertDialogCancel>
             <AlertDialogAction onClick={confirmArchive}>
-              {mailStatus.isArchived ? "Arşivden Çıkar" : "Arşivle"}
+              {mail?.folder === 'archive' ? "Arşivden Çıkar" : "Arşivle"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1091,19 +1050,22 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {mailStatus.isTrashed ? "Çöp Kutusundan Çıkar" : "Çöp Kutusuna Taşı"}
+              {mail?.folder === 'trash' ? "Kalıcı Olarak Sil" : "Çöp Kutusuna Taşı"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {mailStatus.isTrashed 
-                ? "Bu maili çöp kutusundan çıkarmak istediğinizden emin misiniz? Mail gelen kutusuna geri dönecektir."
-                : "Bu maili çöp kutusuna taşımak istediğinizden emin misiniz? Mail çöp kutusu klasörüne taşınacaktır."
+              {mail?.folder === 'trash'
+                ? "Bu maili kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
+                : "Bu maili çöp kutusuna taşımak istediğinizden emin misiniz? Mail 30 gün sonra otomatik olarak silinecektir."
               }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmTrash}>
-              {mailStatus.isTrashed ? "Çöp Kutusundan Çıkar" : "Çöp Kutusuna Taşı"}
+            <AlertDialogAction 
+              onClick={confirmTrash}
+              className={mail?.folder === 'trash' ? "bg-red-600 hover:bg-red-700" : ""}
+            >
+              {mail?.folder === 'trash' ? "Kalıcı Olarak Sil" : "Çöp Kutusuna Taşı"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
