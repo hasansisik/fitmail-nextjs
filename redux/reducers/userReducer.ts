@@ -13,6 +13,7 @@ import {
   updateSettings,
   updateTheme,
   checkEmailAvailability,
+  checkPremiumCode,
   clearError,
   getAllUsers,
   updateUserRole,
@@ -30,6 +31,12 @@ interface UserState {
   emailCheck: {
     loading: boolean;
     available: boolean | null;
+    message: string | null;
+    isPremium?: boolean;
+  };
+  premiumCodeCheck: {
+    loading: boolean;
+    valid: boolean | null;
     message: string | null;
   };
   allUsers: {
@@ -51,6 +58,12 @@ const initialState: UserState = {
   emailCheck: {
     loading: false,
     available: null,
+    message: null,
+    isPremium: false,
+  },
+  premiumCodeCheck: {
+    loading: false,
+    valid: null,
     message: null,
   },
   allUsers: {
@@ -273,16 +286,35 @@ export const userReducer = createReducer(initialState, (builder) => {
       state.emailCheck.loading = true;
       state.emailCheck.available = null;
       state.emailCheck.message = null;
+      state.emailCheck.isPremium = false;
     })
     .addCase(checkEmailAvailability.fulfilled, (state, action) => {
       state.emailCheck.loading = false;
       state.emailCheck.available = action.payload.available;
       state.emailCheck.message = action.payload.message;
+      state.emailCheck.isPremium = action.payload.isPremium || false;
     })
     .addCase(checkEmailAvailability.rejected, (state, action) => {
       state.emailCheck.loading = false;
       state.emailCheck.available = false;
       state.emailCheck.message = action.payload as string;
+      state.emailCheck.isPremium = false;
+    })
+    // Check Premium Code
+    .addCase(checkPremiumCode.pending, (state) => {
+      state.premiumCodeCheck.loading = true;
+      state.premiumCodeCheck.valid = null;
+      state.premiumCodeCheck.message = null;
+    })
+    .addCase(checkPremiumCode.fulfilled, (state, action) => {
+      state.premiumCodeCheck.loading = false;
+      state.premiumCodeCheck.valid = action.payload.valid;
+      state.premiumCodeCheck.message = action.payload.message;
+    })
+    .addCase(checkPremiumCode.rejected, (state, action) => {
+      state.premiumCodeCheck.loading = false;
+      state.premiumCodeCheck.valid = false;
+      state.premiumCodeCheck.message = action.payload as string;
     })
     // Clear Error
     .addCase(clearError.fulfilled, (state) => {

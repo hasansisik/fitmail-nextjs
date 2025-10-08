@@ -20,7 +20,7 @@ export function RegisterForm({
 }: React.ComponentProps<"form">) {
   const router = useRouter()
   const dispatch = useAppDispatch()
-  const { emailCheck } = useAppSelector((state) => state.user)
+  const { emailCheck, premiumCodeCheck } = useAppSelector((state) => state.user)
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState({
     firstName: "",
@@ -32,7 +32,8 @@ export function RegisterForm({
     day: "",
     month: "",
     year: "",
-    gender: ""
+    gender: "",
+    premiumCode: ""
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -173,6 +174,17 @@ export function RegisterForm({
         toast.error("Geçerli bir kurtarıcı e-posta adresi girin!")
         return
       }
+      // Check premium code if domain is premium
+      if (emailCheck?.isPremium) {
+        if (!formData.premiumCode || formData.premiumCode.trim() === '') {
+          toast.error("Premium domain için kod gereklidir!")
+          return
+        }
+        if (formData.premiumCode.length !== 5) {
+          toast.error("Premium kod 5 haneli olmalıdır!")
+          return
+        }
+      }
     }
     
     // Check password match on step 4
@@ -225,7 +237,8 @@ export function RegisterForm({
       password: formData.password,
       birthDate: birthDate.toISOString(),
       age: actualAge,
-      gender: formData.gender
+      gender: formData.gender,
+      premiumCode: formData.premiumCode || undefined
     }
     
     console.log("Registration data:", registrationData)
@@ -300,6 +313,7 @@ export function RegisterForm({
             onNext={handleNext}
             onBack={handleBack}
             emailCheck={emailCheck}
+            premiumCodeCheck={premiumCodeCheck}
           />
         )
       

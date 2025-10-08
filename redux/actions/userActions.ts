@@ -453,6 +453,19 @@ export const checkEmailAvailability = createAsyncThunk(
   }
 );
 
+//Check Premium Code Action
+export const checkPremiumCode = createAsyncThunk(
+  "user/checkPremiumCode",
+  async (payload: { email: string; code: string }, thunkAPI) => {
+    try {
+      const { data } = await axios.post(`${server}/auth/check-premium-code`, payload);
+      return data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
 export const clearError = createAsyncThunk(
   "user/clearError",
   async () => {

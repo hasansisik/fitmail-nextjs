@@ -3,11 +3,16 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
+import { useAppDispatch } from "@/redux/hook"
+import { checkPremiumCode } from "@/redux/actions/userActions"
+import { useEffect } from "react"
 
 interface Step3Props {
   formData: {
     email: string
     recoveryEmail: string
+    premiumCode?: string
   }
   onInputChange: (field: string, value: string) => void
   onNext: () => void
@@ -16,10 +21,29 @@ interface Step3Props {
     loading: boolean
     available: boolean | null
     message: string | null
+    isPremium?: boolean
+  }
+  premiumCodeCheck?: {
+    loading: boolean
+    valid: boolean | null
+    message: string | null
   }
 }
 
-export function Step3Email({ formData, onInputChange, onNext, onBack, emailCheck }: Step3Props) {
+export function Step3Email({ formData, onInputChange, onNext, onBack, emailCheck, premiumCodeCheck }: Step3Props) {
+  const dispatch = useAppDispatch();
+
+  // Premium kod kontrolü
+  useEffect(() => {
+    if (emailCheck?.isPremium && formData.premiumCode && formData.premiumCode.length === 5) {
+      const fullEmail = `${formData.email}@gozdedijital.xyz`;
+      dispatch(checkPremiumCode({ 
+        email: fullEmail, 
+        code: formData.premiumCode 
+      }));
+    }
+  }, [formData.premiumCode, formData.email, emailCheck?.isPremium, dispatch]);
+
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
     // Remove @ symbol if user tries to type it
@@ -79,6 +103,50 @@ export function Step3Email({ formData, onInputChange, onNext, onBack, emailCheck
           </p>
         )}
       </div>
+      
+      {/* Premium Code Field - Only show if domain is premium */}
+      {emailCheck?.isPremium && (
+        <div className="grid gap-3">
+          <Label htmlFor="premiumCode">Premium Kod</Label>
+          <div className="flex justify-center">
+            <InputOTP
+              maxLength={5}
+              value={formData.premiumCode || ''}
+              onChange={(value) => onInputChange("premiumCode", value)}
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+          
+          {/* Premium Code Validation Message */}
+          {formData.premiumCode && formData.premiumCode.length === 5 && (
+            <p className={`text-xs text-center ${
+              premiumCodeCheck?.loading 
+                ? 'text-blue-600' 
+                : premiumCodeCheck?.valid === true 
+                  ? 'text-green-600' 
+                  : premiumCodeCheck?.valid === false 
+                    ? 'text-red-600' 
+                    : 'text-muted-foreground'
+            }`}>
+              {premiumCodeCheck?.loading 
+                ? 'Kod kontrol ediliyor...' 
+                : premiumCodeCheck?.message || 'Kod kontrol ediliyor...'}
+            </p>
+          )}
+          
+          <p className="text-xs text-muted-foreground text-center">
+            Bu domain premium bir domaindir. Kayıt olmak için yöneticinizden aldığınız 5 haneli premium kodunu giriniz.
+          </p>
+        </div>
+      )}
+      
       <div className="grid gap-3">
         <Label htmlFor="recoveryEmail">Kurtarıcı E-posta</Label>
         <Input 
@@ -94,6 +162,7 @@ export function Step3Email({ formData, onInputChange, onNext, onBack, emailCheck
           Şifrenizi unuttuğunuzda kullanılacak e-posta adresi
         </p>
       </div>
+      
       <div className="flex gap-3">
         <Button type="button" variant="outline" onClick={onBack} className="flex-1">
           Geri
