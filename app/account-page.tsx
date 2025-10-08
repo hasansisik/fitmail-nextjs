@@ -86,15 +86,7 @@ const quickActions = [
 export default function AccountPage() {
   const pathname = usePathname();
   
-  // Giriş sayfalarını render et
-  if (pathname === '/giris') {
-    return <LoginPage />;
-  }
-  
-  if (pathname === '/kayit-ol') {
-    return <RegisterPage />;
-  }
-  
+  // All hooks must be called before any conditional returns
   const [searchQuery, setSearchQuery] = useState('');
   const [activeNav, setActiveNav] = useState('home');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -260,6 +252,15 @@ export default function AccountPage() {
       }
     }
   }, [message, error]);
+
+  // Giriş sayfalarını render et
+  if (pathname === '/giris') {
+    return <LoginPage />;
+  }
+  
+  if (pathname === '/kayit-ol') {
+    return <RegisterPage />;
+  }
 
   // Kullanıcı adını oluştur
   const getUserDisplayName = () => {

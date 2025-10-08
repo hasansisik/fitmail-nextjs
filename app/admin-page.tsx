@@ -42,15 +42,7 @@ import RegisterPage from "./(logged-out)/kayit-ol/page";
 export default function AdminPage() {
   const pathname = usePathname();
   
-  // Giriş sayfalarını render et
-  if (pathname === '/giris') {
-    return <LoginPage />;
-  }
-  
-  if (pathname === '/kayit-ol') {
-    return <RegisterPage />;
-  }
-  
+  // All hooks must be called before any conditional returns
   const dispatch = useDispatch<AppDispatch>();
   const { user, loading, isAuthenticated, allUsers } = useSelector((state: RootState) => state.user);
   const { premiums, loading: premiumLoading } = useSelector((state: RootState) => state.premium);
@@ -76,6 +68,15 @@ export default function AdminPage() {
       dispatch(getAllUsers({}));
     }
   }, [dispatch, isAuthenticated, user]);
+
+  // Giriş sayfalarını render et
+  if (pathname === '/giris') {
+    return <LoginPage />;
+  }
+  
+  if (pathname === '/kayit-ol') {
+    return <RegisterPage />;
+  }
 
   // UUID generator for premium codes
   const generateCode = () => {

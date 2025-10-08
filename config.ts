@@ -1,5 +1,5 @@
 // Development server
-export const server: string = "http://localhost:5003/v1";
+export const server: string = "https://mail-backend-mu.vercel.app/v1";
 
 // Production server
 export const server2: string = "https://mail-backend-mu.vercel.app/v1";
@@ -18,9 +18,9 @@ export const domains = {
   },
   // Production domains
   production: {
-    main: 'domain.com',
-    account: 'account.domain.com',
-    panel: 'panel.domain.com',
+    main: 'fitmail-nextjs.vercel.app',
+    account: 'account.fitmail-nextjs.vercel.app',
+    panel: 'panel.fitmail-nextjs.vercel.app',
     protocol: 'https'
   }
 };
