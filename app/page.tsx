@@ -23,9 +23,15 @@ import {
   CheckCircle,
   AlertCircle,
   Trash2,
-  Camera
+  Camera,
+  Home,
+  UserCheck,
+  ShieldCheck,
+  Link,
+  Languages,
+  HelpCircle
 } from 'lucide-react';
-import { loadUser, editProfile, changePassword, verifyPassword, updateSettings } from '@/redux/actions/userActions';
+import { loadUser, editProfile, changePassword, verifyPassword, updateSettings, deleteAccount } from '@/redux/actions/userActions';
 import { RootState, AppDispatch } from '@/redux/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,6 +45,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { formatRelativeTime } from '@/lib/dateUtils';
 import { uploadFileToCloudinary } from '@/utils/cloudinary';
@@ -46,21 +62,21 @@ import ReactCrop, { centerCrop, makeAspectCrop, Crop, PixelCrop } from 'react-im
 import 'react-image-crop/dist/ReactCrop.css';
 
 const navigationItems = [
-  { id: 'home', label: 'Ana Sayfa', icon: User },
-  { id: 'personal', label: 'Kişisel Veriler', icon: User },
-  { id: 'privacy', label: 'Güvenlik ve Şifre', icon: Shield },
-  { id: 'accounts', label: 'Bağlı Hesaplar', icon: Users },
-  { id: 'language', label: 'Dil ve Bölge', icon: Globe },
-  { id: 'about', label: 'Hakkında', icon: Info },
+  { id: 'home', label: 'Ana Sayfa', icon: Home },
+  { id: 'personal', label: 'Kişisel Veriler', icon: UserCheck },
+  { id: 'privacy', label: 'Güvenlik ve Şifre', icon: ShieldCheck },
+  { id: 'accounts', label: 'Bağlı Hesaplar', icon: Link },
+  { id: 'language', label: 'Dil ve Bölge', icon: Languages },
+  { id: 'about', label: 'Hakkında', icon: HelpCircle },
 ];
 
 const quickActions = [
-  { id: 'home', label: 'Ana Sayfa', icon: User },
-  { id: 'personal', label: 'Kişisel Veriler', icon: User },
-  { id: 'privacy', label: 'Güvenlik ve Şifre', icon: Shield },
-  { id: 'accounts', label: 'Bağlı Hesaplar', icon: Users },
-  { id: 'language', label: 'Dil ve Bölge', icon: Globe },
-  { id: 'about', label: 'Hakkında', icon: Info },
+  { id: 'home', label: 'Ana Sayfa', icon: Home },
+  { id: 'personal', label: 'Kişisel Veriler', icon: UserCheck },
+  { id: 'privacy', label: 'Güvenlik ve Şifre', icon: ShieldCheck },
+  { id: 'accounts', label: 'Bağlı Hesaplar', icon: Link },
+  { id: 'language', label: 'Dil ve Bölge', icon: Languages },
+  { id: 'about', label: 'Hakkında', icon: HelpCircle },
 ];
 
 export default function AccountPage() {
@@ -68,6 +84,7 @@ export default function AccountPage() {
   const [activeNav, setActiveNav] = useState('home');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
+  const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
   
   // Kişisel veriler için state'ler
   const [isEditing, setIsEditing] = useState(false);
@@ -268,11 +285,11 @@ export default function AccountPage() {
 
   // Arama önerileri
   const searchSuggestions = [
-    { id: 'personal', label: 'Kişisel Veriler', icon: User, description: 'Ad, soyad, doğum tarihi ve diğer bilgiler' },
-    { id: 'privacy', label: 'Güvenlik ve Şifre', icon: Shield, description: 'Şifre değiştirme ve güvenlik ayarları' },
-    { id: 'language', label: 'Dil ve Bölge', icon: Globe, description: 'Dil, saat dilimi ve tarih formatı' },
-    { id: 'accounts', label: 'Bağlı Hesaplar', icon: Users, description: 'Google, Microsoft ve diğer platformlar' },
-    { id: 'about', label: 'Hakkında', icon: Info, description: 'Fitmail hesap bilgileri ve sürüm' }
+    { id: 'personal', label: 'Kişisel Veriler', icon: UserCheck, description: 'Ad, soyad, doğum tarihi ve diğer bilgiler' },
+    { id: 'privacy', label: 'Güvenlik ve Şifre', icon: ShieldCheck, description: 'Şifre değiştirme ve güvenlik ayarları' },
+    { id: 'language', label: 'Dil ve Bölge', icon: Languages, description: 'Dil, saat dilimi ve tarih formatı' },
+    { id: 'accounts', label: 'Bağlı Hesaplar', icon: Link, description: 'Google, Microsoft ve diğer platformlar' },
+    { id: 'about', label: 'Hakkında', icon: HelpCircle, description: 'Fitmail hesap bilgileri ve sürüm' }
   ];
 
   // Filtrelenmiş öneriler
@@ -555,6 +572,23 @@ export default function AccountPage() {
     setCompletedCrop(undefined);
   };
 
+  // Hesap silme fonksiyonu
+  const handleDeleteAccount = async () => {
+    try {
+      await dispatch(deleteAccount());
+      toast.success('Hesabınız başarıyla silindi');
+      // Çıkış yap ve login sayfasına yönlendir
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("userEmail");
+      window.location.href = '/giris';
+    } catch (error) {
+      console.error('Account deletion error:', error);
+      toast.error('Hesap silinirken hata oluştu');
+    } finally {
+      setShowDeleteAccountDialog(false);
+    }
+  };
+
   // Dil ve bölge ayarları
   const handleSaveSettings = async () => {
     try {
@@ -593,32 +627,32 @@ export default function AccountPage() {
       {/* Header */}
       <header className="border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-14 sm:h-16">
             {/* Logo */}
             <div className="flex items-center">
-              <span className="text-gray-900 font-bold text-xl">Fitmail</span>
+              <span className="text-gray-900 font-bold text-lg sm:text-xl">Fitmail</span>
             </div>
 
             {/* Header Actions */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <button 
                 onClick={() => handleSearch()}
                 className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full"
               >
-                <Search className="h-5 w-5" />
+                <Search className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
               <button 
                 onClick={handleAbout}
                 className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full"
               >
-                <Info className="h-5 w-5" />
+                <Info className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
               <div className="relative profile-menu-container">
                 <button 
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
                   className="p-1 hover:bg-gray-100 rounded-full"
                 >
-                  <div className="w-8 h-8 rounded-full border-2 border-blue-500 overflow-hidden">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-blue-500 overflow-hidden">
                     <img 
                       src={getProfileImage()} 
                       alt="Profile" 
@@ -647,38 +681,39 @@ export default function AccountPage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="flex flex-col lg:flex-row">
           {/* Sidebar */}
-          <aside className="w-64 pr-8">
-            <nav className="space-y-1">
-              {navigationItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveNav(item.id)}
-                    className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-r-lg transition-colors ${
-                      activeNav === item.id
-                        ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Icon className="mr-3 h-5 w-5" />
-                    {item.label}
-                  </button>
-                );
-              })}
-            </nav>
-          </aside>
+            <aside className="w-full lg:w-64 mb-6 lg:mb-0 lg:pr-8">
+              <nav className="flex flex-wrap lg:flex-col lg:space-y-1 space-x-2 lg:space-x-0 justify-center lg:justify-start">
+                {navigationItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeNav === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveNav(item.id)}
+                      className={`flex items-center px-3 py-2 lg:px-4 lg:py-3 text-sm font-medium transition-all duration-200 rounded-lg lg:rounded-r-full ${
+                        isActive
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Icon className={`mr-2 lg:mr-3 h-4 w-4 lg:h-5 lg:w-5 ${isActive ? 'text-blue-700' : 'text-gray-600'}`} />
+                      <span className="text-xs sm:text-sm">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </aside>
 
           {/* Main Content */}
-          <main className="flex-1">
+          <main className="flex-1 min-w-0">
             <div className="max-w-2xl">
               {/* Profile Section */}
-              <div className="text-center mb-8">
-                <div className="relative w-24 h-24 mx-auto mb-4 group">
-                  <div className="w-24 h-24 rounded-full border-4 border-blue-500 overflow-hidden">
+              <div className="text-center mb-6 sm:mb-8">
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 group">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-blue-500 overflow-hidden">
                     <img 
                       src={getProfileImage()} 
                       alt={getUserDisplayName()} 
@@ -687,27 +722,27 @@ export default function AccountPage() {
                   </div>
                   <button
                     onClick={handleAvatarClick}
-                    className="absolute -bottom-1 -right-1 bg-blue-600 text-white p-2 rounded-full shadow-lg hover:bg-blue-700 transition-colors opacity-0 group-hover:opacity-100"
+                    className="absolute -bottom-1 -right-1 bg-blue-600 text-white p-1.5 sm:p-2 rounded-full shadow-lg hover:bg-blue-700 transition-colors opacity-0 group-hover:opacity-100"
                   >
-                    <Camera className="w-4 h-4" />
+                    <Camera className="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
                 </div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                   Hoş geldiniz {getUserDisplayName()}
                 </h1>
-                <p className="text-gray-600 mb-4">
-                  Fitmail'den en iyi şekilde yararlanmak için bilgi, gizlilik ve güvenliğinizi yönetin.{' '}
+                <p className="text-sm sm:text-base text-gray-600 mb-4 px-4 sm:px-0">
+                  Fitmail'den en iyi şekilde yararlanmak için bilgi, gizlilik ve güvenliğinizi yönetin.
                 </p>
                 
                 <div className="mb-4">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg">
                     <span className="w-2 h-2 bg-white rounded-full mr-2"></span>
                     Premium
                   </span>
                 </div>
                 
                 {user?.email && (
-                  <p className="text-sm text-gray-500 mb-4">
+                  <p className="text-xs sm:text-sm text-gray-500 mb-4">
                     {user.email}
                   </p>
                 )}
@@ -715,9 +750,9 @@ export default function AccountPage() {
               </div>
 
               {/* Search Bar */}
-              <div className="mb-8">
+              <div className="mb-6 sm:mb-8">
                 <div className="relative search-container">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Fitmail Hesabında ara"
@@ -725,7 +760,7 @@ export default function AccountPage() {
                     onChange={handleSearchInputChange}
                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                     onFocus={() => searchQuery.length > 0 && setShowSearchSuggestions(true)}
-                    className="w-full pl-12 pr-4 py-4 text-lg border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 text-base sm:text-lg border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   
                   {/* Arama Önerileri */}
@@ -765,93 +800,93 @@ export default function AccountPage() {
                     <h2 className="text-2xl font-semibold text-gray-900">Ana Sayfa</h2>
                     
                     {/* Profil Yönetimi Kartı */}
-                    <div className="bg-white border border-gray-200 rounded-lg p-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Profiliniz</h3>
-                      <p className="text-gray-600 mb-4">
+                    <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Profiliniz</h3>
+                      <p className="text-sm sm:text-base text-gray-600 mb-4">
                         Fitmail hizmetlerinde profilinizin nasıl göründüğünü yönetin ve kişisel bilgilerinizi güncelleyin.
                       </p>
-                      <div className="flex items-center space-x-4 mb-4">
-                        <div className="w-16 h-16 rounded-full border-2 border-blue-500 overflow-hidden">
+                      <div className="flex items-center space-x-3 sm:space-x-4 mb-4">
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-blue-500 overflow-hidden">
                           <img 
                             src={getProfileImage()} 
                             alt={getUserDisplayName()} 
                             className="w-full h-full object-cover"
                           />
                         </div>
-                        <div>
-                          <h4 className="font-medium text-gray-900">{getUserDisplayName()}</h4>
-                          <p className="text-sm text-gray-500">{user?.email}</p>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-medium text-gray-900 text-sm sm:text-base truncate">{getUserDisplayName()}</h4>
+                          <p className="text-xs sm:text-sm text-gray-500 truncate">{user?.email}</p>
                         </div>
                       </div>
                       <button 
                         onClick={() => setActiveNav('personal')}
-                        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                        className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium"
                       >
                         Profili düzenle →
                       </button>
                     </div>
 
                     {/* Güvenlik ve Gizlilik Kartı */}
-                    <div className="bg-white border border-gray-200 rounded-lg p-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Güvenlik ve Gizlilik</h3>
-                      <p className="text-gray-600 mb-4">
+                    <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Güvenlik ve Gizlilik</h3>
+                      <p className="text-sm sm:text-base text-gray-600 mb-4">
                         Hesabınızın güvenliğini artırın ve gizlilik ayarlarınızı yönetin.
                       </p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
                         <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                            <Shield className="w-4 h-4 text-green-600" />
+                          <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-100 rounded-full flex items-center justify-center">
+                            <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-900">Şifre</p>
+                            <p className="text-xs sm:text-sm font-medium text-gray-900">Şifre</p>
                             <p className="text-xs text-gray-500">Son güncelleme: Bu ay</p>
                           </div>
                         </div>
                         <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <Lock className="w-4 h-4 text-blue-600" />
+                          <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <Lock className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-900">Güvenlik</p>
+                            <p className="text-xs sm:text-sm font-medium text-gray-900">Güvenlik</p>
                             <p className="text-xs text-gray-500">Aktif koruma</p>
                           </div>
                         </div>
                       </div>
                       <button 
                         onClick={() => setActiveNav('privacy')}
-                        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                        className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium"
                       >
                         Güvenlik ayarları →
                       </button>
-                    </div>
+          </div>
 
                     {/* Hızlı Erişim Kartı */}
-                    <div className="bg-white border border-gray-200 rounded-lg p-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Hızlı Erişim</h3>
-                      <p className="text-gray-600 mb-4">
+                    <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Hızlı Erişim</h3>
+                      <p className="text-sm sm:text-base text-gray-600 mb-4">
                         Sık kullanılan ayarlara hızlıca erişin.
                       </p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
                         <button 
                           onClick={() => setActiveNav('language')}
-                          className="flex items-center space-x-2 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
+                          className="flex items-center space-x-2 p-2 sm:p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
                         >
-                          <Globe className="w-5 h-5 text-blue-600" />
-                          <span className="text-sm font-medium text-gray-700">Dil ve Bölge</span>
+                          <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                          <span className="text-xs sm:text-sm font-medium text-gray-700">Dil ve Bölge</span>
                         </button>
                         <button 
                           onClick={() => setActiveNav('accounts')}
-                          className="flex items-center space-x-2 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
+                          className="flex items-center space-x-2 p-2 sm:p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
                         >
-                          <Users className="w-5 h-5 text-blue-600" />
-                          <span className="text-sm font-medium text-gray-700">Bağlı Hesaplar</span>
+                          <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                          <span className="text-xs sm:text-sm font-medium text-gray-700">Bağlı Hesaplar</span>
                         </button>
                         <button 
                           onClick={() => setActiveNav('about')}
-                          className="flex items-center space-x-2 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
+                          className="flex items-center space-x-2 p-2 sm:p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
                         >
-                          <Info className="w-5 h-5 text-blue-600" />
-                          <span className="text-sm font-medium text-gray-700">Hakkında</span>
+                          <Info className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                          <span className="text-xs sm:text-sm font-medium text-gray-700">Hakkında</span>
                         </button>
                       </div>
                     </div>
@@ -1149,6 +1184,30 @@ export default function AccountPage() {
                           {user?.isVerified && (
                             <span className="text-xs text-green-600 font-medium">✓ Aktif</span>
                           )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Hesap Silme */}
+                    <div className="border-t border-gray-200 pt-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Tehlikeli Bölge</h3>
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-red-900 mb-1">Hesabınızı Silin</h4>
+                            <p className="text-sm text-red-700 mb-3">
+                              Hesabınızı silmek geri alınamaz bir işlemdir. Tüm verileriniz kalıcı olarak silinecektir.
+                            </p>
+                          </div>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => setShowDeleteAccountDialog(true)}
+                            className="ml-4"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Hesabı Sil
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -1530,6 +1589,28 @@ export default function AccountPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Hesap Silme Onay Dialog'u */}
+      <AlertDialog open={showDeleteAccountDialog} onOpenChange={setShowDeleteAccountDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hesabınızı Silmek İstediğinizden Emin misiniz?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu işlem geri alınamaz. Hesabınız ve tüm verileriniz kalıcı olarak silinecektir. 
+              Bu işlemden sonra hesabınıza tekrar erişemeyeceksiniz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteAccount}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Evet, Hesabımı Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

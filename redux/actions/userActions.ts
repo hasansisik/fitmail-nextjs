@@ -460,4 +460,28 @@ export const clearError = createAsyncThunk(
   }
 );
 
+// Delete Account Action
+export const deleteAccount = createAsyncThunk(
+  "user/deleteAccount",
+  async (_, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const response = await axios.delete(`${server}/auth/delete-account`, config);
+      return response.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
 
