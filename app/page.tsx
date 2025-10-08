@@ -605,8 +605,8 @@ export default function AccountPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Yükleniyor...</p>
-        </div>
-      </div>
+          </div>
+          </div>
     );
   }
 
@@ -729,7 +729,7 @@ export default function AccountPage() {
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                   Hoş geldiniz {getUserDisplayName()}
-                </h1>
+            </h1>
                 <p className="text-sm sm:text-base text-gray-600 mb-4 px-4 sm:px-0">
                   Fitmail'den en iyi şekilde yararlanmak için bilgi, gizlilik ve güvenliğinizi yönetin.
                 </p>
@@ -739,15 +739,15 @@ export default function AccountPage() {
                     <span className="w-2 h-2 bg-white rounded-full mr-2"></span>
                     Premium
                   </span>
-                </div>
-                
+          </div>
+
                 {user?.email && (
                   <p className="text-xs sm:text-sm text-gray-500 mb-4">
                     {user.email}
                   </p>
                 )}
   
-              </div>
+          </div>
 
               {/* Search Bar */}
               <div className="mb-6 sm:mb-8">
@@ -1139,12 +1139,12 @@ export default function AccountPage() {
                             className="bg-blue-600 hover:bg-blue-700"
                           >
                             Kaydet
-                          </Button>
+            </Button>
                         </div>
                       )}
-                    </div>
+          </div>
 
-                  </div>
+              </div>
                 )}
                 
                 {activeNav === 'privacy' && (
@@ -1165,11 +1165,11 @@ export default function AccountPage() {
                               Son değişiklik: {formatRelativeTime(user.auth.passwordChangedAt)}
                             </p>
                           )}
-                        </div>
+            </div>
                         <Button variant="outline" size="sm" onClick={handlePasswordChange}>
                           Değiştir
                         </Button>
-                      </div>
+              </div>
                     </div>
 
                     {/* Güvenlik Durumu */}
@@ -1197,8 +1197,8 @@ export default function AccountPage() {
                             <h4 className="font-medium text-red-900 mb-1">Hesabınızı Silin</h4>
                             <p className="text-sm text-red-700 mb-3">
                               Hesabınızı silmek geri alınamaz bir işlemdir. Tüm verileriniz kalıcı olarak silinecektir.
-                            </p>
-                          </div>
+              </p>
+            </div>
                           <Button 
                             variant="destructive" 
                             size="sm"
@@ -1351,11 +1351,11 @@ export default function AccountPage() {
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-3">Özellikler</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
+            <div className="space-y-2">
                             <div className="flex items-center gap-2">
                               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                               <span className="text-sm font-medium">Kişisel Veri Yönetimi</span>
-                            </div>
+              </div>
                             <p className="text-xs text-gray-500 ml-4">Ad, soyad, e-posta ve kişisel bilgilerinizi güncelleyin</p>
                           </div>
                           <div className="space-y-2">
@@ -1409,10 +1409,10 @@ export default function AccountPage() {
                           Güvenlik konularında herhangi bir endişeniz varsa lütfen derhal bizimle iletişime geçin.
               </p>
             </div>
-                    </div>
-                  </div>
+          </div>
+        </div>
                 )}
-              </div>
+      </div>
             </div>
           </main>
         </div>

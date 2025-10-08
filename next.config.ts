@@ -13,6 +13,16 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        source: '/:path*',
+        destination: '/panel/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'panel.localhost',
+          },
+        ],
+      },
     ];
   },
 };

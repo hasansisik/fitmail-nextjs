@@ -484,4 +484,280 @@ export const deleteAccount = createAsyncThunk(
   }
 );
 
+// Premium Actions
+export interface PremiumPlan {
+  _id: string;
+  name: string;
+  price: number;
+  code: string;
+  isActive: boolean;
+  description?: string;
+  features?: string[];
+  duration: number;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePremiumPayload {
+  name: string;
+  price: number;
+  description?: string;
+  features?: string[];
+  duration?: number;
+}
+
+export interface UpdatePremiumPayload {
+  id: string;
+  name?: string;
+  price?: number;
+  description?: string;
+  features?: string[];
+  duration?: number;
+  isActive?: boolean;
+}
+
+// Get All Premium Plans
+export const getAllPremiums = createAsyncThunk(
+  "premium/getAllPremiums",
+  async (_, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const response = await axios.get(`${server}/premium`, config);
+      return response.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
+// Create Premium Plan
+export const createPremium = createAsyncThunk(
+  "premium/createPremium",
+  async (premiumData: CreatePremiumPayload, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      console.log(premiumData);
+      const response = await axios.post(`${server}/premium`, premiumData, config);
+      return response.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
+// Update Premium Plan
+export const updatePremium = createAsyncThunk(
+  "premium/updatePremium",
+  async (premiumData: UpdatePremiumPayload, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const { id, ...updateData } = premiumData;
+      const response = await axios.put(`${server}/premium/${id}`, updateData, config);
+      return response.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
+// Delete Premium Plan
+export const deletePremium = createAsyncThunk(
+  "premium/deletePremium",
+  async (id: string, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const response = await axios.delete(`${server}/premium/${id}`, config);
+      return { id, ...response.data };
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
+// Toggle Premium Status
+export const togglePremiumStatus = createAsyncThunk(
+  "premium/togglePremiumStatus",
+  async (id: string, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const response = await axios.patch(`${server}/premium/${id}/toggle`, {}, config);
+      return response.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
+// User Management Actions
+export interface User {
+  _id: string;
+  name: string;
+  surname: string;
+  email: string;
+  role: 'admin' | 'user';
+  status: 'active' | 'inactive';
+  createdAt: string;
+  updatedAt: string;
+  profile?: any;
+  address?: any;
+}
+
+export interface UpdateUserRolePayload {
+  id: string;
+  role: 'admin' | 'user';
+}
+
+export interface UpdateUserStatusPayload {
+  id: string;
+  status: 'active' | 'inactive';
+}
+
+// Get All Users (Admin only)
+export const getAllUsers = createAsyncThunk(
+  "user/getAllUsers",
+  async (params: { role?: string; status?: string; search?: string; page?: number; limit?: number } = {}, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        params
+      };
+      const response = await axios.get(`${server}/auth/users`, config);
+      return response.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
+// Update User Role (Admin only)
+export const updateUserRole = createAsyncThunk(
+  "user/updateUserRole",
+  async (payload: UpdateUserRolePayload, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const response = await axios.patch(`${server}/auth/users/${payload.id}/role`, { role: payload.role }, config);
+      return response.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
+// Update User Status (Admin only)
+export const updateUserStatus = createAsyncThunk(
+  "user/updateUserStatus",
+  async (payload: UpdateUserStatusPayload, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const response = await axios.patch(`${server}/auth/users/${payload.id}/status`, { status: payload.status }, config);
+      return response.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
+// Delete User (Admin only)
+export const deleteUser = createAsyncThunk(
+  "user/deleteUser",
+  async (id: string, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const response = await axios.delete(`${server}/auth/users/${id}`, config);
+      return { id, ...response.data };
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
 

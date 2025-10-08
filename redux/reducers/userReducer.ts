@@ -14,6 +14,10 @@ import {
   updateTheme,
   checkEmailAvailability,
   clearError,
+  getAllUsers,
+  updateUserRole,
+  updateUserStatus,
+  deleteUser,
 } from "../actions/userActions";
 
 interface UserState {
@@ -28,6 +32,13 @@ interface UserState {
     available: boolean | null;
     message: string | null;
   };
+  allUsers: {
+    users: any[];
+    loading: boolean;
+    error: string | null;
+    stats: any;
+    pagination: any;
+  };
 }
 
 const initialState: UserState = {
@@ -41,6 +52,13 @@ const initialState: UserState = {
     loading: false,
     available: null,
     message: null,
+  },
+  allUsers: {
+    users: [],
+    loading: false,
+    error: null,
+    stats: null,
+    pagination: null,
   },
 };
 
@@ -270,6 +288,76 @@ export const userReducer = createReducer(initialState, (builder) => {
     .addCase(clearError.fulfilled, (state) => {
       state.error = null;
       state.message = null;
+    })
+    
+    // Get All Users
+    .addCase(getAllUsers.pending, (state) => {
+      state.allUsers.loading = true;
+      state.allUsers.error = null;
+    })
+    .addCase(getAllUsers.fulfilled, (state, action) => {
+      state.allUsers.loading = false;
+      state.allUsers.users = action.payload.users;
+      state.allUsers.stats = action.payload.stats;
+      state.allUsers.pagination = action.payload.pagination;
+      state.allUsers.error = null;
+    })
+    .addCase(getAllUsers.rejected, (state, action) => {
+      state.allUsers.loading = false;
+      state.allUsers.error = action.payload as string;
+    })
+    
+    // Update User Role
+    .addCase(updateUserRole.pending, (state) => {
+      state.allUsers.loading = true;
+      state.allUsers.error = null;
+    })
+    .addCase(updateUserRole.fulfilled, (state, action) => {
+      state.allUsers.loading = false;
+      const updatedUser = action.payload.user;
+      const index = state.allUsers.users.findIndex(user => user._id === updatedUser._id);
+      if (index !== -1) {
+        state.allUsers.users[index] = { ...state.allUsers.users[index], role: updatedUser.role };
+      }
+      state.allUsers.error = null;
+    })
+    .addCase(updateUserRole.rejected, (state, action) => {
+      state.allUsers.loading = false;
+      state.allUsers.error = action.payload as string;
+    })
+    
+    // Update User Status
+    .addCase(updateUserStatus.pending, (state) => {
+      state.allUsers.loading = true;
+      state.allUsers.error = null;
+    })
+    .addCase(updateUserStatus.fulfilled, (state, action) => {
+      state.allUsers.loading = false;
+      const updatedUser = action.payload.user;
+      const index = state.allUsers.users.findIndex(user => user._id === updatedUser._id);
+      if (index !== -1) {
+        state.allUsers.users[index] = { ...state.allUsers.users[index], status: updatedUser.status };
+      }
+      state.allUsers.error = null;
+    })
+    .addCase(updateUserStatus.rejected, (state, action) => {
+      state.allUsers.loading = false;
+      state.allUsers.error = action.payload as string;
+    })
+    
+    // Delete User
+    .addCase(deleteUser.pending, (state) => {
+      state.allUsers.loading = true;
+      state.allUsers.error = null;
+    })
+    .addCase(deleteUser.fulfilled, (state, action) => {
+      state.allUsers.loading = false;
+      state.allUsers.users = state.allUsers.users.filter(user => user._id !== action.payload.id);
+      state.allUsers.error = null;
+    })
+    .addCase(deleteUser.rejected, (state, action) => {
+      state.allUsers.loading = false;
+      state.allUsers.error = action.payload as string;
     });
 });
 
