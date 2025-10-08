@@ -8,6 +8,7 @@ import { getMailsByCategory, getMailsByLabelCategory, getMailStats, clearSelecte
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { toast } from "sonner"
+import { getAccountDomainUrl } from "@/config"
 import {
   Tooltip,
   TooltipContent,
@@ -151,7 +152,7 @@ const settingsNav = [
     label: "",
     icon: Settings,
     variant: "ghost" as const,
-    href: "http://account.localhost:3000",
+    href: getAccountDomainUrl(),
     isExternal: true
   },
   {

@@ -1,7 +1,8 @@
 "use client"
 
 import { Geist, Geist_Mono } from "next/font/google";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import "./globals.css";
 import { MainLayout } from "@/components/main-layout";
 import { Providers } from "@/redux/provider";
@@ -9,6 +10,7 @@ import { Toaster } from "sonner";
 import { useAppDispatch } from "@/redux/hook";
 import { loadUser } from "@/redux/actions/userActions";
 import { Metadata } from "@/components/metadata";
+import { isSubdomain, getMainDomainFromSubdomain, activeDomains } from "@/config";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,11 +24,44 @@ const geistMono = Geist_Mono({
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
+  const pathname = usePathname();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
     // Uygulama başladığında kullanıcı bilgilerini yükle
     dispatch(loadUser());
   }, [dispatch]);
+
+  useEffect(() => {
+    // Global subdomain yönlendirme kontrolü
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      
+      // Subdomain'lerde belirli route'lar yazıldığında ana domain'e yönlendir
+      // Sadece root path (/) değilse yönlendir
+      if (isSubdomain(hostname) && pathname && pathname !== '/' && pathname.length > 1) {
+        // Ana domain'e yönlendir
+        const mainDomain = getMainDomainFromSubdomain(hostname);
+        const redirectUrl = `${activeDomains.protocol}://${mainDomain}${pathname}`;
+        
+        setIsRedirecting(true);
+        window.location.href = redirectUrl;
+        return;
+      }
+    }
+  }, [pathname]);
+
+  // Yönlendirme sırasında loading göster
+  if (isRedirecting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Yönlendiriliyor...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

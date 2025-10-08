@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import HomePage from './home-page';
 import AccountPage from './account-page';
 import AdminPage from './admin-page';
+import { isAccountSubdomain, isPanelSubdomain } from '@/config';
 
 export default function Page() {
   const [currentDomain, setCurrentDomain] = useState<string>('');
@@ -16,11 +17,11 @@ export default function Page() {
   }, []);
 
   // Domain bazlı routing
-  if (currentDomain === 'panel.localhost' || currentDomain === 'panel.domain.com') {
+  if (isPanelSubdomain(currentDomain)) {
     return <AdminPage />;
   }
   
-  if (currentDomain === 'account.localhost' || currentDomain === 'account.domain.com') {
+  if (isAccountSubdomain(currentDomain)) {
     return <AccountPage />;
   }
   

@@ -7,15 +7,19 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/redux/hook";
 import { Metadata } from "@/components/metadata";
+import { isSubdomain } from "@/config";
 
 export default function HomePage() {
   const router = useRouter();
   const { user, isAuthenticated, loading } = useAppSelector((state) => state.user);
 
-  // Redirect authenticated users to /mail
+  // Redirect authenticated users to /mail (only on main domain)
   useEffect(() => {
     if (!loading && isAuthenticated && user) {
-      router.push("/mail");
+      // Sadece ana domain'deyse /mail'e yönlendir
+      if (typeof window !== 'undefined' && !isSubdomain(window.location.hostname)) {
+        router.push("/mail");
+      }
     }
   }, [isAuthenticated, loading, user, router]);
 

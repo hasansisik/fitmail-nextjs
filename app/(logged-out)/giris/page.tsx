@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/redux/hook";
 import { Metadata } from "@/components/metadata";
+import { activeDomains } from "@/config";
 
 import { LoginForm } from "@/components/login-form"
 
@@ -16,7 +17,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (!loading && isAuthenticated && user) {
       // Eğer account subdomain'indeyse account sayfasında kal
-      if (window.location.hostname === 'account.localhost') {
+      if (window.location.hostname === activeDomains.account) {
         // Account sayfasında kal, sadece sayfayı yenile
         window.location.reload();
       } else {
