@@ -22,6 +22,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/hook"
 import { editProfile, changePassword, verifyPassword } from "@/redux/actions/userActions"
 import { toast } from "sonner"
 import { uploadFileToCloudinary } from "@/utils/cloudinary"
+import { formatRelativeTime } from "@/lib/dateUtils"
 import ReactCrop, { centerCrop, makeAspectCrop, Crop, PixelCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 
@@ -782,7 +783,11 @@ export default function AccountSettingsPage() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div>
               <h4 className="font-medium">Şifre</h4>
-              <p className="text-sm text-muted-foreground">Son değişiklik: 3 ay önce</p>
+              {user?.auth?.passwordChangedAt && (
+                <p className="text-sm text-muted-foreground">
+                  Son değişiklik: {formatRelativeTime(user.auth.passwordChangedAt)}
+                </p>
+              )}
             </div>
             <Button variant="outline" size="sm" onClick={handlePasswordChange} className="w-full sm:w-auto">Değiştir</Button>
           </div>
