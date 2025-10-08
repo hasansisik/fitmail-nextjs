@@ -57,6 +57,16 @@ export const mailReducer = createReducer(initialState, (builder) => {
       state.mailsLoading = false;
       state.message = action.payload.message;
       state.mailsError = null;
+      
+      // Eğer gönderilen kutusundaysak, yeni mail'i listeye ekle
+      if (state.currentFolder === 'sent' && action.payload.mail) {
+        // Mail zaten listede var mı kontrol et
+        const existingMailIndex = state.mails.findIndex(mail => mail._id === action.payload.mail._id);
+        if (existingMailIndex === -1) {
+          // Mail'i listenin başına ekle (en yeni mail en üstte)
+          state.mails.unshift(action.payload.mail);
+        }
+      }
     })
     .addCase(sendMail.rejected, (state, action) => {
       state.mailsLoading = false;
@@ -319,6 +329,16 @@ export const mailReducer = createReducer(initialState, (builder) => {
       state.mailsLoading = false;
       state.message = action.payload.message;
       state.mailsError = null;
+      
+      // Eğer cevap mail'i varsa ve gönderilen kutusundaysak, mail listesine ekle
+      if (action.payload.replyMail && state.currentFolder === 'sent') {
+        // Mail zaten listede var mı kontrol et
+        const existingMailIndex = state.mails.findIndex(mail => mail._id === action.payload.replyMail._id);
+        if (existingMailIndex === -1) {
+          // Mail'i listenin başına ekle (en yeni mail en üstte)
+          state.mails.unshift(action.payload.replyMail);
+        }
+      }
     })
     .addCase(addReplyToMail.rejected, (state, action) => {
       state.mailsLoading = false;
