@@ -11,10 +11,10 @@ export const activeServer: string = process.env.NODE_ENV === 'production' ? serv
 export const domains = {
   // Development domains
   development: {
-    main: 'localhost:3000',
-    account: 'account.localhost:3000',
-    panel: 'panel.localhost:3000',
-    protocol: 'http'
+    main: 'fitmail-nextjs.vercel.app',
+    account: 'account.fitmail-nextjs.vercel.app',
+    panel: 'panel.fitmail-nextjs.vercel.app',
+    protocol: 'https'
   },
   // Production domains
   production: {
