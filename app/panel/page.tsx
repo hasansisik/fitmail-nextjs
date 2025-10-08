@@ -8,7 +8,6 @@ import {
   getAllPremiums, 
   createPremium, 
   deletePremium, 
-  togglePremiumStatus,
   CreatePremiumPayload,
   getAllUsers,
   updateUserRole,
@@ -20,28 +19,18 @@ import {
 import { 
   Users, 
   Crown, 
-  Settings, 
   LogOut, 
   Plus, 
-  Edit, 
   Trash2, 
-  Eye, 
-  EyeOff,
-  Search,
-  Filter,
-  MoreHorizontal,
-  UserPlus,
-  Package
+  Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 
@@ -167,8 +156,8 @@ export default function PanelPage() {
   // Loading state
   if (loading || allUsers.loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
       </div>
     );
   }
@@ -176,13 +165,13 @@ export default function PanelPage() {
   // Auth check
   if (!isAuthenticated || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Giriş Gerekli</h1>
+          <h1 className="text-xl font-semibold text-black mb-4">Giriş Gerekli</h1>
           <p className="text-gray-600 mb-6">Bu sayfaya erişmek için giriş yapmanız gerekiyor.</p>
           <a 
             href="/giris" 
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="inline-flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
           >
             Giriş Yap
           </a>
@@ -194,13 +183,13 @@ export default function PanelPage() {
   // Admin check
   if (user.role !== 'admin') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Yetkisiz Erişim</h1>
+          <h1 className="text-xl font-semibold text-red-600 mb-4">Yetkisiz Erişim</h1>
           <p className="text-gray-600 mb-6">Bu sayfaya erişmek için admin yetkisine sahip olmanız gerekiyor.</p>
           <a 
             href="/" 
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="inline-flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
           >
             Ana Sayfaya Dön
           </a>
@@ -215,26 +204,18 @@ export default function PanelPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg">
+      <header className="border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                  <Crown className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-white">Fitmail Admin Panel</h1>
-                  <p className="text-blue-100 text-sm">Sistem Yönetimi</p>
-                </div>
-              </div>
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-3">
+              <Crown className="w-6 h-6 text-black" />
+              <h1 className="text-xl font-semibold text-black">Admin Panel</h1>
             </div>
             <div className="flex items-center space-x-4">
-              {/* User Info */}
-              <div className="flex items-center space-x-3 bg-white/10 rounded-lg px-4 py-2">
-                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
                   {user?.picture ? (
                     <img 
                       src={user.picture} 
@@ -242,105 +223,89 @@ export default function PanelPage() {
                       className="w-8 h-8 rounded-full object-cover"
                     />
                   ) : (
-                    <span className="text-white text-sm font-medium">
+                    <span className="text-gray-600 text-sm font-medium">
                       {user?.name?.charAt(0)?.toUpperCase()}
                     </span>
                   )}
                 </div>
-                <div className="text-white">
-                  <p className="text-sm font-medium">{user?.name} {user?.surname}</p>
-                  <p className="text-xs text-blue-100 capitalize">{user?.role}</p>
+                <div>
+                  <p className="text-sm font-medium text-black">{user?.name} {user?.surname}</p>
+                  <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
                 </div>
               </div>
               <Button 
                 variant="outline" 
                 onClick={handleLogout}
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white"
+                className="border-gray-300 text-gray-700 hover:bg-gray-50"
               >
                 <LogOut className="w-4 h-4 mr-2" />
-                Çıkış Yap
+                Çıkış
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Toplam Kullanıcı</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+        <div className="grid gap-4 md:grid-cols-4 mb-6">
+          <Card className="border-gray-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Toplam Kullanıcı</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{allUsers.users.length}</div>
-              <p className="text-xs text-muted-foreground">
-                +{allUsers.users.filter(u => u.status === 'active').length} aktif
-              </p>
+              <div className="text-2xl font-bold text-black">{allUsers.users.length}</div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Premium Domainler</CardTitle>
-              <Crown className="h-4 w-4 text-muted-foreground" />
+          <Card className="border-gray-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Premium Domainler</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{premiums.length}</div>
-              <p className="text-xs text-muted-foreground">
-                Aktif planlar
-              </p>
+              <div className="text-2xl font-bold text-black">{premiums.length}</div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Aktif Kullanıcılar</CardTitle>
-              <UserPlus className="h-4 w-4 text-muted-foreground" />
+          <Card className="border-gray-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Aktif Kullanıcılar</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{allUsers.users.filter(u => u.status === 'active').length}</div>
-              <p className="text-xs text-muted-foreground">
-                Bu ay
-              </p>
+              <div className="text-2xl font-bold text-black">{allUsers.users.filter(u => u.status === 'active').length}</div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Admin Kullanıcılar</CardTitle>
-              <Settings className="h-4 w-4 text-muted-foreground" />
+          <Card className="border-gray-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Admin Kullanıcılar</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{allUsers.users.filter(u => u.role === 'admin').length}</div>
-              <p className="text-xs text-muted-foreground">
-                Sistem yöneticileri
-              </p>
+              <div className="text-2xl font-bold text-black">{allUsers.users.filter(u => u.role === 'admin').length}</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="mb-8">
+        <div className="mb-6">
           <nav className="flex space-x-8">
             <button
               onClick={() => setActiveTab('users')}
               className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'users'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-black text-black'
+                  : 'border-transparent text-gray-500 hover:text-black hover:border-gray-300'
               }`}
             >
-              <Users className="w-5 h-5" />
+              <Users className="w-4 h-4" />
               <span>Kullanıcılar</span>
             </button>
             <button
               onClick={() => setActiveTab('premium')}
               className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'premium'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-black text-black'
+                  : 'border-transparent text-gray-500 hover:text-black hover:border-gray-300'
               }`}
             >
-              <Crown className="w-5 h-5" />
+              <Crown className="w-4 h-4" />
               <span>Premium Domainler</span>
             </button>
           </nav>
@@ -348,14 +313,14 @@ export default function PanelPage() {
 
         {/* Users Tab */}
         {activeTab === 'users' && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Kullanıcı Yönetimi</h2>
+              <h2 className="text-lg font-semibold text-black">Kullanıcılar</h2>
               <Dialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog}>
                 <DialogTrigger asChild>
-                  <Button>
+                  <Button className="bg-black hover:bg-gray-800 text-white">
                     <Plus className="w-4 h-4 mr-2" />
-                    Kullanıcı Ekle
+                    Ekle
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -415,23 +380,20 @@ export default function PanelPage() {
             {/* Search */}
             <div className="flex items-center space-x-2">
               <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="Kullanıcı ara..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8"
+                  className="pl-8 border-gray-300"
                 />
               </div>
             </div>
 
             {/* Users Table */}
-            <Card>
+            <Card className="border-gray-200">
               <CardHeader>
-                <CardTitle>Kullanıcı Listesi</CardTitle>
-                <CardDescription>
-                  Sistemdeki tüm kullanıcıları yönetin
-                </CardDescription>
+                <CardTitle className="text-black">Kullanıcı Listesi</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -499,7 +461,7 @@ export default function PanelPage() {
                         <TableCell className="text-right">
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="destructive" size="sm">
+                              <Button variant="outline" size="sm" className="border-red-200 text-red-600 hover:bg-red-50">
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </AlertDialogTrigger>
@@ -530,14 +492,14 @@ export default function PanelPage() {
 
         {/* Premium Tab */}
         {activeTab === 'premium' && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Premium Domain Yönetimi</h2>
+              <h2 className="text-lg font-semibold text-black">Premium Domainler</h2>
               <Dialog open={showAddDomainDialog} onOpenChange={setShowAddDomainDialog}>
                 <DialogTrigger asChild>
-                  <Button>
+                  <Button className="bg-black hover:bg-gray-800 text-white">
                     <Plus className="w-4 h-4 mr-2" />
-                    Domain Ekle
+                    Ekle
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -608,33 +570,31 @@ export default function PanelPage() {
             </div>
 
             {/* Premium Domains Grid */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {premiums.map((plan) => (
-                <Card key={plan._id}>
+                <Card key={plan._id} className="border-gray-200">
                   <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>{plan.name.includes('@gozdedijital.xyz') ? plan.name : `${plan.name}@gozdedijital.xyz`}</span>
-                      <Crown className="w-5 h-5 text-yellow-500" />
+                    <CardTitle className="flex items-center justify-between text-black">
+                      <span className="text-sm">{plan.name.includes('@gozdedijital.xyz') ? plan.name : `${plan.name}@gozdedijital.xyz`}</span>
+                      <Crown className="w-4 h-4 text-gray-600" />
                     </CardTitle>
-                    <CardDescription>
-                      Premium domain detayları
-                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Fiyat:</span>
-                        <span className="text-lg font-bold text-green-600">₺{plan.price}</span>
+                        <span className="text-lg font-bold text-black">₺{plan.price}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Kod:</span>
                         <div className="flex items-center space-x-2">
-                          <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">
+                          <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono text-black">
                             {plan.code}
                           </code>
                           <Button
                             variant="outline"
                             size="sm"
+                            className="border-gray-300 text-gray-700 hover:bg-gray-50"
                             onClick={() => {
                               navigator.clipboard.writeText(plan.code);
                               toast.success('Kod kopyalandı');
@@ -644,12 +604,12 @@ export default function PanelPage() {
                           </Button>
                         </div>
                       </div>
-                      <div className="pt-4 border-t">
+                      <div className="pt-3 border-t border-gray-200">
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm" className="w-full">
+                            <Button variant="outline" size="sm" className="w-full border-red-200 text-red-600 hover:bg-red-50">
                               <Trash2 className="w-4 h-4 mr-2" />
-                              Domaini Sil
+                              Sil
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>

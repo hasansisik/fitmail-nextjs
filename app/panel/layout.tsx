@@ -23,21 +23,21 @@ export default function PanelLayout({
   // Admin kontrolü
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
       </div>
     );
   }
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Giriş Gerekli</h1>
+          <h1 className="text-xl font-semibold text-black mb-4">Giriş Gerekli</h1>
           <p className="text-gray-600 mb-6">Bu sayfaya erişmek için giriş yapmanız gerekiyor.</p>
           <a 
             href="/giris" 
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="inline-flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
           >
             Giriş Yap
           </a>
@@ -48,13 +48,13 @@ export default function PanelLayout({
 
   if (user.role !== 'admin') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Yetkisiz Erişim</h1>
+          <h1 className="text-xl font-semibold text-red-600 mb-4">Yetkisiz Erişim</h1>
           <p className="text-gray-600 mb-6">Bu sayfaya erişmek için admin yetkisine sahip olmanız gerekiyor.</p>
           <a 
             href="/" 
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="inline-flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
           >
             Ana Sayfaya Dön
           </a>
@@ -64,7 +64,7 @@ export default function PanelLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {children}
     </div>
   );
