@@ -33,9 +33,24 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
+import { activeDomains } from "@/config";
+import { usePathname } from 'next/navigation';
+import LoginPage from "./(logged-out)/giris/page";
+import RegisterPage from "./(logged-out)/kayit-ol/page";
 
 
 export default function AdminPage() {
+  const pathname = usePathname();
+  
+  // Giriş sayfalarını render et
+  if (pathname === '/giris') {
+    return <LoginPage />;
+  }
+  
+  if (pathname === '/kayit-ol') {
+    return <RegisterPage />;
+  }
+  
   const dispatch = useDispatch<AppDispatch>();
   const { user, loading, isAuthenticated, allUsers } = useSelector((state: RootState) => state.user);
   const { premiums, loading: premiumLoading } = useSelector((state: RootState) => state.premium);
@@ -162,23 +177,7 @@ export default function AdminPage() {
     );
   }
 
-  // Auth check
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <h1 className="text-xl font-semibold text-black mb-4">Giriş Gerekli</h1>
-          <p className="text-gray-600 mb-6">Bu sayfaya erişmek için giriş yapmanız gerekiyor.</p>
-          <a 
-            href="/giris" 
-            className="inline-flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
-          >
-            Giriş Yap
-          </a>
-        </div>
-      </div>
-    );
-  }
+
 
   // Admin check
   if (user.role !== 'admin') {
@@ -186,10 +185,10 @@ export default function AdminPage() {
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
           <h1 className="text-xl font-semibold text-red-600 mb-4">Yetkisiz Erişim</h1>
-          <p className="text-gray-600 mb-6">Bu sayfaya erişmek için admin yetkisine sahip olmanız gerekiyor.</p>
+          <p className="text-gray-600 mb-6">Erişim yetkiniz bulunmamaktadır</p>
           <a 
             href="/" 
-            className="inline-flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+            className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-gray-800"
           >
             Ana Sayfaya Dön
           </a>
@@ -313,7 +312,7 @@ export default function AdminPage() {
 
         {/* Users Tab */}
         {activeTab === 'users' && (
-          <div className="space-y-4">
+          <div className="space-y-2">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold text-black">Kullanıcılar</h2>
               <Dialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog}>
@@ -434,7 +433,7 @@ export default function AdminPage() {
                             value={user.role} 
                             onValueChange={(value) => handleUserRoleChange(user._id, value)}
                           >
-                            <SelectTrigger className="w-24">
+                            <SelectTrigger className="w-30">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>

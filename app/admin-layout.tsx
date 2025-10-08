@@ -33,7 +33,7 @@ export default function AdminLayout({
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <h1 className="text-xl font-semibold text-black mb-4">Giriş Gerekli</h1>
+          <h1 className="text-xl font-semibold text-black mb-4">Giriş Gerekli1</h1>
           <p className="text-gray-600 mb-6">Bu sayfaya erişmek için giriş yapmanız gerekiyor.</p>
           <a 
             href="/giris" 
@@ -51,10 +51,10 @@ export default function AdminLayout({
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
           <h1 className="text-xl font-semibold text-red-600 mb-4">Yetkisiz Erişim</h1>
-          <p className="text-gray-600 mb-6">Bu sayfaya erişmek için admin yetkisine sahip olmanız gerekiyor.</p>
+          <p className="text-gray-600 mb-6">Erişim yetkiniz bulunmamaktadır</p>
           <a 
             href="/" 
-            className="inline-flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+            className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-gray-800"
           >
             Ana Sayfaya Dön
           </a>

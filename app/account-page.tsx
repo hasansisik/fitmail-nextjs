@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { usePathname } from 'next/navigation';
 import { 
   User, 
   Shield, 
@@ -60,6 +61,9 @@ import { formatRelativeTime } from '@/lib/dateUtils';
 import { uploadFileToCloudinary } from '@/utils/cloudinary';
 import ReactCrop, { centerCrop, makeAspectCrop, Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
+import { activeDomains } from "@/config";
+import LoginPage from "./(logged-out)/giris/page";
+import RegisterPage from "./(logged-out)/kayit-ol/page";
 
 const navigationItems = [
   { id: 'home', label: 'Ana Sayfa', icon: Home },
@@ -80,6 +84,17 @@ const quickActions = [
 ];
 
 export default function AccountPage() {
+  const pathname = usePathname();
+  
+  // Giriş sayfalarını render et
+  if (pathname === '/giris') {
+    return <LoginPage />;
+  }
+  
+  if (pathname === '/kayit-ol') {
+    return <RegisterPage />;
+  }
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [activeNav, setActiveNav] = useState('home');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
