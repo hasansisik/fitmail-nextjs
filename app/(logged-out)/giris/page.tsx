@@ -12,10 +12,17 @@ export default function LoginPage() {
   const router = useRouter();
   const { user, isAuthenticated, loading } = useAppSelector((state) => state.user);
 
-  // Redirect authenticated users to /mail
+  // Redirect authenticated users to appropriate page
   useEffect(() => {
     if (!loading && isAuthenticated && user) {
-      router.push("/mail");
+      // Eğer account subdomain'indeyse account sayfasında kal
+      if (window.location.hostname === 'account.localhost') {
+        // Account sayfasında kal, sadece sayfayı yenile
+        window.location.reload();
+      } else {
+        // Normal domain'deyse mail sayfasına yönlendir
+        router.push("/mail");
+      }
     }
   }, [isAuthenticated, loading, user, router]);
 

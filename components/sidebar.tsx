@@ -147,11 +147,12 @@ const getCategoryNav = (mailStats: any) => [
 
 const settingsNav = [
   {
-    title: "Ayarlar",
+    title: "Hesap",
     label: "",
     icon: Settings,
     variant: "ghost" as const,
-    href: "/mail/settings/account"
+    href: "http://account.localhost:3000",
+    isExternal: true
   },
   {
     title: "Çıkış Yap",
@@ -242,6 +243,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
   const renderNavItem = (link: any, index: number, isActive: boolean) => {
     const isLogout = link.isLogout
     const isSettings = link.href?.includes('/settings')
+    const isExternal = link.isExternal
 
     return isLogout ? (
       isCollapsed ? (
@@ -309,6 +311,40 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+      )
+    ) : isExternal ? (
+      isCollapsed ? (
+        <Tooltip key={index} delayDuration={0}>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => window.open(link.href, '_blank')}
+              className={cn(
+                buttonVariants({ variant: isActive ? "default" : "ghost", size: "icon" }),
+                "h-9 w-9 mx-auto cursor-pointer",
+                !isActive && "hover:bg-transparent hover:text-foreground"
+              )}
+            >
+              <link.icon className="h-4 w-4" />
+              <span className="sr-only">{link.title}</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="flex items-center gap-4">
+            {link.title}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <button
+          key={index}
+          onClick={() => window.open(link.href, '_blank')}
+          className={cn(
+            buttonVariants({ variant: isActive ? "default" : "ghost", size: "sm" }),
+            !isActive && "hover:bg-transparent hover:text-foreground",
+            "justify-start w-full cursor-pointer"
+          )}
+        >
+          <link.icon className="mr-2 h-4 w-4" />
+          {link.title}
+        </button>
       )
     ) : isSettings ? (
       isCollapsed ? (

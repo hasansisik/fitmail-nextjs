@@ -93,6 +93,7 @@ export interface EditProfilePayload {
   name?: string;
   surname?: string;
   recoveryEmail?: string;
+  avatar?: string;
   address?: {
     street?: string;
     city?: string;
