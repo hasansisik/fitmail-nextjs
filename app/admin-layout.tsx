@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/redux/store';
 import { loadUser } from '@/redux/actions/userActions';
 
-export default function PanelLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;

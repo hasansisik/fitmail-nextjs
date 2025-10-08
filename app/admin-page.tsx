@@ -35,7 +35,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from 'sonner';
 
 
-export default function PanelPage() {
+export default function AdminPage() {
   const dispatch = useDispatch<AppDispatch>();
   const { user, loading, isAuthenticated, allUsers } = useSelector((state: RootState) => state.user);
   const { premiums, loading: premiumLoading } = useSelector((state: RootState) => state.premium);
