@@ -180,8 +180,13 @@ export const loadUser = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const token = localStorage.getItem("accessToken");
+      console.log('loadUser called:', { 
+        token: token ? 'exists' : 'missing',
+        serverUrl: `${server}/auth/me`
+      });
       
       if (!token) {
+        console.log('loadUser: No token found');
         throw new Error("");
       }
       
@@ -190,17 +195,27 @@ export const loadUser = createAsyncThunk(
           Authorization: `Bearer ${token}`,
         },
       });
+      console.log('loadUser success:', { 
+        user: data.user,
+        role: data.user?.role 
+      });
       // Store user email for potential verification redirects
       if (data.user.email) {
         localStorage.setItem("userEmail", data.user.email);
       }
       return data.user;
     } catch (error: any) {
+      console.log('loadUser error:', { 
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+        error: error
+      });
       // Handle 404 errors silently (user not found or invalid token)
       if (error.response?.status === 404) {
         // Clear invalid token and return silent error
         localStorage.removeItem("accessToken");
         localStorage.removeItem("userEmail");
+        console.log('loadUser: 404 error, token cleared');
         return thunkAPI.rejectWithValue("User not found");
       }
       
@@ -209,6 +224,7 @@ export const loadUser = createAsyncThunk(
         // Clear local storage and return special error
         localStorage.removeItem("accessToken");
         localStorage.removeItem("userEmail");
+        console.log('loadUser: 401 error, user inactive');
         return thunkAPI.rejectWithValue({
           message: error.response.data.message,
           requiresLogout: true

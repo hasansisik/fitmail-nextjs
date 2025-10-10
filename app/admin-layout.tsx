@@ -20,7 +20,12 @@ export default function AdminLayout({
     }
   }, [dispatch, isAuthenticated, loading]);
 
-  console.log(user.role);
+  console.log('Admin Layout Debug:', {
+    user,
+    userRole: user?.role,
+    isAuthenticated,
+    loading
+  });
 
   // Admin kontrolü
   if (loading) {
