@@ -11,16 +11,16 @@ export const activeServer: string = process.env.NODE_ENV === 'production' ? serv
 export const domains = {
   // Development domains
   development: {
-    main: 'fitmail-nextjs.vercel.app',
-    account: 'account.fitmail-nextjs.vercel.app',
-    panel: 'panel.fitmail-nextjs.vercel.app',
+    main: 'gozdedijital.xyz',
+    account: 'account.gozdedijital.xyz',
+    panel: 'panel.gozdedijital.xyz',
     protocol: 'https'
   },
   // Production domains
   production: {
-    main: 'fitmail-nextjs.vercel.app',
-    account: 'account.fitmail-nextjs.vercel.app',
-    panel: 'panel.fitmail-nextjs.vercel.app',
+    main: 'gozdedijital.xyz',
+    account: 'account.gozdedijital.xyz',
+    panel: 'panel.gozdedijital.xyz',
     protocol: 'https'
   }
 };
