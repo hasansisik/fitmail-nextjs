@@ -47,13 +47,7 @@ export default function AdminPage() {
   const { user, loading, isAuthenticated, allUsers } = useSelector((state: RootState) => state.user);
   const { premiums, loading: premiumLoading } = useSelector((state: RootState) => state.premium);
 
-  console.log('Admin Page Debug:', {
-    user,
-    userRole: user?.role,
-    isAuthenticated,
-    loading,
-    allUsersLoading: allUsers.loading
-  });
+  console.log(user.role);
 
   const [activeTab, setActiveTab] = useState<'users' | 'premium'>('users');
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
@@ -64,21 +58,11 @@ export default function AdminPage() {
   const [isCreatingDomain, setIsCreatingDomain] = useState(false);
 
   useEffect(() => {
-    // Her zaman token kontrolü yap
     const token = localStorage.getItem("accessToken");
-    console.log('Admin Page useEffect:', { 
-      token: token ? 'exists' : 'missing', 
-      isAuthenticated, 
-      loading,
-      userRole: user?.role 
-    });
-    
-    // Token varsa ve user yüklenmemişse loadUser çağır
-    if (token && !loading && (!user || !user._id)) {
-      console.log('Dispatching loadUser...');
+    if (token && !isAuthenticated && !loading) {
       dispatch(loadUser());
     }
-  }, [dispatch, loading, user]);
+  }, [dispatch, isAuthenticated, loading]);
 
   useEffect(() => {
     if (isAuthenticated && user?.role === 'admin') {
@@ -187,33 +171,24 @@ export default function AdminPage() {
     window.location.href = '/giris';
   };
 
-  // Loading state - daha güvenli kontrol
-  if (loading || allUsers.loading || (!isAuthenticated && !user)) {
+  // Loading state
+  if (loading || allUsers.loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-600">Yükleniyor...</p>
-          <div className="text-xs text-gray-400 mt-2">
-            Debug: loading={loading}, isAuthenticated={isAuthenticated}, user={user ? 'exists' : 'null'}
-          </div>
-        </div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
       </div>
     );
   }
 
 
 
-  // Admin check - daha güvenli kontrol
-  if (!user || !user.role || user.role !== 'admin') {
+  // Admin check
+  if (user.role !== 'admin') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
           <h1 className="text-xl font-semibold text-red-600 mb-4">Yetkisiz Erişim</h1>
           <p className="text-gray-600 mb-6">Erişim yetkiniz bulunmamaktadır</p>
-          <div className="text-xs text-gray-400 mb-4">
-            Debug: user={JSON.stringify(user)}, role={user?.role}
-          </div>
           <a 
             href="/" 
             className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-gray-800"
