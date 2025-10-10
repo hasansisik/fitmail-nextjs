@@ -37,8 +37,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     if (typeof window !== 'undefined') {
       const hostname = window.location.hostname;
       
-      // Subdomain'lerde sadece /mail path'ini ana domain'e yönlendir
-      // Diğer path'ler (giris, kayit-ol vs.) subdomain'de kalabilir
+      // Panel subdomain'inde /mail path'ini ana domain'e yönlendir
+      // Account subdomain'inde /mail path'ini ana domain'e yönlendir
+      // Diğer path'ler subdomain'de kalabilir
       if (isSubdomain(hostname) && pathname === '/mail') {
         // Ana domain'e yönlendir
         const mainDomain = getMainDomainFromSubdomain(hostname);

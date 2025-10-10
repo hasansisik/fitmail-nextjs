@@ -47,6 +47,11 @@ export const isSubdomain = (hostname: string) => {
   const accountHost = activeDomains.account.split(':')[0];
   const panelHost = activeDomains.panel.split(':')[0];
   
+  // Localhost development için özel kontrol
+  if (hostname.includes('localhost')) {
+    return hostname.startsWith('account.localhost') || hostname.startsWith('panel.localhost');
+  }
+  
   return hostname === accountHost || hostname === panelHost;
 };
 
@@ -61,11 +66,23 @@ export const getMainDomainFromSubdomain = (hostname: string) => {
 // Check if hostname is account subdomain
 export const isAccountSubdomain = (hostname: string) => {
   const accountHost = activeDomains.account.split(':')[0];
+  
+  // Localhost development için özel kontrol
+  if (hostname.includes('localhost')) {
+    return hostname.startsWith('account.localhost');
+  }
+  
   return hostname === accountHost;
 };
 
 // Check if hostname is panel subdomain
 export const isPanelSubdomain = (hostname: string) => {
   const panelHost = activeDomains.panel.split(':')[0];
+  
+  // Localhost development için özel kontrol
+  if (hostname.includes('localhost')) {
+    return hostname.startsWith('panel.localhost');
+  }
+  
   return hostname === panelHost;
 };
