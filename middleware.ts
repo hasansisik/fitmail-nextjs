@@ -8,8 +8,18 @@ export function middleware(request: NextRequest) {
   const isAccountSubdomain = hostname === 'account.gozdedijital.xyz'
   const isPanelSubdomain = hostname === 'panel.gozdedijital.xyz'
   
-  // If it's a subdomain and the path is not root (/), redirect to root
-  if ((isAccountSubdomain || isPanelSubdomain) && pathname !== '/') {
+  // Allowed paths for subdomains (logged-out pages)
+  const allowedSubdomainPaths = [
+    '/giris',
+    '/kayit-ol', 
+    '/sifremi-unuttum',
+    '/sifre-sifirla'
+  ]
+  
+  // If it's a subdomain and the path is not root (/) and not in allowed paths, redirect to root
+  if ((isAccountSubdomain || isPanelSubdomain) && 
+      pathname !== '/' && 
+      !allowedSubdomainPaths.includes(pathname)) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)
