@@ -3,7 +3,6 @@
 import { GalleryVerticalEnd } from "lucide-react"
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { useAppSelector } from "@/redux/hook";
 import { Metadata } from "@/components/metadata";
 import { activeDomains } from "@/config";
@@ -35,15 +34,15 @@ export default function LoginPage() {
   if (loading) {
     return (
       <div className="grid min-h-svh lg:grid-cols-2">
-        <div className="bg-muted relative hidden lg:block">
-          <Image
-            src="/bg.jpg"
-            alt="Bg"
-            fill
-            className="object-cover dark:brightness-[0.2] dark:grayscale"
-            priority
-          />
-        </div>
+        <div 
+          className="bg-muted relative hidden lg:block"
+          style={{
+            backgroundImage: 'url(/bg.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        />
         <div className="flex flex-col gap-4 p-6 md:p-10">
           <div className="flex justify-center gap-2 md:justify-start">
             <a href="#" className="flex items-center gap-2 font-medium">
@@ -73,15 +72,15 @@ export default function LoginPage() {
         keywords="giriş, login, fitmail, email, e-posta"
       />
       <div className="grid min-h-svh lg:grid-cols-2">
-        <div className="bg-muted relative hidden lg:block">
-          <Image
-            src="/bg.jpg"
-            alt="Bg"
-            fill
-            className="object-cover dark:brightness-[0.2] dark:grayscale"
-            priority
-          />
-        </div>
+        <div 
+          className="bg-muted relative hidden lg:block"
+          style={{
+            backgroundImage: 'url(/bg.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        />
         <div className="flex flex-col gap-4 p-6 md:p-10">
           <div className="flex justify-center gap-2 md:justify-start">
             <a href="#" className="flex items-center gap-2 font-medium">

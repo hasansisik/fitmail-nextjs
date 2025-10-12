@@ -3,7 +3,6 @@
 import { GalleryVerticalEnd } from "lucide-react"
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { useAppSelector } from "@/redux/hook";
 import { Metadata } from "@/components/metadata";
 
@@ -25,12 +24,14 @@ export default function ForgotPasswordPage() {
     return (
       <div className="grid min-h-svh lg:grid-cols-2">
         <div className="bg-muted relative hidden lg:block">
-          <Image
-            src="/bg.jpg"
-            alt="Bg"
-            fill
-            className="object-cover dark:brightness-[0.2] dark:grayscale"
-            priority
+          <div 
+            className="absolute inset-0"
+            style={{
+              backgroundImage: 'url(/bg.jpg)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
           />
         </div>
         <div className="flex flex-col gap-4 p-6 md:p-10">
@@ -63,12 +64,14 @@ export default function ForgotPasswordPage() {
       />
       <div className="grid min-h-svh lg:grid-cols-2">
         <div className="bg-muted relative hidden lg:block">
-          <Image
-            src="/bg.jpg"
-            alt="Bg"
-            fill
-            className="object-cover dark:brightness-[0.2] dark:grayscale"
-            priority
+          <div 
+            className="absolute inset-0"
+            style={{
+              backgroundImage: 'url(/bg.jpg)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
           />
         </div>
         <div className="flex flex-col gap-4 p-6 md:p-10">
