@@ -25,7 +25,7 @@ export default function LoginPage() {
         window.location.href = '/';
       } else {
         // Normal domain'deyse mail sayfasına yönlendir
-        router.push("/mail");
+        window.location.href = '/mail';
       }
     }
   }, [isAuthenticated, loading, user, router]);
