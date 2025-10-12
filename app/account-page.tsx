@@ -348,31 +348,52 @@ export default function AccountPage() {
 
   const handleSaveProfile = async () => {
     try {
-      const profileData = {
-        name: formData.name,
-        surname: formData.surname,
-        recoveryEmail: formData.recoveryEmail,
-        birthDate: formData.birthDate,
-        age: formData.age ? parseInt(formData.age) : undefined,
-        gender: formData.gender,
-        weight: formData.weight ? parseFloat(formData.weight) : undefined,
-        height: formData.height ? parseInt(formData.height) : undefined,
-        phoneNumber: formData.phoneNumber,
-        bio: formData.bio,
-        skills: formData.skills ? formData.skills.split(',').map(s => s.trim()).filter(s => s) : [],
-        address: {
-          street: formData.street,
-          city: formData.city,
-          state: formData.state,
-          postalCode: formData.postalCode,
-          country: formData.country
-        }
-      };
+      // Filter out empty values and prepare data
+      const profileData: any = {};
       
-      await dispatch(editProfile(profileData));
-      setIsEditing(false);
+      // Basic fields
+      if (formData.name?.trim()) profileData.name = formData.name.trim();
+      if (formData.surname?.trim()) profileData.surname = formData.surname.trim();
+      if (formData.recoveryEmail?.trim()) profileData.recoveryEmail = formData.recoveryEmail.trim();
+      if (formData.birthDate) profileData.birthDate = formData.birthDate;
+      if (formData.age && formData.age.trim()) profileData.age = parseInt(formData.age);
+      if (formData.gender) profileData.gender = formData.gender;
+      if (formData.weight && formData.weight.trim()) profileData.weight = parseFloat(formData.weight);
+      if (formData.height && formData.height.trim()) profileData.height = parseInt(formData.height);
+      if (formData.phoneNumber?.trim()) profileData.phoneNumber = formData.phoneNumber.trim();
+      if (formData.bio?.trim()) profileData.bio = formData.bio.trim();
+      
+      // Skills array
+      if (formData.skills?.trim()) {
+        profileData.skills = formData.skills.split(',').map(s => s.trim()).filter(s => s);
+      }
+      
+      // Address object - only include if at least one field has value
+      const addressData: any = {};
+      if (formData.street?.trim()) addressData.street = formData.street.trim();
+      if (formData.city?.trim()) addressData.city = formData.city.trim();
+      if (formData.state?.trim()) addressData.state = formData.state.trim();
+      if (formData.postalCode?.trim()) addressData.postalCode = formData.postalCode.trim();
+      if (formData.country?.trim()) addressData.country = formData.country.trim();
+      
+      // Only include address if it has at least one field
+      if (Object.keys(addressData).length > 0) {
+        profileData.address = addressData;
+      }
+      
+      console.log('Sending profile data:', profileData);
+      const result = await dispatch(editProfile(profileData));
+      
+      if (editProfile.fulfilled.match(result)) {
+        setIsEditing(false);
+        toast.success('Profil başarıyla güncellendi!');
+      } else {
+        console.error('Profile update failed:', result.payload);
+        toast.error(result.payload as string || 'Profil güncellenirken hata oluştu');
+      }
     } catch (error) {
       console.error('Profile update error:', error);
+      toast.error('Profil güncellenirken hata oluştu');
     }
   };
 
