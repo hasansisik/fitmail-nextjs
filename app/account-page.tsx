@@ -352,16 +352,25 @@ export default function AccountPage() {
       const profileData: any = {};
       
       // Basic fields
-      if (formData.name?.trim()) profileData.name = formData.name.trim();
-      if (formData.surname?.trim()) profileData.surname = formData.surname.trim();
-      if (formData.recoveryEmail?.trim()) profileData.recoveryEmail = formData.recoveryEmail.trim();
+      if (formData.name && formData.name.trim()) profileData.name = formData.name.trim();
+      if (formData.surname && formData.surname.trim()) profileData.surname = formData.surname.trim();
+      if (formData.recoveryEmail && formData.recoveryEmail.trim()) profileData.recoveryEmail = formData.recoveryEmail.trim();
       if (formData.birthDate) profileData.birthDate = formData.birthDate;
-      if (formData.age && formData.age.trim()) profileData.age = parseInt(formData.age);
+      if (formData.age && formData.age !== '') {
+        const ageValue = parseInt(formData.age.toString());
+        if (!isNaN(ageValue)) profileData.age = ageValue;
+      }
       if (formData.gender) profileData.gender = formData.gender;
-      if (formData.weight && formData.weight.trim()) profileData.weight = parseFloat(formData.weight);
-      if (formData.height && formData.height.trim()) profileData.height = parseInt(formData.height);
-      if (formData.phoneNumber?.trim()) profileData.phoneNumber = formData.phoneNumber.trim();
-      if (formData.bio?.trim()) profileData.bio = formData.bio.trim();
+      if (formData.weight && formData.weight !== '') {
+        const weightValue = parseFloat(formData.weight.toString());
+        if (!isNaN(weightValue)) profileData.weight = weightValue;
+      }
+      if (formData.height && formData.height !== '') {
+        const heightValue = parseInt(formData.height.toString());
+        if (!isNaN(heightValue)) profileData.height = heightValue;
+      }
+      if (formData.phoneNumber && formData.phoneNumber.trim()) profileData.phoneNumber = formData.phoneNumber.trim();
+      if (formData.bio && formData.bio.trim()) profileData.bio = formData.bio.trim();
       
       // Skills array
       if (formData.skills?.trim()) {
