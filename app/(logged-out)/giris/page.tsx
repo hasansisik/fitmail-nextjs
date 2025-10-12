@@ -18,8 +18,11 @@ export default function LoginPage() {
     if (!loading && isAuthenticated && user) {
       // Eğer account subdomain'indeyse account sayfasında kal
       if (window.location.hostname === activeDomains.account) {
-        // Account sayfasında kal, sadece sayfayı yenile
-        window.location.reload();
+        // Account sayfasında kal, ana sayfaya yönlendir
+        window.location.href = '/';
+      } else if (window.location.hostname === activeDomains.panel) {
+        // Panel subdomain'indeyse panel ana sayfasına yönlendir
+        window.location.href = '/';
       } else {
         // Normal domain'deyse mail sayfasına yönlendir
         router.push("/mail");

@@ -17,6 +17,9 @@ export default function AdminLayout({
     const token = localStorage.getItem("accessToken");
     if (token && !isAuthenticated && !loading) {
       dispatch(loadUser());
+    } else if (!token && !loading) {
+      // No token, redirect to login
+      window.location.href = '/giris';
     }
   }, [dispatch, isAuthenticated, loading]);
 
@@ -48,7 +51,7 @@ export default function AdminLayout({
     );
   }
 
-  if (user.role !== 'admin') {
+  if (isAuthenticated && user && user.role !== 'admin') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">

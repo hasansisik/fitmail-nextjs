@@ -61,6 +61,9 @@ export default function AdminPage() {
     const token = localStorage.getItem("accessToken");
     if (token && !isAuthenticated && !loading) {
       dispatch(loadUser());
+    } else if (!token && !loading) {
+      // No token, redirect to login
+      window.location.href = '/giris';
     }
   }, [dispatch, isAuthenticated, loading]);
 
@@ -172,18 +175,39 @@ export default function AdminPage() {
   };
 
   // Loading state
-  if (loading || allUsers.loading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-gray-600">Yükleniyor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <h1 className="text-xl font-semibold text-gray-900 mb-4">Giriş Gerekli</h1>
+          <p className="text-gray-600 mb-6">Bu sayfaya erişmek için giriş yapmanız gerekiyor.</p>
+          <a 
+            href="/giris" 
+            className="inline-flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+          >
+            Giriş Yap
+          </a>
+        </div>
       </div>
     );
   }
 
 
 
-  // Admin check
-  if (user.role !== 'admin') {
+  // Admin check - only check after user is loaded and authenticated
+  if (isAuthenticated && user && user.role !== 'admin') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">

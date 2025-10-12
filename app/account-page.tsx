@@ -158,15 +158,14 @@ export default function AccountPage() {
     // Token kontrolü
     const token = localStorage.getItem("accessToken");
     
-    if (token && !isAuthenticated && !loading && !user?.email) {
+    if (token && !isAuthenticated && !loading) {
       // Token varsa kullanıcı bilgilerini yükle
       dispatch(loadUser());
     } else if (!token && !loading) {
       // Token yoksa giriş sayfasına yönlendir
-      // Giriş sayfasına yönlendir
       window.location.href = '/giris';
     }
-  }, [dispatch, isAuthenticated, loading, user?.email]);
+  }, [dispatch, isAuthenticated, loading]);
 
   // Profil menüsünü dışına tıklayınca kapat
   useEffect(() => {
@@ -617,13 +616,13 @@ export default function AccountPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Yükleniyor...</p>
-          </div>
-          </div>
+        </div>
+      </div>
     );
   }
 
   // Kullanıcı giriş yapmamışsa (client-side kontrol)
-  if (typeof window !== 'undefined' && !isAuthenticated && !user?.email && !loading) {
+  if (typeof window !== 'undefined' && !isAuthenticated && !loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
