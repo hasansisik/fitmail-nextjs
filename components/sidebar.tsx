@@ -71,7 +71,7 @@ const getMainNav = (mailStats: any) => [
   },
   {
     title: "Gönderilenler",
-    label: (mailStats?.sent || 0) > 0 ? (mailStats?.sent || 0).toString() : "",
+    label: "",
     icon: Send,
     variant: "ghost" as const,
     href: "/mail/sent",
