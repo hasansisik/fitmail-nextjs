@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useRouter } from "next/navigation"
-import { useAppDispatch } from "@/redux/hook"
-import { login } from "@/redux/actions/userActions"
+import { useAppDispatch, useAppSelector } from "@/redux/hook"
+import { login, verify2FALogin } from "@/redux/actions/userActions"
 import { toast } from "sonner"
+import { useState, useEffect } from "react"
 
 export function LoginForm({
   className,
@@ -15,6 +16,16 @@ export function LoginForm({
 }: React.ComponentProps<"form">) {
   const router = useRouter()
   const dispatch = useAppDispatch()
+  const { twoFactor } = useAppSelector((state) => state.user)
+  const [twoFactorCode, setTwoFactorCode] = useState("")
+  const [show2FAStep, setShow2FAStep] = useState(false)
+
+  // Check if 2FA is required
+  useEffect(() => {
+    if (twoFactor.requires2FA) {
+      setShow2FAStep(true)
+    }
+  }, [twoFactor.requires2FA])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,6 +59,12 @@ export function LoginForm({
       // Dismiss loading toast
       toast.dismiss(loadingToastId)
       
+      // Check if 2FA is required
+      if ((result as any).requires2FA) {
+        toast.info("2FA kodu gerekli. Lütfen doğrulama kodunuzu girin.")
+        return
+      }
+      
       // Login successful
       toast.success("Giriş başarılı!")
       // Redirect to mail page
@@ -60,6 +77,34 @@ export function LoginForm({
       
       // Show error message
       const errorMessage = typeof error === 'string' ? error : error?.message || "Giriş yapılırken bir hata oluştu"
+      toast.error(errorMessage)
+    }
+  }
+
+  const handle2FASubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!twoFactorCode || twoFactorCode.length !== 6) {
+      toast.error("Lütfen 6 haneli doğrulama kodunu girin!")
+      return
+    }
+    
+    const loadingToastId = toast.loading("Doğrulama yapılıyor...")
+    
+    try {
+      const result = await dispatch(verify2FALogin({
+        tempToken: twoFactor.tempToken!,
+        token: twoFactorCode
+      })).unwrap()
+      
+      toast.dismiss(loadingToastId)
+      toast.success("2FA doğrulaması başarılı!")
+      router.push("/mail")
+    } catch (error: any) {
+      console.error("2FA verification failed:", error)
+      toast.dismiss(loadingToastId)
+      
+      const errorMessage = typeof error === 'string' ? error : error?.message || "Doğrulama başarısız"
       toast.error(errorMessage)
     }
   }
@@ -77,6 +122,50 @@ export function LoginForm({
         handleSubmit(syntheticEvent)
       }
     }
+  }
+
+  // Show 2FA form if required
+  if (show2FAStep) {
+    return (
+      <form className={cn("flex flex-col gap-6", className)} onSubmit={handle2FASubmit} {...props}>
+        <div className="flex flex-col items-center gap-2 text-center">
+          <h1 className="text-2xl font-bold">İki Faktörlü Doğrulama</h1>
+          <p className="text-muted-foreground text-sm text-balance">
+            Authenticator uygulamanızdan 6 haneli kodu girin
+          </p>
+        </div>
+        <div className="grid gap-6">
+          <div className="grid gap-3">
+            <Label htmlFor="twoFactorCode">Doğrulama Kodu</Label>
+            <Input 
+              id="twoFactorCode" 
+              name="twoFactorCode" 
+              type="text" 
+              placeholder="000000" 
+              maxLength={6}
+              value={twoFactorCode}
+              onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
+              required 
+              autoFocus
+            />
+          </div>
+          <Button type="submit" className="w-full">
+            Doğrula
+          </Button>
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="w-full"
+            onClick={() => {
+              setShow2FAStep(false)
+              setTwoFactorCode("")
+            }}
+          >
+            Geri Dön
+          </Button>
+        </div>
+      </form>
+    )
   }
 
   return (

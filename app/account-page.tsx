@@ -3,12 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { usePathname } from 'next/navigation';
-import { 
-  User, 
-  Shield, 
-  Users, 
-  Info, 
-  Search, 
+import {
+  User,
+  Shield,
+  Users,
+  Info,
+  Search,
   Lock,
   Smartphone,
   Key,
@@ -33,7 +33,7 @@ import {
   Languages,
   HelpCircle
 } from 'lucide-react';
-import { loadUser, editProfile, changePassword, verifyPassword, updateSettings, deleteAccount, switchUser, getAllSessions, removeSession } from '@/redux/actions/userActions';
+import { loadUser, editProfile, changePassword, verifyPassword, updateSettings, deleteAccount, switchUser, getAllSessions, removeSession, enable2FA, verify2FA, disable2FA, get2FAStatus } from '@/redux/actions/userActions';
 import { RootState, AppDispatch } from '@/redux/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -86,14 +86,22 @@ const quickActions = [
 
 export default function AccountPage() {
   const pathname = usePathname();
-  
+
   // All hooks must be called before any conditional returns
   const [searchQuery, setSearchQuery] = useState('');
   const [activeNav, setActiveNav] = useState('home');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
-  
+
+  // 2FA state
+  const [show2FADialog, setShow2FADialog] = useState(false);
+  const [show2FAQRCode, setShow2FAQRCode] = useState(false);
+  const [show2FAVerifyDialog, setShow2FAVerifyDialog] = useState(false);
+  const [show2FADisableDialog, setShow2FADisableDialog] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [disable2FAPassword, setDisable2FAPassword] = useState('');
+
   // Kişisel veriler için state'ler
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -115,7 +123,7 @@ export default function AccountPage() {
     postalCode: "",
     country: "Turkey"
   });
-  
+
   // Şifre değiştirme için state'ler
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [passwordStep, setPasswordStep] = useState<'current' | 'new'>('current');
@@ -130,7 +138,7 @@ export default function AccountPage() {
     confirmPassword: ''
   });
   const [passwordError, setPasswordError] = useState('');
-  
+
   // Dil ve bölge ayarları için state'ler
   const [settings, setSettings] = useState({
     language: "tr",
@@ -149,17 +157,17 @@ export default function AccountPage() {
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [imageError, setImageError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
-  
+
   const dispatch = useDispatch<AppDispatch>();
-  const { user, loading, isAuthenticated, error, message, sessions } = useSelector((state: RootState) => state.user);
+  const { user, loading, isAuthenticated, error, message, sessions, twoFactor } = useSelector((state: RootState) => state.user);
 
   useEffect(() => {
     // Sadece client-side'da çalış
     if (typeof window === 'undefined') return;
-    
+
     // Token kontrolü
     const token = localStorage.getItem("accessToken");
-    
+
     if (token && !isAuthenticated && !loading) {
       // Token varsa kullanıcı bilgilerini yükle
       dispatch(loadUser());
@@ -217,11 +225,11 @@ export default function AccountPage() {
     const today = new Date();
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
       age--;
     }
-    
+
     return age >= 0 ? age.toString() : '';
   };
 
@@ -230,7 +238,7 @@ export default function AccountPage() {
     if (user) {
       const birthDateString = user.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : "";
       const calculatedAge = calculateAge(birthDateString);
-      
+
       setFormData({
         name: user.name || "",
         surname: user.surname || "",
@@ -250,11 +258,11 @@ export default function AccountPage() {
         postalCode: user.address?.postalCode || "",
         country: user.address?.country || "Turkey"
       });
-      
+
       // Profil resmini yükle ve hata durumunu sıfırla
       setAvatarUrl(user.picture || user.profile?.picture || '');
       setImageError(false);
-      
+
       // Settings'i yükle
       if (user.settings) {
         setSettings(prev => ({
@@ -284,7 +292,7 @@ export default function AccountPage() {
   if (pathname === '/giris') {
     return <LoginPage />;
   }
-  
+
   if (pathname === '/kayit-ol') {
     return <RegisterPage />;
   }
@@ -430,7 +438,7 @@ export default function AccountPage() {
     try {
       // Filter out empty values and prepare data
       const profileData: any = {};
-      
+
       // Basic fields
       if (formData.name && formData.name.trim()) profileData.name = formData.name.trim();
       if (formData.surname && formData.surname.trim()) profileData.surname = formData.surname.trim();
@@ -451,12 +459,12 @@ export default function AccountPage() {
       }
       if (formData.phoneNumber && formData.phoneNumber.trim()) profileData.phoneNumber = formData.phoneNumber.trim();
       if (formData.bio && formData.bio.trim()) profileData.bio = formData.bio.trim();
-      
+
       // Skills array
       if (formData.skills?.trim()) {
         profileData.skills = formData.skills.split(',').map(s => s.trim()).filter(s => s);
       }
-      
+
       // Address object - only include if at least one field has value
       const addressData: any = {};
       if (formData.street?.trim()) addressData.street = formData.street.trim();
@@ -464,15 +472,15 @@ export default function AccountPage() {
       if (formData.state?.trim()) addressData.state = formData.state.trim();
       if (formData.postalCode?.trim()) addressData.postalCode = formData.postalCode.trim();
       if (formData.country?.trim()) addressData.country = formData.country.trim();
-      
+
       // Only include address if it has at least one field
       if (Object.keys(addressData).length > 0) {
         profileData.address = addressData;
       }
-      
+
       console.log('Sending profile data:', profileData);
       const result = await dispatch(editProfile(profileData));
-      
+
       if (editProfile.fulfilled.match(result)) {
         setIsEditing(false);
         toast.success('Profil başarıyla güncellendi!');
@@ -492,7 +500,7 @@ export default function AccountPage() {
     if (user) {
       const birthDateString = user.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : "";
       const calculatedAge = calculateAge(birthDateString);
-      
+
       setFormData({
         name: user.name || "",
         surname: user.surname || "",
@@ -527,7 +535,7 @@ export default function AccountPage() {
     try {
       setPasswordError('');
       const result = await dispatch(verifyPassword(passwordData.currentPassword));
-      
+
       if (result.payload?.isValid) {
         setPasswordStep('new');
         setPasswordError('');
@@ -548,13 +556,13 @@ export default function AccountPage() {
       setPasswordError('Yeni şifre en az 6 karakter olmalı');
       return;
     }
-    
+
     try {
       await dispatch(changePassword({
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword
       }));
-      
+
       setShowPasswordDialog(false);
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setPasswordError('');
@@ -662,19 +670,19 @@ export default function AccountPage() {
     try {
       setIsUploading(true);
       const croppedImageBlob = await getCroppedImg(imgRef.current, completedCrop);
-      
+
       // Blob'u File'a çevir
       const file = new File([croppedImageBlob], 'avatar.jpg', { type: 'image/jpeg' });
-      
+
       // Cloudinary'ye yükle
       const uploadResult = await uploadFileToCloudinary(file);
-      
+
       if (uploadResult) {
         // Profil resmini güncelle
-        await dispatch(editProfile({ 
+        await dispatch(editProfile({
           picture: uploadResult
         }));
-        
+
         setAvatarUrl(uploadResult);
         setImageError(false); // Yeni resim yüklendiğinde hata durumunu temizle
         setShowCropModal(false);
@@ -721,6 +729,59 @@ export default function AccountPage() {
       await dispatch(updateSettings(settings));
     } catch (error) {
       console.error('Settings update failed:', error);
+    }
+  };
+
+  // 2FA Functions
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      dispatch(get2FAStatus());
+    }
+  }, [dispatch, isAuthenticated, user]);
+
+  const handleEnable2FA = async () => {
+    try {
+      await dispatch(enable2FA()).unwrap();
+      setShow2FAQRCode(true);
+      setShow2FAVerifyDialog(true);
+    } catch (error: any) {
+      console.error('Enable 2FA failed:', error);
+      toast.error(error || '2FA aktifleştirilemedi');
+    }
+  };
+
+  const handleVerify2FA = async () => {
+    if (!twoFactorCode || twoFactorCode.length !== 6) {
+      toast.error('Lütfen 6 haneli kodu girin');
+      return;
+    }
+
+    try {
+      await dispatch(verify2FA(twoFactorCode)).unwrap();
+      toast.success('2FA başarıyla aktifleştirildi!');
+      setShow2FAVerifyDialog(false);
+      setShow2FAQRCode(false);
+      setTwoFactorCode('');
+    } catch (error: any) {
+      console.error('Verify 2FA failed:', error);
+      toast.error(error || '2FA doğrulaması başarısız');
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    if (!disable2FAPassword) {
+      toast.error('Lütfen şifrenizi girin');
+      return;
+    }
+
+    try {
+      await dispatch(disable2FA(disable2FAPassword)).unwrap();
+      toast.success('2FA başarıyla devre dışı bırakıldı!');
+      setShow2FADisableDialog(false);
+      setDisable2FAPassword('');
+    } catch (error: any) {
+      console.error('Disable 2FA failed:', error);
+      toast.error(error || '2FA devre dışı bırakılamadı');
     }
   };
 
@@ -777,32 +838,32 @@ export default function AccountPage() {
 
             {/* Header Actions */}
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <button 
+              <button
                 onClick={() => handleSearch()}
                 className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full"
               >
                 <Search className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
-              <button 
+              <button
                 onClick={handleAbout}
                 className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full"
               >
                 <Info className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
               <div className="relative profile-menu-container">
-                <button 
+                <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
                   className="p-1 hover:bg-gray-100 rounded-full"
                 >
                   <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-blue-500 overflow-hidden">
-                    <img 
-                      src={getProfileImage()} 
-                      alt="Profile" 
+                    <img
+                      src={getProfileImage()}
+                      alt="Profile"
                       className="w-full h-full object-cover"
                     />
                   </div>
                 </button>
-                
+
                 {/* Profile Menu - Gmail Style */}
                 {showProfileMenu && (
                   <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 max-h-[600px] overflow-y-auto">
@@ -819,16 +880,16 @@ export default function AccountPage() {
                           </svg>
                         </button>
                       </div>
-                      
+
                       <div className="flex flex-col items-center">
                         <button
                           onClick={handleAvatarClick}
                           className="w-24 h-24 rounded-full border-2 border-blue-500 overflow-hidden mb-3 relative group cursor-pointer"
                         >
                           {hasProfileImage() && getProfileImage() ? (
-                            <img 
-                              src={getProfileImage()} 
-                              alt={getUserDisplayName()} 
+                            <img
+                              src={getProfileImage()}
+                              alt={getUserDisplayName()}
                               className="w-full h-full object-cover"
                             />
                           ) : null}
@@ -839,7 +900,7 @@ export default function AccountPage() {
                         <h2 className="text-xl text-gray-900 mb-1">
                           Merhaba, {getUserDisplayName()}!
                         </h2>
-                        <button 
+                        <button
                           onClick={() => {
                             handleOpenSection('personal');
                           }}
@@ -871,8 +932,8 @@ export default function AccountPage() {
                                 <div className="flex items-center gap-3 flex-1 min-w-0">
                                   <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 relative">
                                     {session.user?.picture ? (
-                                      <img 
-                                        src={session.user.picture} 
+                                      <img
+                                        src={session.user.picture}
                                         alt={`${session.user?.name || ''} ${session.user?.surname || ''}`}
                                         className="w-full h-full object-cover"
                                         onError={(e) => {
@@ -886,8 +947,8 @@ export default function AccountPage() {
                                         }}
                                       />
                                     ) : session.user?.profile?.picture ? (
-                                      <img 
-                                        src={session.user.profile.picture} 
+                                      <img
+                                        src={session.user.profile.picture}
                                         alt={`${session.user?.name || ''} ${session.user?.surname || ''}`}
                                         className="w-full h-full object-cover"
                                         onError={(e) => {
@@ -963,14 +1024,14 @@ export default function AccountPage() {
                     {/* Footer */}
                     <div className="p-4 border-t border-gray-200 text-center">
                       <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
-                        <button 
+                        <button
                           onClick={() => handleOpenSection('about')}
                           className="hover:text-gray-700"
                         >
                           Gizlilik Politikası
                         </button>
                         <span>•</span>
-                        <button 
+                        <button
                           onClick={() => handleOpenSection('about')}
                           className="hover:text-gray-700"
                         >
@@ -989,28 +1050,27 @@ export default function AccountPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         <div className="flex flex-col lg:flex-row">
           {/* Sidebar */}
-            <aside className="w-full lg:w-64 mb-6 lg:mb-0 lg:pr-8">
-              <nav className="flex flex-wrap lg:flex-col lg:space-y-1 space-x-2 lg:space-x-0 justify-center lg:justify-start">
-                {navigationItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeNav === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => setActiveNav(item.id)}
-                      className={`flex items-center px-3 py-2 lg:px-4 lg:py-3 text-sm font-medium transition-all duration-200 rounded-lg lg:rounded-r-full ${
-                        isActive
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'text-gray-700 hover:bg-gray-50'
+          <aside className="w-full lg:w-64 mb-6 lg:mb-0 lg:pr-8">
+            <nav className="flex flex-wrap lg:flex-col lg:space-y-1 space-x-2 lg:space-x-0 justify-center lg:justify-start">
+              {navigationItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeNav === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveNav(item.id)}
+                    className={`flex items-center px-3 py-2 lg:px-4 lg:py-3 text-sm font-medium transition-all duration-200 rounded-lg lg:rounded-r-full ${isActive
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-gray-700 hover:bg-gray-50'
                       }`}
-                    >
-                      <Icon className={`mr-2 lg:mr-3 h-4 w-4 lg:h-5 lg:w-5 ${isActive ? 'text-blue-700' : 'text-gray-600'}`} />
-                      <span className="text-xs sm:text-sm">{item.label}</span>
-                    </button>
-                  );
-                })}
-              </nav>
-            </aside>
+                  >
+                    <Icon className={`mr-2 lg:mr-3 h-4 w-4 lg:h-5 lg:w-5 ${isActive ? 'text-blue-700' : 'text-gray-600'}`} />
+                    <span className="text-xs sm:text-sm">{item.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </aside>
 
           {/* Main Content */}
           <main className="flex-1 min-w-0">
@@ -1019,9 +1079,9 @@ export default function AccountPage() {
               <div className="text-center mb-6 sm:mb-8">
                 <div className="relative w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 group">
                   <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-blue-500 overflow-hidden">
-                    <img 
-                      src={getProfileImage()} 
-                      alt={getUserDisplayName()} 
+                    <img
+                      src={getProfileImage()}
+                      alt={getUserDisplayName()}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -1034,25 +1094,18 @@ export default function AccountPage() {
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                   Hoş geldiniz {getUserDisplayName()}
-            </h1>
+                </h1>
                 <p className="text-sm sm:text-base text-gray-600 mb-4 px-4 sm:px-0">
                   Fitmail'den en iyi şekilde yararlanmak için bilgi, gizlilik ve güvenliğinizi yönetin.
                 </p>
-                
-                <div className="mb-4">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg">
-                    <span className="w-2 h-2 bg-white rounded-full mr-2"></span>
-                    Premium
-                  </span>
-          </div>
 
                 {user?.email && (
                   <p className="text-xs sm:text-sm text-gray-500 mb-4">
                     {user.email}
                   </p>
                 )}
-  
-          </div>
+
+              </div>
 
               {/* Search Bar */}
               <div className="mb-6 sm:mb-8">
@@ -1067,7 +1120,7 @@ export default function AccountPage() {
                     onFocus={() => searchQuery.length > 0 && setShowSearchSuggestions(true)}
                     className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 text-base sm:text-lg border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                  
+
                   {/* Arama Önerileri */}
                   {showSearchSuggestions && filteredSuggestions.length > 0 && (
                     <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
@@ -1088,7 +1141,7 @@ export default function AccountPage() {
                       ))}
                     </div>
                   )}
-                  
+
                   {/* Sonuç bulunamadı */}
                   {showSearchSuggestions && searchQuery.length > 0 && filteredSuggestions.length === 0 && (
                     <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4">
@@ -1103,7 +1156,7 @@ export default function AccountPage() {
                 {activeNav === 'home' && (
                   <div className="space-y-6">
                     <h2 className="text-2xl font-semibold text-gray-900">Ana Sayfa</h2>
-                    
+
                     {/* Profil Yönetimi Kartı */}
                     <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
                       <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Profiliniz</h3>
@@ -1112,9 +1165,9 @@ export default function AccountPage() {
                       </p>
                       <div className="flex items-center space-x-3 sm:space-x-4 mb-4">
                         <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-blue-500 overflow-hidden">
-                          <img 
-                            src={getProfileImage()} 
-                            alt={getUserDisplayName()} 
+                          <img
+                            src={getProfileImage()}
+                            alt={getUserDisplayName()}
                             className="w-full h-full object-cover"
                           />
                         </div>
@@ -1123,7 +1176,7 @@ export default function AccountPage() {
                           <p className="text-xs sm:text-sm text-gray-500 truncate">{user?.email}</p>
                         </div>
                       </div>
-                      <button 
+                      <button
                         onClick={() => setActiveNav('personal')}
                         className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium"
                       >
@@ -1157,13 +1210,13 @@ export default function AccountPage() {
                           </div>
                         </div>
                       </div>
-                      <button 
+                      <button
                         onClick={() => setActiveNav('privacy')}
                         className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium"
                       >
                         Güvenlik ayarları →
                       </button>
-          </div>
+                    </div>
 
                     {/* Hızlı Erişim Kartı */}
                     <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
@@ -1172,21 +1225,21 @@ export default function AccountPage() {
                         Sık kullanılan ayarlara hızlıca erişin.
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-                        <button 
+                        <button
                           onClick={() => setActiveNav('language')}
                           className="flex items-center space-x-2 p-2 sm:p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
                         >
                           <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                           <span className="text-xs sm:text-sm font-medium text-gray-700">Dil ve Bölge</span>
                         </button>
-                        <button 
+                        <button
                           onClick={() => setActiveNav('accounts')}
                           className="flex items-center space-x-2 p-2 sm:p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
                         >
                           <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                           <span className="text-xs sm:text-sm font-medium text-gray-700">Bağlı Hesaplar</span>
                         </button>
-                        <button 
+                        <button
                           onClick={() => setActiveNav('about')}
                           className="flex items-center space-x-2 p-2 sm:p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
                         >
@@ -1197,7 +1250,7 @@ export default function AccountPage() {
                     </div>
                   </div>
                 )}
-                
+
                 {activeNav === 'personal' && (
                   <div className="space-y-6">
                     <div className="flex items-center justify-between">
@@ -1215,8 +1268,8 @@ export default function AccountPage() {
                       >
                         <Edit className="h-4 w-4" />
                         {isEditing ? 'İptal' : 'Düzenle'}
-            </Button>
-          </div>
+                      </Button>
+                    </div>
 
                     <div>
                       {/* Temel Bilgiler */}
@@ -1446,14 +1499,14 @@ export default function AccountPage() {
                             className="bg-blue-600 hover:bg-blue-700"
                           >
                             Kaydet
-            </Button>
+                          </Button>
                         </div>
                       )}
-          </div>
+                    </div>
 
-              </div>
+                  </div>
                 )}
-                
+
                 {activeNav === 'privacy' && (
                   <div className="space-y-6">
                     <h2 className="text-2xl font-semibold text-gray-900">Güvenlik ve Şifre</h2>
@@ -1472,11 +1525,59 @@ export default function AccountPage() {
                               Son değişiklik: {formatRelativeTime(user.auth.passwordChangedAt)}
                             </p>
                           )}
-            </div>
+                        </div>
                         <Button variant="outline" size="sm" onClick={handlePasswordChange}>
                           Değiştir
                         </Button>
-              </div>
+                      </div>
+                    </div>
+
+                    {/* 2FA Bölümü */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">İki Faktörlü Doğrulama (2FA)</h3>
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="font-medium text-gray-900">2FA Durumu</h4>
+                              {twoFactor.enabled ? (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  Aktif
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                  Pasif
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-600 mb-3">
+                              {twoFactor.enabled
+                                ? 'Hesabınız iki faktörlü doğrulama ile korunuyor. Her girişte authenticator uygulamanızdan kod girmeniz gerekecek.'
+                                : 'Hesabınıza ekstra bir güvenlik katmanı ekleyin. Giriş yaparken şifrenizin yanı sıra telefonunuzdaki bir uygulamadan kod girmeniz gerekecek.'
+                              }
+                            </p>
+                          </div>
+                          {twoFactor.enabled ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setShow2FADisableDialog(true)}
+                              className="ml-4"
+                            >
+                              Devre Dışı Bırak
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={handleEnable2FA}
+                              className="ml-4 bg-blue-600 hover:bg-blue-700"
+                            >
+                              Aktifleştir
+                            </Button>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
                     {/* Güvenlik Durumu */}
@@ -1492,6 +1593,15 @@ export default function AccountPage() {
                             <span className="text-xs text-green-600 font-medium">✓ Aktif</span>
                           )}
                         </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 ${twoFactor.enabled ? 'bg-green-500' : 'bg-gray-400'} rounded-full`}></div>
+                            <span className="text-sm">İki faktörlü doğrulama</span>
+                          </div>
+                          {twoFactor.enabled && (
+                            <span className="text-xs text-green-600 font-medium">✓ Aktif</span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -1504,10 +1614,10 @@ export default function AccountPage() {
                             <h4 className="font-medium text-red-900 mb-1">Hesabınızı Silin</h4>
                             <p className="text-sm text-red-700 mb-3">
                               Hesabınızı silmek geri alınamaz bir işlemdir. Tüm verileriniz kalıcı olarak silinecektir.
-              </p>
-            </div>
-                          <Button 
-                            variant="destructive" 
+                            </p>
+                          </div>
+                          <Button
+                            variant="destructive"
                             size="sm"
                             onClick={() => setShowDeleteAccountDialog(true)}
                             className="ml-4"
@@ -1520,22 +1630,22 @@ export default function AccountPage() {
                     </div>
                   </div>
                 )}
-                
-                  {activeNav === 'accounts' && (
-                    <div className="space-y-6">
-                      <h2 className="text-2xl font-semibold text-gray-900">Bağlı Hesaplar</h2>
-                      <div className="p-6 text-center">
-                        <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Users className="w-8 h-8 text-blue-600" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Yakında Gelecek</h3>
-                        <p className="text-gray-600 text-sm">
-                          Artık hesabınız ile platformlara doğrudan erişim sağlayacaksınız. Google, Microsoft ve diğer platformlarla entegrasyon yakında aktif olacak.
-                        </p>
+
+                {activeNav === 'accounts' && (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-semibold text-gray-900">Bağlı Hesaplar</h2>
+                    <div className="p-6 text-center">
+                      <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Users className="w-8 h-8 text-blue-600" />
                       </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Yakında Gelecek</h3>
+                      <p className="text-gray-600 text-sm">
+                        Artık hesabınız ile platformlara doğrudan erişim sağlayacaksınız. Google, Microsoft ve diğer platformlarla entegrasyon yakında aktif olacak.
+                      </p>
                     </div>
-                  )}
-                
+                  </div>
+                )}
+
                 {activeNav === 'language' && (
                   <div className="space-y-6">
                     <div>
@@ -1549,10 +1659,10 @@ export default function AccountPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                           <Label htmlFor="language">Dil</Label>
-                          <Select 
-                            value={settings.language} 
+                          <Select
+                            value={settings.language}
                             onValueChange={(value) => {
-                              const newSettings = {...settings, language: value};
+                              const newSettings = { ...settings, language: value };
                               setSettings(newSettings);
                               dispatch(updateSettings(newSettings));
                             }}
@@ -1571,10 +1681,10 @@ export default function AccountPage() {
 
                         <div>
                           <Label htmlFor="timezone">Saat Dilimi</Label>
-                          <Select 
-                            value={settings.timezone} 
+                          <Select
+                            value={settings.timezone}
                             onValueChange={(value) => {
-                              const newSettings = {...settings, timezone: value};
+                              const newSettings = { ...settings, timezone: value };
                               setSettings(newSettings);
                               dispatch(updateSettings(newSettings));
                             }}
@@ -1593,10 +1703,10 @@ export default function AccountPage() {
 
                         <div>
                           <Label htmlFor="dateFormat">Tarih Formatı</Label>
-                          <Select 
-                            value={settings.dateFormat} 
+                          <Select
+                            value={settings.dateFormat}
                             onValueChange={(value) => {
-                              const newSettings = {...settings, dateFormat: value};
+                              const newSettings = { ...settings, dateFormat: value };
                               setSettings(newSettings);
                               dispatch(updateSettings(newSettings));
                             }}
@@ -1614,10 +1724,10 @@ export default function AccountPage() {
 
                         <div>
                           <Label htmlFor="timeFormat">Saat Formatı</Label>
-                          <Select 
-                            value={settings.timeFormat} 
+                          <Select
+                            value={settings.timeFormat}
                             onValueChange={(value) => {
-                              const newSettings = {...settings, timeFormat: value};
+                              const newSettings = { ...settings, timeFormat: value };
                               setSettings(newSettings);
                               dispatch(updateSettings(newSettings));
                             }}
@@ -1633,9 +1743,9 @@ export default function AccountPage() {
                         </div>
                       </div>
                     </div>
-              </div>
+                  </div>
                 )}
-                
+
                 {activeNav === 'about' && (
                   <div className="space-y-6">
                     <h2 className="text-2xl font-semibold text-gray-900">Hakkında</h2>
@@ -1648,8 +1758,8 @@ export default function AccountPage() {
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-3">Fitmail Hesap Yönetimi</h3>
                         <p className="text-gray-600 text-sm leading-relaxed">
-                          Bu sayfa Fitmail hesabınızı yönetmek için tasarlanmış kapsamlı bir hesap yönetim panelidir. 
-                          Kişisel bilgilerinizi düzenleyebilir, güvenlik ayarlarınızı yönetebilir ve hesap tercihlerinizi 
+                          Bu sayfa Fitmail hesabınızı yönetmek için tasarlanmış kapsamlı bir hesap yönetim panelidir.
+                          Kişisel bilgilerinizi düzenleyebilir, güvenlik ayarlarınızı yönetebilir ve hesap tercihlerinizi
                           özelleştirebilirsiniz.
                         </p>
                       </div>
@@ -1658,11 +1768,11 @@ export default function AccountPage() {
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-3">Özellikler</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
+                          <div className="space-y-2">
                             <div className="flex items-center gap-2">
                               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                               <span className="text-sm font-medium">Kişisel Veri Yönetimi</span>
-              </div>
+                            </div>
                             <p className="text-xs text-gray-500 ml-4">Ad, soyad, e-posta ve kişisel bilgilerinizi güncelleyin</p>
                           </div>
                           <div className="space-y-2">
@@ -1678,8 +1788,8 @@ export default function AccountPage() {
                               <span className="text-sm font-medium">Dil ve Bölge</span>
                             </div>
                             <p className="text-xs text-gray-500 ml-4">Dil, saat dilimi ve format ayarları</p>
-            </div>
-            <div className="space-y-2">
+                          </div>
+                          <div className="space-y-2">
                             <div className="flex items-center gap-2">
                               <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                               <span className="text-sm font-medium">Bağlı Hesaplar</span>
@@ -1706,20 +1816,20 @@ export default function AccountPage() {
                             <span className="font-medium">Web</span>
                           </div>
                         </div>
-              </div>
+                      </div>
 
                       {/* İletişim */}
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-3">Destek</h3>
                         <p className="text-gray-600 text-sm">
-                          Hesabınızla ilgili sorularınız için destek ekibimizle iletişime geçebilirsiniz. 
+                          Hesabınızla ilgili sorularınız için destek ekibimizle iletişime geçebilirsiniz.
                           Güvenlik konularında herhangi bir endişeniz varsa lütfen derhal bizimle iletişime geçin.
-              </p>
-            </div>
-          </div>
-        </div>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 )}
-      </div>
+              </div>
             </div>
           </main>
         </div>
@@ -1733,13 +1843,13 @@ export default function AccountPage() {
               {passwordStep === 'current' ? 'Mevcut Şifrenizi Girin' : 'Yeni Şifre Belirleyin'}
             </DialogTitle>
             <DialogDescription>
-              {passwordStep === 'current' 
+              {passwordStep === 'current'
                 ? 'Şifrenizi değiştirmek için önce mevcut şifrenizi girin.'
                 : 'Hesabınız için yeni bir şifre belirleyin.'
               }
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             {passwordStep === 'current' ? (
               <div className="space-y-2">
@@ -1749,7 +1859,7 @@ export default function AccountPage() {
                     id="currentPassword"
                     type={showPasswords.current ? "text" : "password"}
                     value={passwordData.currentPassword}
-                    onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                    onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
                     placeholder="Mevcut şifrenizi girin"
                   />
                   <Button
@@ -1776,7 +1886,7 @@ export default function AccountPage() {
                       id="newPassword"
                       type={showPasswords.new ? "text" : "password"}
                       value={passwordData.newPassword}
-                      onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
                       placeholder="Yeni şifrenizi girin"
                     />
                     <Button
@@ -1794,7 +1904,7 @@ export default function AccountPage() {
                     </Button>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Yeni Şifre Tekrar</Label>
                   <div className="relative">
@@ -1802,7 +1912,7 @@ export default function AccountPage() {
                       id="confirmPassword"
                       type={showPasswords.confirm ? "text" : "password"}
                       value={passwordData.confirmPassword}
-                      onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
                       placeholder="Yeni şifrenizi tekrar girin"
                     />
                     <Button
@@ -1822,7 +1932,7 @@ export default function AccountPage() {
                 </div>
               </div>
             )}
-            
+
             {passwordError && (
               <p className="text-sm text-red-600">{passwordError}</p>
             )}
@@ -1832,11 +1942,11 @@ export default function AccountPage() {
             <Button variant="outline" onClick={handlePasswordDialogClose}>
               İptal
             </Button>
-            <Button 
+            <Button
               onClick={passwordStep === 'current' ? handleCurrentPasswordSubmit : handleNewPasswordSubmit}
               disabled={
-                passwordStep === 'current' 
-                  ? !passwordData.currentPassword 
+                passwordStep === 'current'
+                  ? !passwordData.currentPassword
                   : !passwordData.newPassword || !passwordData.confirmPassword
               }
             >
@@ -1855,7 +1965,7 @@ export default function AccountPage() {
               Profil resminizi kırparak düzenleyin. Kare şeklinde bir alan seçin.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             {previewUrl && (
               <div className="flex justify-center max-w-full overflow-hidden">
@@ -1904,13 +2014,13 @@ export default function AccountPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Hesabınızı Silmek İstediğinizden Emin misiniz?</AlertDialogTitle>
             <AlertDialogDescription>
-              Bu işlem geri alınamaz. Hesabınız ve tüm verileriniz kalıcı olarak silinecektir. 
+              Bu işlem geri alınamaz. Hesabınız ve tüm verileriniz kalıcı olarak silinecektir.
               Bu işlemden sonra hesabınıza tekrar erişemeyeceksiniz.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleDeleteAccount}
               className="bg-red-600 hover:bg-red-700"
             >
@@ -1919,6 +2029,104 @@ export default function AccountPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 2FA QR Code ve Doğrulama Dialog'u */}
+      <Dialog open={show2FAVerifyDialog} onOpenChange={setShow2FAVerifyDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>İki Faktörlü Doğrulamayı Aktifleştir</DialogTitle>
+            <DialogDescription>
+              Authenticator uygulamanızla (Google Authenticator, Authy, vb.) QR kodu tarayın ve oluşturulan 6 haneli kodu girin.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {twoFactor.qrCode && (
+              <div className="flex justify-center p-4 bg-white border border-gray-200 rounded-lg">
+                <img src={twoFactor.qrCode} alt="2FA QR Code" className="w-48 h-48" />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="twoFactorCode">Doğrulama Kodu</Label>
+              <Input
+                id="twoFactorCode"
+                type="text"
+                maxLength={6}
+                value={twoFactorCode}
+                onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
+                placeholder="000000"
+              />
+              <p className="text-xs text-gray-500">
+                Authenticator uygulamanızdan 6 haneli kodu girin
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShow2FAVerifyDialog(false);
+                setShow2FAQRCode(false);
+                setTwoFactorCode('');
+              }}
+            >
+              İptal
+            </Button>
+            <Button
+              onClick={handleVerify2FA}
+              disabled={twoFactorCode.length !== 6}
+            >
+              Doğrula ve Aktifleştir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 2FA Devre Dışı Bırakma Dialog'u */}
+      <Dialog open={show2FADisableDialog} onOpenChange={setShow2FADisableDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>İki Faktörlü Doğrulamayı Devre Dışı Bırak</DialogTitle>
+            <DialogDescription>
+              2FA'yı devre dışı bırakmak için şifrenizi girin. Bu işlem hesabınızın güvenliğini azaltacaktır.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="disable2FAPassword">Şifre</Label>
+              <Input
+                id="disable2FAPassword"
+                type="password"
+                value={disable2FAPassword}
+                onChange={(e) => setDisable2FAPassword(e.target.value)}
+                placeholder="Şifrenizi girin"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShow2FADisableDialog(false);
+                setDisable2FAPassword('');
+              }}
+            >
+              İptal
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDisable2FA}
+              disabled={!disable2FAPassword}
+            >
+              Devre Dışı Bırak
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

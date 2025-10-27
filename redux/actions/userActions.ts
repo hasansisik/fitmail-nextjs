@@ -179,6 +179,15 @@ export const login = createAsyncThunk(
     try {
       const { data } = await axios.post(`${server}/auth/login`, payload);
       
+      // Check if 2FA is required
+      if (data.requires2FA) {
+        return {
+          requires2FA: true,
+          tempToken: data.tempToken,
+          message: data.message
+        };
+      }
+      
       // Store user session
       const userSession = {
         email: data.user.email,
@@ -928,6 +937,146 @@ export const deleteUser = createAsyncThunk(
       };
       const response = await axios.delete(`${server}/auth/users/${id}`, config);
       return { id, ...response.data };
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
+// 2FA Actions
+export const enable2FA = createAsyncThunk(
+  "user/enable2FA",
+  async (_, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const response = await axios.post(`${server}/auth/2fa/enable`, {}, config);
+      return response.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
+export const verify2FA = createAsyncThunk(
+  "user/verify2FA",
+  async (token: string, thunkAPI) => {
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      };
+      const response = await axios.post(`${server}/auth/2fa/verify`, { token }, config);
+      return response.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
+export const disable2FA = createAsyncThunk(
+  "user/disable2FA",
+  async (password: string, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const response = await axios.post(`${server}/auth/2fa/disable`, { password }, config);
+      return response.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
+export const verify2FALogin = createAsyncThunk(
+  "user/verify2FALogin",
+  async (payload: { tempToken: string; token: string }, thunkAPI) => {
+    try {
+      const response = await axios.post(`${server}/auth/2fa/verify-login`, payload);
+      
+      // Store user session
+      const userSession = {
+        email: response.data.user.email,
+        token: response.data.user.token,
+        user: response.data.user,
+        loginTime: new Date().toISOString()
+      };
+      
+      // Get existing sessions
+      const existingSessions = JSON.parse(localStorage.getItem("userSessions") || "[]");
+      
+      // Check if this user is already in sessions
+      const existingIndex = existingSessions.findIndex((s: any) => s.email === response.data.user.email);
+      
+      if (existingIndex >= 0) {
+        // Update existing session
+        existingSessions[existingIndex] = userSession;
+      } else {
+        // Add new session
+        existingSessions.push(userSession);
+      }
+      
+      // Store all sessions
+      localStorage.setItem("userSessions", JSON.stringify(existingSessions));
+      
+      // Set current active user
+      localStorage.setItem("activeUserId", userSession.email);
+      localStorage.setItem("accessToken", userSession.token);
+      localStorage.setItem("userEmail", userSession.email);
+      
+      return response.data.user;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
+export const get2FAStatus = createAsyncThunk(
+  "user/get2FAStatus",
+  async (_, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const response = await axios.get(`${server}/auth/2fa/status`, config);
+      return response.data;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(
         error.response && error.response.data.message

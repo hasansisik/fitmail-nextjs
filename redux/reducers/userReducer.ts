@@ -23,6 +23,11 @@ import {
   switchUser,
   getAllSessions,
   removeSession,
+  enable2FA,
+  verify2FA,
+  disable2FA,
+  verify2FALogin,
+  get2FAStatus,
 } from "../actions/userActions";
 
 interface UserState {
@@ -57,6 +62,15 @@ interface UserState {
     error: string | null;
     stats: any;
     pagination: any;
+  };
+  twoFactor: {
+    loading: boolean;
+    enabled: boolean;
+    qrCode: string | null;
+    secret: string | null;
+    error: string | null;
+    tempToken: string | null;
+    requires2FA: boolean;
   };
 }
 
@@ -93,6 +107,15 @@ const initialState: UserState = {
     stats: null,
     pagination: null,
   },
+  twoFactor: {
+    loading: false,
+    enabled: false,
+    qrCode: null,
+    secret: null,
+    error: null,
+    tempToken: null,
+    requires2FA: false,
+  },
 };
 
 export const userReducer = createReducer(initialState, (builder) => {
@@ -119,9 +142,20 @@ export const userReducer = createReducer(initialState, (builder) => {
     })
     .addCase(login.fulfilled, (state, action) => {
       state.loading = false;
+      
+      // Check if 2FA is required
+      if ((action.payload as any).requires2FA) {
+        state.twoFactor.requires2FA = true;
+        state.twoFactor.tempToken = (action.payload as any).tempToken;
+        state.isAuthenticated = false;
+        return;
+      }
+      
       state.isAuthenticated = true;
       state.isVerified = true; // Login successful means user is verified
       state.user = action.payload;
+      state.twoFactor.requires2FA = false;
+      state.twoFactor.tempToken = null;
       // Seçili hesabı güncelle ve localStorage'a kaydet
       state.selectedAccountEmail = action.payload.email;
       if (typeof window !== 'undefined') {
@@ -481,6 +515,87 @@ export const userReducer = createReducer(initialState, (builder) => {
         state.isAuthenticated = false;
         state.isVerified = false;
       }
+    })
+    
+    // Enable 2FA
+    .addCase(enable2FA.pending, (state) => {
+      state.twoFactor.loading = true;
+      state.twoFactor.error = null;
+    })
+    .addCase(enable2FA.fulfilled, (state, action) => {
+      state.twoFactor.loading = false;
+      state.twoFactor.qrCode = action.payload.qrCode;
+      state.twoFactor.secret = action.payload.secret;
+      state.twoFactor.error = null;
+    })
+    .addCase(enable2FA.rejected, (state, action) => {
+      state.twoFactor.loading = false;
+      state.twoFactor.error = action.payload as string;
+    })
+    
+    // Verify 2FA
+    .addCase(verify2FA.pending, (state) => {
+      state.twoFactor.loading = true;
+      state.twoFactor.error = null;
+    })
+    .addCase(verify2FA.fulfilled, (state) => {
+      state.twoFactor.loading = false;
+      state.twoFactor.enabled = true;
+      state.twoFactor.qrCode = null;
+      state.twoFactor.secret = null;
+      state.twoFactor.error = null;
+      if (state.user) {
+        state.user.twoFactorEnabled = true;
+      }
+    })
+    .addCase(verify2FA.rejected, (state, action) => {
+      state.twoFactor.loading = false;
+      state.twoFactor.error = action.payload as string;
+    })
+    
+    // Disable 2FA
+    .addCase(disable2FA.pending, (state) => {
+      state.twoFactor.loading = true;
+      state.twoFactor.error = null;
+    })
+    .addCase(disable2FA.fulfilled, (state) => {
+      state.twoFactor.loading = false;
+      state.twoFactor.enabled = false;
+      state.twoFactor.error = null;
+      if (state.user) {
+        state.user.twoFactorEnabled = false;
+      }
+    })
+    .addCase(disable2FA.rejected, (state, action) => {
+      state.twoFactor.loading = false;
+      state.twoFactor.error = action.payload as string;
+    })
+    
+    // Verify 2FA Login
+    .addCase(verify2FALogin.pending, (state) => {
+      state.loading = true;
+    })
+    .addCase(verify2FALogin.fulfilled, (state, action) => {
+      state.loading = false;
+      state.isAuthenticated = true;
+      state.isVerified = true;
+      state.user = action.payload;
+      state.twoFactor.requires2FA = false;
+      state.twoFactor.tempToken = null;
+      // Seçili hesabı güncelle ve localStorage'a kaydet
+      state.selectedAccountEmail = action.payload.email;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('selectedAccountEmail', action.payload.email);
+      }
+    })
+    .addCase(verify2FALogin.rejected, (state, action) => {
+      state.loading = false;
+      state.twoFactor.error = action.payload as string;
+    })
+    
+    // Get 2FA Status
+    .addCase(get2FAStatus.fulfilled, (state, action) => {
+      state.twoFactor.enabled = action.payload.twoFactorEnabled;
     });
 });
 
