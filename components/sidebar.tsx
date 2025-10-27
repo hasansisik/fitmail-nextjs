@@ -186,6 +186,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
   
   const [internalIsCollapsed, setInternalIsCollapsed] = useState(false)
   const [isSendDialogOpen, setIsSendDialogOpen] = useState(false)
+  const selectedAccountEmail = useAppSelector((state) => state.user.selectedAccountEmail)
   
   const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : internalIsCollapsed
   const setIsCollapsed = onCollapse || setInternalIsCollapsed
@@ -202,15 +203,28 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
     }
   }, [dispatch, user, mailStats])
   
+  // Seçili hesap değiştiğinde mail stats'ı yenile
+  useEffect(() => {
+    if (user && selectedAccountEmail) {
+      console.log('Sidebar: Seçili hesap değişti, mail stats yenileniyor:', selectedAccountEmail)
+      dispatch(getMailStats())
+    }
+  }, [selectedAccountEmail, dispatch, user])
+  
   // Account switch handler
   const handleAccountSwitch = async (email: string) => {
     if (email === "__add_account__") {
       return // Don't switch if "add account" was clicked
     }
     
+    // Aynı hesap seçiliyorsa bir şey yapma
+    if (email === selectedAccountEmail) {
+      return
+    }
+    
     try {
       await dispatch(switchUser(email)).unwrap()
-      // Reload user data
+      // Reload user data ve mailleri yenile
       window.location.reload()
       toast.success("Hesap değiştirildi")
     } catch (error: any) {
@@ -501,7 +515,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       {!isCollapsed && (
         <div className="px-2 py-3">
           <div className="mb-8">
-            <Select value={user?.email} onValueChange={handleAccountSwitch}>
+            <Select value={selectedAccountEmail || user?.email} onValueChange={handleAccountSwitch}>
               <SelectTrigger className="h-auto py-2 px-3 rounded-md hover:bg-accent transition-colors cursor-pointer bg-background w-full border-0 shadow-none">
                 <SelectValue>
                   <div className="flex items-center gap-3 w-full">
@@ -516,7 +530,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
                         {user?.name} {user?.surname}
                       </span>
                       <span className="text-xs text-muted-foreground truncate w-full">
-                        {user?.email}
+                        {selectedAccountEmail || user?.email}
                       </span>
                     </div>
                   </div>

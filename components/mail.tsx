@@ -130,8 +130,10 @@ export function Mail({
   const pathname = usePathname()
   const mobileSidebar = useMobileSidebar()
   
-  // Redux'tan selectedMail'i al
+  // Redux'tan selectedMail ve selectedAccountEmail'i al
   const selectedMail = useAppSelector((state) => state.mail.selectedMail)
+  const selectedAccountEmail = useAppSelector((state) => state.user.selectedAccountEmail)
+  const user = useAppSelector((state) => state.user.user)
 
   // Seçili mail var mı kontrol et (listOnly modunda detay gösterme)
   const showMailDetail = !listOnly && selectedMail !== null
@@ -178,6 +180,23 @@ export function Mail({
   // Mail filtreleme fonksiyonu
   const filteredMails = React.useMemo(() => {
     let filtered = mails
+    
+    // Seçili hesaba göre filtrele
+    // Gönderilenler ve taslaklar için from email'e göre filtrele
+    // Diğer klasörler için to email'e göre filtrele
+    if (selectedAccountEmail) {
+      const folderCategories = ['sent', 'drafts']
+      const currentFolder = pathname.split('/')[2] || 'inbox'
+      
+      filtered = filtered.filter(mail => {
+        // Gönderilenler ve taslaklar klasöründe from email'e göre filtrele
+        if (folderCategories.includes(currentFolder)) {
+          return mail.from?.email === selectedAccountEmail
+        }
+        // Diğer klasörlerde to email'e göre filtrele
+        return mail.to?.some(recipient => recipient.email === selectedAccountEmail)
+      })
+    }
 
     // Basic search query
     if (searchQuery.trim()) {
@@ -246,7 +265,7 @@ export function Mail({
     }
 
     return filtered
-  }, [mails, searchQuery, advancedFilters])
+  }, [mails, searchQuery, advancedFilters, selectedAccountEmail, pathname])
 
   // Yenileme fonksiyonu - pathname'e göre hangi kategoriyi yenileyeceğini belirle
   const handleRefresh = async () => {

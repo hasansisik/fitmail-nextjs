@@ -82,6 +82,14 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
   const [bccRecipients, setBccRecipients] = useState<string[]>([])
   const [showSaveDraftDialog, setShowSaveDraftDialog] = useState(false)
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null)
+  
+  // Seçili hesabı al (Redux'tan)
+  const selectedAccountEmail = React.useMemo(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('selectedAccountEmail')
+    }
+    return null
+  }, [])
 
   // Reply mode veya draft mode'a göre form verilerini otomatik doldur
   React.useEffect(() => {

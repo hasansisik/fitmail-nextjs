@@ -33,6 +33,7 @@ interface UserState {
   isVerified?: boolean;
   message?: string | null;
   sessions: any[];
+  selectedAccountEmail: string | null; // Seçili hesap email'i
   emailCheck: {
     loading: boolean;
     available: boolean | null;
@@ -67,6 +68,7 @@ const initialState: UserState = {
   isVerified: false,
   message: null,
   sessions: [],
+  selectedAccountEmail: typeof window !== 'undefined' ? localStorage.getItem('selectedAccountEmail') : null,
   emailCheck: {
     loading: false,
     available: null,
@@ -120,6 +122,11 @@ export const userReducer = createReducer(initialState, (builder) => {
       state.isAuthenticated = true;
       state.isVerified = true; // Login successful means user is verified
       state.user = action.payload;
+      // Seçili hesabı güncelle ve localStorage'a kaydet
+      state.selectedAccountEmail = action.payload.email;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('selectedAccountEmail', action.payload.email);
+      }
     })
     .addCase(login.rejected, (state, action) => {
       state.loading = false;
@@ -142,6 +149,13 @@ export const userReducer = createReducer(initialState, (builder) => {
       state.isAuthenticated = true;
       state.isVerified = action.payload.isVerified; // Use actual verification status from backend
       state.user = action.payload;
+      // Eğer selectedAccountEmail yoksa veya user email'i ile eşleşmiyorsa, user email'ini kullan
+      if (!state.selectedAccountEmail || state.selectedAccountEmail !== action.payload.email) {
+        state.selectedAccountEmail = action.payload.email;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('selectedAccountEmail', action.payload.email);
+        }
+      }
     })
     .addCase(loadUser.rejected, (state, action) => {
       state.loading = false;
@@ -165,6 +179,11 @@ export const userReducer = createReducer(initialState, (builder) => {
       state.isVerified = false;
       state.user = null;
       state.message = typeof action.payload === 'string' ? action.payload : action.payload?.message || 'Çıkış yapıldı';
+      // Seçili hesabı temizle
+      state.selectedAccountEmail = null;
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('selectedAccountEmail');
+      }
     })
     .addCase(logout.rejected, (state, action) => {
       state.loading = false;
@@ -437,6 +456,11 @@ export const userReducer = createReducer(initialState, (builder) => {
       state.user = action.payload;
       state.isAuthenticated = true;
       state.error = null;
+      // Seçili hesabı güncelle ve localStorage'a kaydet
+      state.selectedAccountEmail = action.payload.email;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('selectedAccountEmail', action.payload.email);
+      }
     })
     .addCase(switchUser.rejected, (state, action) => {
       state.loading = false;
