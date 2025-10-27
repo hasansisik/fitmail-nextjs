@@ -284,6 +284,18 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
 
   // Kullanıcı adının baş harflerini al
   const userInitials = user ? `${user.name?.[0] || ''}${user.surname?.[0] || ''}`.toUpperCase() : 'U'
+  
+  // Kullanıcı profil resmi URL'si
+  const getUserProfileImage = (userData?: any) => {
+    const targetUser = userData || user;
+    if (targetUser?.picture) {
+      return targetUser.picture;
+    }
+    if (targetUser?.profile?.picture) {
+      return targetUser.profile.picture;
+    }
+    return "";
+  }
 
   const renderNavItem = (link: any, index: number, isActive: boolean) => {
     const isLogout = link.isLogout
@@ -494,7 +506,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
                 <SelectValue>
                   <div className="flex items-center gap-3 w-full">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src="" alt={`${user?.name} ${user?.surname}`} />
+                      <AvatarImage src={getUserProfileImage()} alt={`${user?.name} ${user?.surname}`} />
                       <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
                         {userInitials}
                       </AvatarFallback>
@@ -516,6 +528,10 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
                       <SelectItem key={session.email} value={session.email}>
                         <div className="flex items-center gap-2 w-full">
                           <Avatar className="h-6 w-6">
+                            <AvatarImage 
+                              src={session.email === user?.email ? getUserProfileImage() : getUserProfileImage(session.user)} 
+                              alt={`${session.user?.name} ${session.user?.surname}`} 
+                            />
                             <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                               {session.user?.name?.[0]}{session.user?.surname?.[0]}
                             </AvatarFallback>
@@ -535,6 +551,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
                     <SelectItem value={user?.email} disabled>
                       <div className="flex items-center gap-2 w-full">
                         <Avatar className="h-6 w-6">
+                          <AvatarImage src={getUserProfileImage()} alt={`${user?.name} ${user?.surname}`} />
                           <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                             {userInitials}
                           </AvatarFallback>
@@ -580,7 +597,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
         <div className="py-3">
           <div className="flex flex-col items-center gap-2">
             <Avatar className="h-8 w-8">
-              <AvatarImage src="" alt={`${user?.name} ${user?.surname}`} />
+              <AvatarImage src={getUserProfileImage()} alt={`${user?.name} ${user?.surname}`} />
               <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
                 {userInitials}
               </AvatarFallback>

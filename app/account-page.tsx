@@ -783,8 +783,8 @@ export default function AccountPage() {
                               className="w-full h-full object-cover"
                             />
                           ) : null}
-                          <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white p-1.5 rounded-full shadow-lg hover:bg-blue-700 transition-colors opacity-0 group-hover:opacity-100">
-                            <Camera className="w-4 h-4" />
+                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-600 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none">
+                            <Camera className="w-5 h-5" />
                           </div>
                         </button>
                         <h2 className="text-xl text-gray-900 mb-1">
@@ -1797,7 +1797,7 @@ export default function AccountPage() {
 
       {/* Profil Resmi Kırpma Modalı */}
       <Dialog open={showCropModal} onOpenChange={setShowCropModal}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Profil Resmini Düzenle</DialogTitle>
             <DialogDescription>
@@ -1807,7 +1807,7 @@ export default function AccountPage() {
           
           <div className="space-y-4">
             {previewUrl && (
-              <div className="flex justify-center">
+              <div className="flex justify-center max-w-full overflow-hidden">
                 <ReactCrop
                   crop={crop}
                   onChange={(_, percentCrop) => setCrop(percentCrop)}
@@ -1821,7 +1821,8 @@ export default function AccountPage() {
                     alt="Crop me"
                     src={previewUrl}
                     onLoad={onImageLoad}
-                    className="max-h-96"
+                    className="max-h-96 max-w-full object-contain"
+                    style={{ maxHeight: '70vh' }}
                   />
                 </ReactCrop>
               </div>
