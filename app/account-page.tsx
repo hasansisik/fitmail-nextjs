@@ -840,12 +840,6 @@ export default function AccountPage() {
             {/* Header Actions */}
             <div className="flex items-center space-x-2 sm:space-x-4">
               <button
-                onClick={() => handleSearch()}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full"
-              >
-                <Search className="h-4 w-4 sm:h-5 sm:w-5" />
-              </button>
-              <button
                 onClick={handleAbout}
                 className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full"
               >
