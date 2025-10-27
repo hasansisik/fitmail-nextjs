@@ -14,14 +14,14 @@ export const domains = {
     main: 'localhost:3000',
     account: 'account.localhost:3000',
     panel: 'panel.localhost:3000',
-    protocol: 'https'
+    protocol: 'http'
   },
   // Production domains
   production: {
     main: 'localhost:3000',
     account: 'account.localhost:3000',
     panel: 'panel.localhost:3000',
-    protocol: 'https'
+    protocol: 'http'
   }
 };
 

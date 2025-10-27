@@ -32,7 +32,7 @@ import {
   Languages,
   HelpCircle
 } from 'lucide-react';
-import { loadUser, editProfile, changePassword, verifyPassword, updateSettings, deleteAccount } from '@/redux/actions/userActions';
+import { loadUser, editProfile, changePassword, verifyPassword, updateSettings, deleteAccount, switchUser, getAllSessions, removeSession } from '@/redux/actions/userActions';
 import { RootState, AppDispatch } from '@/redux/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -146,10 +146,11 @@ export default function AccountPage() {
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [imageError, setImageError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
   
   const dispatch = useDispatch<AppDispatch>();
-  const { user, loading, isAuthenticated, error, message } = useSelector((state: RootState) => state.user);
+  const { user, loading, isAuthenticated, error, message, sessions } = useSelector((state: RootState) => state.user);
 
   useEffect(() => {
     // Sadece client-side'da çalış
@@ -166,6 +167,13 @@ export default function AccountPage() {
       window.location.href = '/giris';
     }
   }, [dispatch, isAuthenticated, loading]);
+
+  // Sessions'ı yükle
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      dispatch(getAllSessions());
+    }
+  }, [dispatch, isAuthenticated, user]);
 
   // Profil menüsünü dışına tıklayınca kapat
   useEffect(() => {
@@ -224,8 +232,9 @@ export default function AccountPage() {
         country: user.address?.country || "Turkey"
       });
       
-      // Profil resmini yükle
-      setAvatarUrl(user.profile?.picture || '');
+      // Profil resmini yükle ve hata durumunu sıfırla
+      setAvatarUrl(user.picture || user.profile?.picture || '');
+      setImageError(false);
       
       // Settings'i yükle
       if (user.settings) {
@@ -280,11 +289,19 @@ export default function AccountPage() {
     if (avatarUrl) {
       return avatarUrl;
     }
+    if (user?.picture) {
+      return user.picture;
+    }
     if (user?.profile?.picture) {
       return user.profile.picture;
     }
-    // Varsayılan profil fotoğrafı
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(getUserDisplayName())}&background=random&color=fff&size=200`;
+    // Return empty string instead of default to show initials
+    return '';
+  };
+
+  // Check if user has a profile image
+  const hasProfileImage = () => {
+    return !!(avatarUrl || user?.picture || user?.profile?.picture);
   };
 
   // Çıkış yapma fonksiyonu
@@ -292,6 +309,34 @@ export default function AccountPage() {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("userEmail");
     window.location.href = '/giris';
+  };
+
+  // Hesap değiştirme fonksiyonu
+  const handleAccountSwitch = async (email: string) => {
+    try {
+      await dispatch(switchUser(email)).unwrap();
+      toast.success("Hesap değiştirildi");
+      window.location.reload();
+    } catch (error: any) {
+      console.error("Account switch failed:", error);
+      toast.error("Hesap değiştirilemedi");
+    }
+  };
+
+  // Hesap kaldırma fonksiyonu
+  const handleRemoveAccount = async (email: string) => {
+    try {
+      await dispatch(removeSession(email)).unwrap();
+      if (email === user?.email) {
+        // Eğer aktif hesabı kaldırırsak, çıkış yap
+        await handleLogout();
+      } else {
+        toast.success("Hesap kaldırıldı");
+      }
+    } catch (error: any) {
+      console.error("Remove account failed:", error);
+      toast.error("Hesap kaldırılamadı");
+    }
   };
 
   // Arama önerileri
@@ -336,6 +381,12 @@ export default function AccountPage() {
   // Hakkında sayfası açma
   const handleAbout = () => {
     setActiveNav('about');
+  };
+
+  // Profile menüden link açma
+  const handleOpenSection = (section: string) => {
+    setActiveNav(section);
+    setShowProfileMenu(false);
   };
 
   // Form düzenleme fonksiyonları
@@ -592,6 +643,7 @@ export default function AccountPage() {
         }));
         
         setAvatarUrl(uploadResult);
+        setImageError(false); // Yeni resim yüklendiğinde hata durumunu temizle
         setShowCropModal(false);
         setPreviewUrl('');
         setSelectedFile(null);
@@ -702,17 +754,180 @@ export default function AccountPage() {
                   </div>
                 </button>
                 
-                {/* Profile Menu */}
+                {/* Profile Menu - Gmail Style */}
                 {showProfileMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50">
-                    <div className="py-1">
+                  <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 max-h-[600px] overflow-y-auto">
+                    {/* Active Account Section */}
+                    <div className="p-6 border-b border-gray-200">
+                      <div className="flex items-center justify-between mb-4 relative">
+                        <h3 className="text-sm text-gray-900 flex-1 text-center">{user?.email}</h3>
+                        <button
+                          onClick={() => setShowProfileMenu(false)}
+                          className="absolute right-0 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      <div className="flex flex-col items-center">
+                        <button
+                          onClick={handleAvatarClick}
+                          className="w-24 h-24 rounded-full border-2 border-blue-500 overflow-hidden mb-3 relative group cursor-pointer"
+                        >
+                          {hasProfileImage() && getProfileImage() ? (
+                            <img 
+                              src={getProfileImage()} 
+                              alt={getUserDisplayName()} 
+                              className="w-full h-full object-cover"
+                            />
+                          ) : null}
+                          <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white p-1.5 rounded-full shadow-lg hover:bg-blue-700 transition-colors opacity-0 group-hover:opacity-100">
+                            <Camera className="w-4 h-4" />
+                          </div>
+                        </button>
+                        <h2 className="text-xl text-gray-900 mb-1">
+                          Merhaba, {getUserDisplayName()}!
+                        </h2>
+                        <button 
+                          onClick={() => {
+                            handleOpenSection('personal');
+                          }}
+                          className="mt-4 px-4 py-2 text-blue-600 border border-blue-600 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
+                        >
+                          Fitmail Hesabınızı yönetin
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Other Accounts Section */}
+                    {sessions && sessions.length > 0 && (
+                      <div className="p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-medium text-gray-700">Diğer Hesaplar</h3>
+                        </div>
+                        <div className="space-y-1 max-h-80 overflow-y-auto">
+                          {sessions
+                            .filter((session: any) => session.email !== user?.email)
+                            .map((session: any) => (
+                              <div
+                                key={session.email}
+                                className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer group"
+                                onClick={() => {
+                                  handleAccountSwitch(session.email);
+                                  setShowProfileMenu(false);
+                                }}
+                              >
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                  <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 relative">
+                                    {session.user?.picture ? (
+                                      <img 
+                                        src={session.user.picture} 
+                                        alt={`${session.user?.name || ''} ${session.user?.surname || ''}`}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          const target = e.target as HTMLImageElement;
+                                          target.style.display = 'none';
+                                          target.parentElement!.innerHTML = `
+                                            <div class="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                                              <span class="text-white font-medium text-xs">${session.user?.name?.[0]?.toUpperCase() || ''}${session.user?.surname?.[0]?.toUpperCase() || ''}</span>
+                                            </div>
+                                          `;
+                                        }}
+                                      />
+                                    ) : session.user?.profile?.picture ? (
+                                      <img 
+                                        src={session.user.profile.picture} 
+                                        alt={`${session.user?.name || ''} ${session.user?.surname || ''}`}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          const target = e.target as HTMLImageElement;
+                                          target.style.display = 'none';
+                                          target.parentElement!.innerHTML = `
+                                            <div class="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                                              <span class="text-white font-medium text-xs">${session.user?.name?.[0]?.toUpperCase() || ''}${session.user?.surname?.[0]?.toUpperCase() || ''}</span>
+                                            </div>
+                                          `;
+                                        }}
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                                        <span className="text-white font-medium text-xs">
+                                          {session.user?.name?.[0]?.toUpperCase() || ''}{session.user?.surname?.[0]?.toUpperCase() || ''}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-gray-900 truncate">
+                                      {session.user?.name || ''} {session.user?.surname || ''}
+                                    </p>
+                                    <p className="text-xs text-gray-500 truncate">{session.email}</p>
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveAccount(session.email);
+                                  }}
+                                  className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-all"
+                                >
+                                  <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Add Account & Sign Out */}
+                    <div className="p-4 border-t border-gray-200 space-y-2">
                       <button
-                        onClick={handleLogout}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => {
+                          window.open('/giris', '_blank');
+                          setShowProfileMenu(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       >
-                        <LogOut className="h-4 w-4 mr-3" />
-                        Çıkış Yap
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Başka bir hesap ekle
                       </button>
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setShowProfileMenu(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                        Tüm hesapların oturumlarını kapat
+                      </button>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="p-4 border-t border-gray-200 text-center">
+                      <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                        <button 
+                          onClick={() => handleOpenSection('about')}
+                          className="hover:text-gray-700"
+                        >
+                          Gizlilik Politikası
+                        </button>
+                        <span>•</span>
+                        <button 
+                          onClick={() => handleOpenSection('about')}
+                          className="hover:text-gray-700"
+                        >
+                          Hizmet Şartları
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
