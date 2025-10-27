@@ -674,3 +674,22 @@ export const cleanupTrash = createAsyncThunk(
     }
   }
 );
+
+// Compose Dialog Actions (synchronous)
+export const openComposeDialog = createAsyncThunk(
+  "mail/openComposeDialog",
+  async (payload: {
+    replyMode?: 'reply' | 'replyAll' | 'forward' | null;
+    originalMail?: any;
+    draftMail?: any;
+  }) => {
+    return payload;
+  }
+);
+
+export const closeComposeDialog = createAsyncThunk(
+  "mail/closeComposeDialog",
+  async () => {
+    return {};
+  }
+);

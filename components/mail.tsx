@@ -72,7 +72,7 @@ interface ApiMail {
 }
 import { useMail } from "@/app/mail/use-mail"
 import { useAppSelector, useAppDispatch } from "@/redux/hook"
-import { clearSelectedMail, getMailsByCategory, getMailsByLabelCategory, getMailStats, cleanupTrash } from "@/redux/actions/mailActions"
+import { clearSelectedMail, getMailsByCategory, getMailsByLabelCategory, getMailStats, cleanupTrash, openComposeDialog, closeComposeDialog } from "@/redux/actions/mailActions"
 import { usePathname } from "next/navigation"
 import { toast } from "sonner"
 import { useMobileSidebar } from "@/app/mail/layout"
@@ -110,7 +110,6 @@ export function Mail({
 }: MailProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
   const [isMaximized, setIsMaximized] = React.useState(false)
-  const [showSendDialog, setShowSendDialog] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [advancedFilters, setAdvancedFilters] = React.useState<SearchFilters>({
     from: "",
@@ -124,7 +123,6 @@ export function Mail({
   const [showAdvancedSearch, setShowAdvancedSearch] = React.useState(false)
   const [isSelectMode, setIsSelectMode] = React.useState(false)
   const [isRefreshing, setIsRefreshing] = React.useState(false)
-  const [draftToEdit, setDraftToEdit] = React.useState<any>(null)
   const [mail, { clearSelection }] = useMail()
   const dispatch = useAppDispatch()
   const pathname = usePathname()
@@ -134,6 +132,7 @@ export function Mail({
   const selectedMail = useAppSelector((state) => state.mail.selectedMail)
   const selectedAccountEmail = useAppSelector((state) => state.user.selectedAccountEmail)
   const user = useAppSelector((state) => state.user.user)
+  const composeDialog = useAppSelector((state) => state.mail.composeDialog)
 
   // Seçili mail var mı kontrol et (listOnly modunda detay gösterme)
   const showMailDetail = !listOnly && selectedMail !== null
@@ -337,16 +336,17 @@ export function Mail({
 
   // Taslak tıklama fonksiyonu
   const handleDraftClick = (draft: any) => {
-    setDraftToEdit(draft)
-    setShowSendDialog(true)
+    dispatch(openComposeDialog({ draftMail: draft }))
   }
 
-  // Mail gönderme dialogu kapandığında taslağı temizle
-  const handleSendDialogClose = (open: boolean) => {
-    setShowSendDialog(open)
-    if (!open) {
-      setDraftToEdit(null)
-    }
+  // Yeni mail dialogu aç
+  const handleOpenNewMail = () => {
+    dispatch(openComposeDialog({}))
+  }
+
+  // Mail gönderme dialogu kapat
+  const handleCloseSendDialog = () => {
+    dispatch(closeComposeDialog())
   }
 
   return (
@@ -433,7 +433,7 @@ export function Mail({
                   <TooltipTrigger asChild>
                     <Button
                       size="sm"
-                      onClick={() => setShowSendDialog(true)}
+                      onClick={handleOpenNewMail}
                       className="h-8"
                     >
                       <Plus className="h-4 w-4 sm:mr-2" />
@@ -602,11 +602,13 @@ export function Mail({
         </div>
       )}
       
-      {/* Send Mail Dialog */}
+      {/* Send Mail Dialog - Global state */}
       <SendMailDialog
-        open={showSendDialog}
-        onOpenChange={handleSendDialogClose}
-        draftMail={draftToEdit}
+        open={composeDialog.isOpen}
+        onOpenChange={handleCloseSendDialog}
+        replyMode={composeDialog.replyMode}
+        originalMail={composeDialog.originalMail}
+        draftMail={composeDialog.draftMail}
         onMailSent={handleRefresh}
       />
 

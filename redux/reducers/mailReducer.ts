@@ -20,6 +20,8 @@ import {
   clearMailError,
   addReplyToMail,
   cleanupTrash,
+  openComposeDialog,
+  closeComposeDialog,
 } from "../actions/mailActions";
 
 interface MailState {
@@ -33,6 +35,12 @@ interface MailState {
   statsError: string | null;
   selectedMail: any | null;
   message: string | null;
+  composeDialog: {
+    isOpen: boolean;
+    replyMode: 'reply' | 'replyAll' | 'forward' | null;
+    originalMail: any | null;
+    draftMail: any | null;
+  };
 }
 
 const initialState: MailState = {
@@ -46,6 +54,12 @@ const initialState: MailState = {
   statsError: null,
   selectedMail: null,
   message: null,
+  composeDialog: {
+    isOpen: false,
+    replyMode: null,
+    originalMail: null,
+    draftMail: null,
+  },
 };
 
 export const mailReducer = createReducer(initialState, (builder) => {
@@ -406,6 +420,24 @@ export const mailReducer = createReducer(initialState, (builder) => {
     .addCase(cleanupTrash.rejected, (state, action) => {
       state.mailsLoading = false;
       state.mailsError = action.payload as string;
+    })
+    // Open Compose Dialog
+    .addCase(openComposeDialog.fulfilled, (state, action) => {
+      state.composeDialog = {
+        isOpen: true,
+        replyMode: action.payload.replyMode || null,
+        originalMail: action.payload.originalMail || null,
+        draftMail: action.payload.draftMail || null,
+      };
+    })
+    // Close Compose Dialog
+    .addCase(closeComposeDialog.fulfilled, (state) => {
+      state.composeDialog = {
+        isOpen: false,
+        replyMode: null,
+        originalMail: null,
+        draftMail: null,
+      };
     });
 });
 

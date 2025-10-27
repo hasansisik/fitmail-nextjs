@@ -545,22 +545,34 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Send className="h-5 w-5" />
-            {replyMode === 'reply' ? 'Cevapla' : 
-             replyMode === 'replyAll' ? 'Tümünü Cevapla' : 
-             replyMode === 'forward' ? 'İlet' : 'Yeni Mail Gönder'}
-          </DialogTitle>
-          <DialogDescription>
-            {replyMode === 'reply' ? 'Bu maili cevaplamak için aşağıdaki bilgileri doldurun.' :
-             replyMode === 'replyAll' ? 'Bu maili tüm alıcılara cevaplamak için aşağıdaki bilgileri doldurun.' :
-             replyMode === 'forward' ? 'Bu maili iletmek için aşağıdaki bilgileri doldurun.' :
-             'Mail göndermek için aşağıdaki bilgileri doldurun.'}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      {/* Gmail-style compose window - sağ altta */}
+      {open && (
+        <div className="fixed bottom-0 right-4 z-50 w-full max-w-2xl shadow-2xl rounded-t-lg bg-background border border-border overflow-hidden flex flex-col"
+             style={{ height: '600px', maxHeight: 'calc(100vh - 100px)' }}>
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b bg-muted/50">
+            <div className="flex items-center gap-2">
+              <Send className="h-5 w-5" />
+              <h2 className="font-semibold">
+                {replyMode === 'reply' ? 'Cevapla' : 
+                 replyMode === 'replyAll' ? 'Tümünü Cevapla' : 
+                 replyMode === 'forward' ? 'İlet' : 'Yeni Mail'}
+              </h2>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleClose}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto p-4">
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-4">
@@ -859,29 +871,36 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
               )}
             </div>
           </div>
-
-          <DialogFooter className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={false}
-            >
-              <X className="h-4 w-4 mr-2" />
-              İptal
-            </Button>
-            
-            
-            <Button
-              type="submit"
-              disabled={toRecipients.length === 0 || !formData.subject || !formData.content}
-            >
-              <Send className="h-4 w-4 mr-2" />
-              Gönder
-            </Button>
-          </DialogFooter>
         </form>
-      </DialogContent>
+          </div>
+
+          {/* Fixed Footer */}
+          <div className="border-t p-4 bg-background">
+            <div className="flex items-center justify-between gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                disabled={false}
+                size="sm"
+              >
+                <X className="h-4 w-4 mr-2" />
+                İptal
+              </Button>
+              
+              <Button
+                type="submit"
+                disabled={toRecipients.length === 0 || !formData.subject || !formData.content}
+                size="sm"
+                onClick={handleSubmit}
+              >
+                <Send className="h-4 w-4 mr-2" />
+                Gönder
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Taslak Kaydetme Onay Dialogu */}
       <AlertDialog open={showSaveDraftDialog} onOpenChange={setShowSaveDraftDialog}>
@@ -903,6 +922,6 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Dialog>
+    </>
   )
 }
