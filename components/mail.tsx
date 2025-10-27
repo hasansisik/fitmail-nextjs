@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, Plus, ArrowLeft, X, CheckSquare, RefreshCw, Trash2, Filter, Menu, Info } from "lucide-react"
+import { Search, Plus, ArrowLeft, X, CheckSquare, RefreshCw, Trash2, Filter, Menu, Info, ArrowRightFromLine, ArrowLeftToLine } from "lucide-react"
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -370,7 +370,13 @@ export function Mail({
                       'Menüyü gizle'
                     }
                   >
-                    <Menu className="h-4 w-4" />
+                    {mobileSidebar.mobileState === 'hidden' ? (
+                      <ArrowRightFromLine className="h-4 w-4" />
+                    ) : mobileSidebar.mobileState === 'collapsed' ? (
+                      <ArrowRightFromLine className="h-4 w-4" />
+                    ) : (
+                      <ArrowLeftToLine className="h-4 w-4" />
+                    )}
                   </Button>
                 )}
                 <h1 className="text-lg sm:text-xl font-bold">{categoryTitle}</h1>
@@ -574,7 +580,13 @@ export function Mail({
                     'Menüyü gizle'
                   }
                 >
-                  <Menu className="h-4 w-4" />
+                  {mobileSidebar.mobileState === 'hidden' ? (
+                    <ArrowRightFromLine className="h-4 w-4" />
+                  ) : mobileSidebar.mobileState === 'collapsed' ? (
+                    <ArrowRightFromLine className="h-4 w-4" />
+                  ) : (
+                    <ArrowLeftToLine className="h-4 w-4" />
+                  )}
                 </Button>
               )}
               <Button onClick={handleBackToList} variant="outline" size="sm">

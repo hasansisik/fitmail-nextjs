@@ -546,15 +546,27 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
 
   return (
     <>
-      {/* Gmail-style compose window - sağ altta */}
+      {/* Gmail-style compose window - Desktop: sağ altta, Mobile: tam ekran */}
       {open && (
-        <div className="fixed bottom-0 right-4 z-50 w-full max-w-2xl shadow-2xl rounded-t-lg bg-background border border-border overflow-hidden flex flex-col"
-             style={{ height: '600px', maxHeight: 'calc(100vh - 100px)' }}>
+        <>
+          <style jsx>{`
+            @media (min-width: 1024px) {
+              .compose-window {
+                height: 600px !important;
+                max-height: calc(100vh - 100px) !important;
+              }
+            }
+          `}</style>
+          <div className="compose-window fixed bottom-0 right-0 lg:right-4 z-50 w-full lg:max-w-2xl shadow-2xl lg:rounded-t-lg bg-background border-t lg:border border-border overflow-hidden flex flex-col"
+               style={{ 
+                 height: '100vh',
+                 maxHeight: '100vh'
+               }}>
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b bg-muted/50">
+          <div className="flex items-center justify-between p-3 lg:p-4 border-b bg-muted/50">
             <div className="flex items-center gap-2">
-              <Send className="h-5 w-5" />
-              <h2 className="font-semibold">
+              <Send className="h-4 w-4 lg:h-5 lg:w-5" />
+              <h2 className="text-sm lg:text-base font-semibold">
                 {replyMode === 'reply' ? 'Cevapla' : 
                  replyMode === 'replyAll' ? 'Tümünü Cevapla' : 
                  replyMode === 'forward' ? 'İlet' : 'Yeni Mail'}
@@ -572,17 +584,17 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
           </div>
 
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto p-3 lg:p-4">
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid gap-4">
+        <form onSubmit={handleSubmit} className="space-y-3 lg:space-y-4">
+          <div className="grid gap-3 lg:gap-4">
             {/* To Field */}
-            <div className="space-y-2">
+            <div className="space-y-1.5 lg:space-y-2">
               <div className="flex items-center gap-2">
-                <Label htmlFor="to">Alıcı *</Label>
+                <Label htmlFor="to" className="text-xs lg:text-sm">Alıcı *</Label>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    <Info className="h-3 w-3 lg:h-4 lg:w-4 text-muted-foreground cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
                     <p>Mailinizin gönderileceği kişinin e-posta adresi. Alıcı, e-postayı kim gönderdiğini görebilir ve diğer alıcıları da görebilir.</p>
@@ -598,9 +610,9 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                 onBlur={() => handleEmailBlur("to")}
                 required={toRecipients.length === 0}
                 disabled={false}
-                className={toRecipients.length > 0 ? "border-green-500" : ""}
+                className={`text-sm ${toRecipients.length > 0 ? "border-green-500" : ""}`}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[10px] lg:text-xs text-muted-foreground">
                 Mail adresini yazıp Enter'a basın, Tab ile geçin veya virgül ile ayırın
               </p>
               {toRecipients.length > 0 && (
@@ -610,19 +622,19 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
               )}
               {/* To Recipients Chips */}
               {toRecipients.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex flex-wrap gap-1.5 lg:gap-2 mt-2">
                   {toRecipients.map((email) => (
-                    <div key={email} className="inline-flex items-center gap-2 bg-secondary text-secondary-foreground rounded-full px-3 py-1.5 text-sm">
-                      <span>{email}</span>
+                    <div key={email} className="inline-flex items-center gap-1.5 lg:gap-2 bg-secondary text-secondary-foreground rounded-full px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm">
+                      <span className="truncate max-w-[150px] lg:max-w-none">{email}</span>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="h-5 w-5 p-0 rounded-full hover:bg-muted-foreground/20"
+                        className="h-4 w-4 lg:h-5 lg:w-5 p-0 rounded-full hover:bg-muted-foreground/20"
                         onClick={() => removeRecipient(email, 'to')}
                         disabled={false}
                       >
-                        <X className="h-3 w-3" />
+                        <X className="h-2.5 w-2.5 lg:h-3 lg:w-3" />
                       </Button>
                     </div>
                   ))}
@@ -875,7 +887,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
           </div>
 
           {/* Fixed Footer */}
-          <div className="border-t p-4 bg-background">
+          <div className="border-t p-3 lg:p-4 bg-background">
             <div className="flex items-center justify-between gap-2">
               <Button
                 type="button"
@@ -883,8 +895,9 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                 onClick={handleClose}
                 disabled={false}
                 size="sm"
+                className="text-xs lg:text-sm"
               >
-                <X className="h-4 w-4 mr-2" />
+                <X className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
                 İptal
               </Button>
               
@@ -893,13 +906,15 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                 disabled={toRecipients.length === 0 || !formData.subject || !formData.content}
                 size="sm"
                 onClick={handleSubmit}
+                className="text-xs lg:text-sm"
               >
-                <Send className="h-4 w-4 mr-2" />
+                <Send className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
                 Gönder
               </Button>
             </div>
           </div>
-        </div>
+          </div>
+        </>
       )}
 
       {/* Taslak Kaydetme Onay Dialogu */}
