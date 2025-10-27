@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, Plus, ArrowLeft, X, CheckSquare, RefreshCw, Trash2 } from "lucide-react"
+import { Search, Plus, ArrowLeft, X, CheckSquare, RefreshCw, Trash2, Filter } from "lucide-react"
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,7 @@ import {
 import { MailDisplay } from "@/components/mail-display"
 import { MailList } from "@/components/mail-list"
 import { SendMailDialog } from "@/components/send-mail-dialog"
+import { AdvancedSearchDialog } from "@/components/advanced-search-dialog"
 // API'den gelen mail formatı
 interface ApiMail {
   _id: string
@@ -81,6 +82,16 @@ interface MailProps {
   listOnly?: boolean // Sadece liste modu
 }
 
+interface SearchFilters {
+  from: string
+  to: string
+  subject: string
+  hasTheWords: string
+  doesntHave: string
+  isRead: "all" | "read" | "unread"
+  hasAttachment: boolean
+}
+
 export function Mail({
   mails,
   mailsLoading = false,
@@ -95,6 +106,16 @@ export function Mail({
   const [isMaximized, setIsMaximized] = React.useState(false)
   const [showSendDialog, setShowSendDialog] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
+  const [advancedFilters, setAdvancedFilters] = React.useState<SearchFilters>({
+    from: "",
+    to: "",
+    subject: "",
+    hasTheWords: "",
+    doesntHave: "",
+    isRead: "all",
+    hasAttachment: false,
+  })
+  const [showAdvancedSearch, setShowAdvancedSearch] = React.useState(false)
   const [isSelectMode, setIsSelectMode] = React.useState(false)
   const [isRefreshing, setIsRefreshing] = React.useState(false)
   const [mail, { clearSelection }] = useMail()
@@ -118,24 +139,106 @@ export function Mail({
     setSearchQuery(query)
   }
 
+  // Filtre temizleme fonksiyonu
+  const handleClearFilters = () => {
+    setSearchQuery("")
+    setAdvancedFilters({
+      from: "",
+      to: "",
+      subject: "",
+      hasTheWords: "",
+      doesntHave: "",
+      isRead: "all",
+      hasAttachment: false,
+    })
+  }
+
+  // Aktif filtrelere göre badge'ler
+  const activeFilterCount = React.useMemo(() => {
+    let count = 0
+    if (searchQuery) count++
+    if (advancedFilters.from) count++
+    if (advancedFilters.to) count++
+    if (advancedFilters.subject) count++
+    if (advancedFilters.hasTheWords) count++
+    if (advancedFilters.doesntHave) count++
+    if (advancedFilters.isRead !== "all") count++
+    if (advancedFilters.hasAttachment) count++
+    return count
+  }, [searchQuery, advancedFilters])
+
   // Mail filtreleme fonksiyonu
   const filteredMails = React.useMemo(() => {
-    if (!searchQuery.trim()) {
-      return mails
-    }
-    
-    const query = searchQuery.toLowerCase()
-    return mails.filter(mail => 
-      mail.subject.toLowerCase().includes(query) ||
-      mail.content.toLowerCase().includes(query) ||
-      mail.from?.name?.toLowerCase().includes(query) ||
-      mail.from?.email?.toLowerCase().includes(query) ||
-      mail.to?.some(recipient => 
-        recipient.name?.toLowerCase().includes(query) ||
-        recipient.email?.toLowerCase().includes(query)
+    let filtered = mails
+
+    // Basic search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(mail => 
+        mail.subject.toLowerCase().includes(query) ||
+        mail.content.toLowerCase().includes(query) ||
+        mail.from?.name?.toLowerCase().includes(query) ||
+        mail.from?.email?.toLowerCase().includes(query) ||
+        mail.to?.some(recipient => 
+          recipient.name?.toLowerCase().includes(query) ||
+          recipient.email?.toLowerCase().includes(query)
+        )
       )
-    )
-  }, [mails, searchQuery])
+    }
+
+    // Advanced filters
+    if (advancedFilters.from) {
+      const fromQuery = advancedFilters.from.toLowerCase()
+      filtered = filtered.filter(mail =>
+        mail.from?.name?.toLowerCase().includes(fromQuery) ||
+        mail.from?.email?.toLowerCase().includes(fromQuery)
+      )
+    }
+
+    if (advancedFilters.to) {
+      const toQuery = advancedFilters.to.toLowerCase()
+      filtered = filtered.filter(mail =>
+        mail.to?.some(recipient =>
+          recipient.name?.toLowerCase().includes(toQuery) ||
+          recipient.email?.toLowerCase().includes(toQuery)
+        )
+      )
+    }
+
+    if (advancedFilters.subject) {
+      const subjectQuery = advancedFilters.subject.toLowerCase()
+      filtered = filtered.filter(mail =>
+        mail.subject.toLowerCase().includes(subjectQuery)
+      )
+    }
+
+    if (advancedFilters.hasTheWords) {
+      const wordsQuery = advancedFilters.hasTheWords.toLowerCase()
+      filtered = filtered.filter(mail =>
+        mail.content.toLowerCase().includes(wordsQuery)
+      )
+    }
+
+    if (advancedFilters.doesntHave) {
+      const exclusionQuery = advancedFilters.doesntHave.toLowerCase()
+      filtered = filtered.filter(mail =>
+        !mail.content.toLowerCase().includes(exclusionQuery)
+      )
+    }
+
+    if (advancedFilters.isRead !== "all") {
+      const isReadFilter = advancedFilters.isRead === "read"
+      filtered = filtered.filter(mail => mail.isRead === isReadFilter)
+    }
+
+    if (advancedFilters.hasAttachment) {
+      filtered = filtered.filter(mail => 
+        mail.attachments && mail.attachments.length > 0
+      )
+    }
+
+    return filtered
+  }, [mails, searchQuery, advancedFilters])
 
   // Yenileme fonksiyonu - pathname'e göre hangi kategoriyi yenileyeceğini belirle
   const handleRefresh = async () => {
@@ -276,29 +379,58 @@ export function Mail({
             <Separator />
             <div className="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <form>
-                <div className="relative">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Ara" 
-                    className="pl-8 pr-8" 
-                    value={searchQuery}
-                    onChange={(e) => handleSearch(e.target.value)}
-                  />
-                  {searchQuery && (
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Ara" 
+                      className="pl-8 pr-8" 
+                      value={searchQuery}
+                      onChange={(e) => handleSearch(e.target.value)}
+                    />
+                    {searchQuery && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-1 top-1 h-6 w-6 p-0"
+                        onClick={() => handleSearch("")}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="default"
+                    onClick={() => setShowAdvancedSearch(true)}
+                    className="flex items-center gap-2 relative"
+                  >
+                    <Filter className="h-4 w-4" />
+                    <span className="hidden sm:inline">Filtre</span>
+                    {activeFilterCount > 0 && (
+                      <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </Button>
+                </div>
+                {/* Clear filters button */}
+                {(searchQuery || activeFilterCount > 0) && (
+                  <div className="flex items-center justify-between mt-2">
+                    <div className="text-sm text-muted-foreground">
+                      {filteredMails.length} sonuç bulundu
+                    </div>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="absolute right-1 top-1 h-6 w-6 p-0"
-                      onClick={() => handleSearch("")}
+                      onClick={handleClearFilters}
+                      className="h-7 text-xs"
                     >
-                      <X className="h-4 w-4" />
+                      Filtreleri temizle
                     </Button>
-                  )}
-                </div>
-                {searchQuery && (
-                  <div className="mt-2 text-sm text-muted-foreground">
-                    {filteredMails.length} sonuç bulundu
                   </div>
                 )}
               </form>
@@ -363,6 +495,14 @@ export function Mail({
         open={showSendDialog}
         onOpenChange={setShowSendDialog}
         onMailSent={handleRefresh}
+      />
+
+      {/* Advanced Search Dialog */}
+      <AdvancedSearchDialog
+        open={showAdvancedSearch}
+        onOpenChange={setShowAdvancedSearch}
+        onSearch={(filters) => setAdvancedFilters(filters)}
+        initialFilters={advancedFilters}
       />
     </div>
   )
