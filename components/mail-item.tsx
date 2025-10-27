@@ -4,6 +4,19 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { MailContextMenu } from "@/components/mail-context-menu"
 
+// HTML'i düz metne çevir
+function stripHtml(html: string): string {
+  if (!html) return ''
+  if (typeof window === 'undefined') {
+    // Server-side rendering için basit regex temizleme
+    return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
+  }
+  // Client-side için DOM kullan
+  const tmp = document.createElement('div')
+  tmp.innerHTML = html
+  return tmp.textContent || tmp.innerText || ''
+}
+
 // Label translation function
 function translateLabel(label: string): string {
   const translations: Record<string, string> = {
@@ -184,7 +197,10 @@ export function MailItem({ mail, onAction, onClick }: MailItemProps) {
           </div>
         </div>
         <div className="line-clamp-2 text-xs text-muted-foreground">
-          {mail.content ? mail.content.substring(0, 200) + (mail.content.length > 200 ? '...' : '') : 'İçerik yok'}
+          {(() => {
+            const cleanContent = stripHtml(mail.content || mail.htmlContent || '')
+            return cleanContent ? cleanContent.substring(0, 200) + (cleanContent.length > 200 ? '...' : '') : 'İçerik yok'
+          })()}
         </div>
         {mail.labels.length ? (
           <div className="flex items-center gap-2">
