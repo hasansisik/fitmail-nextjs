@@ -56,6 +56,12 @@ export function ResetPasswordForm({
     const cleanEmail = email.replace('@', '').trim()
     const fullEmail = `${cleanEmail}@gozdedijital.xyz`
     
+    // Validate password token is 6 digits
+    if (passwordToken.length !== 6 || !/^\d{6}$/.test(passwordToken)) {
+      toast.error("Doğrulama kodu 6 haneli bir sayı olmalıdır!")
+      return
+    }
+    
     const resetData = {
       email: fullEmail,
       passwordToken: parseInt(passwordToken),
@@ -170,14 +176,16 @@ export function ResetPasswordForm({
           <Input 
             id="passwordToken" 
             name="passwordToken" 
-            type="number" 
-            placeholder="1234" 
-            maxLength={4}
+            type="text" 
+            placeholder="123456" 
+            maxLength={6}
             required 
             onKeyPress={handleKeyPress}
+            pattern="[0-9]{6}"
+            className="font-mono tracking-widest text-center text-lg"
           />
           <p className="text-xs text-muted-foreground">
-            Kurtarıcı e-postanıza gönderilen 4 haneli kodu girin
+            Kurtarıcı e-postanıza gönderilen 6 haneli kodu girin (10 dakika geçerli)
           </p>
         </div>
         <div className="grid gap-3">

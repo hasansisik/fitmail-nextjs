@@ -414,6 +414,27 @@ export const againEmail = createAsyncThunk(
   }
 );
 
+export interface VerifyRecoveryEmailPayload {
+  email: string;
+  recoveryEmailHint?: string;
+}
+
+export const verifyRecoveryEmail = createAsyncThunk(
+  "user/verifyRecoveryEmail",
+  async (payload: VerifyRecoveryEmailPayload, thunkAPI) => {
+    try {
+      const { data } = await axios.post(`${server}/auth/verify-recovery-email`, payload);
+      return data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
 export const forgotPassword = createAsyncThunk(
   "user/forgotPassword",
   async (email: string, thunkAPI) => {

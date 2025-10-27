@@ -6,6 +6,7 @@ import {
   logout,
   verifyEmail,
   againEmail,
+  verifyRecoveryEmail,
   forgotPassword,
   resetPassword,
   editProfile,
@@ -43,6 +44,12 @@ interface UserState {
     valid: boolean | null;
     message: string | null;
   };
+  recoveryEmailVerification: {
+    loading: boolean;
+    verified: boolean;
+    recoveryEmailMask: string | null;
+    message: string | null;
+  };
   allUsers: {
     users: any[];
     loading: boolean;
@@ -69,6 +76,12 @@ const initialState: UserState = {
   premiumCodeCheck: {
     loading: false,
     valid: null,
+    message: null,
+  },
+  recoveryEmailVerification: {
+    loading: false,
+    verified: false,
+    recoveryEmailMask: null,
     message: null,
   },
   allUsers: {
@@ -182,6 +195,24 @@ export const userReducer = createReducer(initialState, (builder) => {
     .addCase(againEmail.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload as string;
+    })
+    // Verify Recovery Email
+    .addCase(verifyRecoveryEmail.pending, (state) => {
+      state.recoveryEmailVerification.loading = true;
+      state.recoveryEmailVerification.verified = false;
+      state.recoveryEmailVerification.recoveryEmailMask = null;
+      state.recoveryEmailVerification.message = null;
+    })
+    .addCase(verifyRecoveryEmail.fulfilled, (state, action) => {
+      state.recoveryEmailVerification.loading = false;
+      state.recoveryEmailVerification.verified = true;
+      state.recoveryEmailVerification.recoveryEmailMask = action.payload.recoveryEmailMask;
+      state.recoveryEmailVerification.message = action.payload.message;
+    })
+    .addCase(verifyRecoveryEmail.rejected, (state, action) => {
+      state.recoveryEmailVerification.loading = false;
+      state.recoveryEmailVerification.verified = false;
+      state.recoveryEmailVerification.message = action.payload as string;
     })
     // Forgot Password
     .addCase(forgotPassword.pending, (state) => {
