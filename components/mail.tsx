@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, Plus, ArrowLeft, X, CheckSquare, RefreshCw, Trash2, Filter } from "lucide-react"
+import { Search, Plus, ArrowLeft, X, CheckSquare, RefreshCw, Trash2, Filter, Menu } from "lucide-react"
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -70,6 +70,7 @@ import { useAppSelector, useAppDispatch } from "@/redux/hook"
 import { clearSelectedMail, getMailsByCategory, getMailsByLabelCategory, getMailStats, cleanupTrash } from "@/redux/actions/mailActions"
 import { usePathname } from "next/navigation"
 import { toast } from "sonner"
+import { useMobileSidebar } from "@/app/mail/layout"
 
 interface MailProps {
   mails: ApiMail[]
@@ -121,6 +122,7 @@ export function Mail({
   const [mail, { clearSelection }] = useMail()
   const dispatch = useAppDispatch()
   const pathname = usePathname()
+  const mobileSidebar = useMobileSidebar()
   
   // Redux'tan selectedMail'i al
   const selectedMail = useAppSelector((state) => state.mail.selectedMail)
@@ -316,6 +318,22 @@ export function Mail({
           <Tabs defaultValue="all">
             <div className="flex flex-col sm:flex-row items-start sm:items-center px-4 py-2 gap-2">
               <div className="flex items-center gap-3">
+                {/* Mobile Menu Toggle Button */}
+                {mobileSidebar && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={mobileSidebar.toggleMobileSidebar}
+                    className="lg:hidden h-8 w-8 p-0"
+                    title={
+                      mobileSidebar.mobileState === 'hidden' ? 'Menüyü göster (ikonlar)' :
+                      mobileSidebar.mobileState === 'collapsed' ? 'Menüyü genişlet (yazılar)' :
+                      'Menüyü gizle'
+                    }
+                  >
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                )}
                 <h1 className="text-lg sm:text-xl font-bold">{categoryTitle}</h1>
               </div>
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
@@ -465,6 +483,22 @@ export function Mail({
           <div className="flex h-full flex-col">
             {/* Header with back button */}
             <div className="flex items-center gap-2 sm:gap-4 p-2 sm:p-4 border-b">
+              {/* Mobile Menu Toggle Button */}
+              {mobileSidebar && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={mobileSidebar.toggleMobileSidebar}
+                  className="lg:hidden h-8 w-8 p-0"
+                  title={
+                    mobileSidebar.mobileState === 'hidden' ? 'Menüyü göster (ikonlar)' :
+                    mobileSidebar.mobileState === 'collapsed' ? 'Menüyü genişlet (yazılar)' :
+                    'Menüyü gizle'
+                  }
+                >
+                  <Menu className="h-4 w-4" />
+                </Button>
+              )}
               <Button onClick={handleBackToList} variant="outline" size="sm">
                 <ArrowLeft className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Geri</span>

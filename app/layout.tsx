@@ -11,6 +11,7 @@ import { useAppDispatch } from "@/redux/hook";
 import { loadUser } from "@/redux/actions/userActions";
 import { Metadata } from "@/components/metadata";
 import { isSubdomain, getMainDomainFromSubdomain, activeDomains } from "@/config";
+import { GalleryVerticalEnd } from "lucide-react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,10 +55,18 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   // Yönlendirme sırasında loading göster
   if (isRedirecting) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Yönlendiriliyor...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex items-center gap-2 font-bold text-2xl">
+            <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-md animate-pulse">
+              <GalleryVerticalEnd className="size-5" />
+            </div>
+            <span className="animate-pulse">Fitmail</span>
+          </div>
+          <div className="h-1 w-24 bg-primary/20 rounded-full overflow-hidden">
+            <div className="h-full bg-primary animate-[loading_1.5s_ease-in-out_infinite]" />
+          </div>
+          <p className="text-muted-foreground text-sm mt-2">Yönlendiriliyor...</p>
         </div>
       </div>
     );

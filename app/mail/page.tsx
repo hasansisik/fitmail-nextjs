@@ -28,7 +28,7 @@ export default function MailPage() {
   }, [dispatch, user])
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col page-transition">
       <Mail
         mails={mails}
         mailsLoading={mailsLoading}

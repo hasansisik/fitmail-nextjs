@@ -7,14 +7,16 @@ import { getMailById } from "@/redux/actions/mailActions"
 import { MailDisplay } from "@/components/mail-display"
 import { Button } from "@/components/ui/button"
 import { Metadata } from "@/components/metadata"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, Loader2, Menu } from "lucide-react"
 import { toast } from "sonner"
+import { useMobileSidebar } from "../../layout"
 
 export default function MailDetailPage() {
   const params = useParams()
   const router = useRouter()
   const dispatch = useAppDispatch()
   const { selectedMail, mailsLoading, mailsError } = useAppSelector((state) => state.mail)
+  const mobileSidebar = useMobileSidebar()
   
   const [isLoading, setIsLoading] = useState(false)
   const mailId = params.id as string
@@ -92,6 +94,22 @@ export default function MailDetailPage() {
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="flex items-center gap-4 p-4 border-b">
+          {/* Mobile Menu Toggle Button */}
+          {mobileSidebar && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={mobileSidebar.toggleMobileSidebar}
+              className="lg:hidden h-8 w-8 p-0"
+              title={
+                mobileSidebar.mobileState === 'hidden' ? 'Menüyü göster (ikonlar)' :
+                mobileSidebar.mobileState === 'collapsed' ? 'Menüyü genişlet (yazılar)' :
+                'Menüyü gizle'
+              }
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
+          )}
           <Button onClick={handleBack} variant="outline" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Geri

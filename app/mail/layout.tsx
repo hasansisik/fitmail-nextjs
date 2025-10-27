@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import * as React from "react"
+import { useState, useEffect, createContext, useContext } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { useAppSelector } from "@/redux/hook"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -11,6 +12,22 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
+import { GalleryVerticalEnd } from "lucide-react"
+
+type MobileSidebarState = 'hidden' | 'collapsed' | 'expanded'
+
+interface MobileSidebarContextType {
+  mobileState: MobileSidebarState
+  setMobileState: (state: MobileSidebarState) => void
+  toggleMobileSidebar: () => void
+}
+
+const MobileSidebarContext = createContext<MobileSidebarContextType | undefined>(undefined)
+
+export function useMobileSidebar() {
+  const context = useContext(MobileSidebarContext)
+  return context
+}
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -18,10 +35,20 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [mobileState, setMobileState] = useState<MobileSidebarState>('collapsed')
   const [isClient, setIsClient] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
   const { user, isAuthenticated, loading } = useAppSelector((state) => state.user)
+
+  // Toggle function: hidden -> collapsed -> expanded -> hidden
+  const toggleMobileSidebar = () => {
+    setMobileState(prev => {
+      if (prev === 'hidden') return 'collapsed'
+      if (prev === 'collapsed') return 'expanded'
+      return 'hidden'
+    })
+  }
 
   // Generate dynamic title based on pathname
   const getPageTitle = () => {
@@ -73,8 +100,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // Show loading state while checking authentication or before client hydration
   if (!isClient || loading) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex items-center gap-2 font-bold text-xl">
+            <div className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md animate-pulse">
+              <GalleryVerticalEnd className="size-4" />
+            </div>
+            <span className="animate-pulse">Fitmail</span>
+          </div>
+          <div className="h-1 w-20 bg-primary/20 rounded-full overflow-hidden">
+            <div className="h-full bg-primary animate-[loading_1.5s_ease-in-out_infinite]" />
+          </div>
+        </div>
       </div>
     )
   }
@@ -91,48 +128,59 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         description="Fitmail ile e-postalarınızı yönetin, organize edin ve iletişiminizi güçlendirin. Modern arayüzü ve güçlü özellikleriyle e-posta deneyiminizi yeniden tanımlayın."
         keywords="email, e-posta, mail, güvenli email, hızlı email, akıllı email, fitmail"
       />
-      <TooltipProvider delayDuration={0}>
-        <div className="h-screen flex flex-row">
-          {/* Mobile Sidebar - Left side on mobile */}
-          <div className="lg:hidden w-16 border-r">
-            <Sidebar isCollapsed={true} onCollapse={setIsCollapsed} />
-          </div>
-          
-          {/* Desktop Resizable Layout */}
-          <div className="hidden lg:flex flex-1">
-            <ResizablePanelGroup
-              direction="horizontal"
-              className="h-screen items-stretch"
-            >
-              <ResizablePanel
-                defaultSize={15}
-                collapsedSize={4}
-                collapsible={true}
-                minSize={10}
-                maxSize={25}
-                onCollapse={() => setIsCollapsed(true)}
-                onResize={() => setIsCollapsed(false)}
-                className="border-r"
+      <MobileSidebarContext.Provider value={{ mobileState, setMobileState, toggleMobileSidebar }}>
+        <TooltipProvider delayDuration={0}>
+          <div className="h-screen flex flex-row">
+            {/* Mobile Sidebar - Left side on mobile */}
+            <div className={`lg:hidden border-r transition-all duration-300 ease-in-out ${
+              mobileState === 'hidden' ? 'w-0 border-0' : 
+              mobileState === 'expanded' ? 'w-64' : 
+              'w-16'
+            }`}>
+              {mobileState !== 'hidden' && (
+                <Sidebar 
+                  isCollapsed={mobileState === 'collapsed'} 
+                  onCollapse={(collapsed) => setMobileState(collapsed ? 'collapsed' : 'expanded')} 
+                />
+              )}
+            </div>
+            
+            {/* Desktop Resizable Layout */}
+            <div className="hidden lg:flex flex-1">
+              <ResizablePanelGroup
+                direction="horizontal"
+                className="h-screen items-stretch"
               >
-                <div className="h-screen overflow-hidden">
-                  <Sidebar isCollapsed={isCollapsed} onCollapse={setIsCollapsed} />
-                </div>
-              </ResizablePanel>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={82} minSize={30}>
-                <div className="h-full overflow-auto">
-                  {children}
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
+                <ResizablePanel
+                  defaultSize={15}
+                  collapsedSize={4}
+                  collapsible={true}
+                  minSize={10}
+                  maxSize={25}
+                  onCollapse={() => setIsCollapsed(true)}
+                  onResize={() => setIsCollapsed(false)}
+                  className="border-r"
+                >
+                  <div className="h-screen overflow-hidden">
+                    <Sidebar isCollapsed={isCollapsed} onCollapse={setIsCollapsed} />
+                  </div>
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+                <ResizablePanel defaultSize={82} minSize={30}>
+                  <div className="h-full overflow-auto">
+                    {children}
+                  </div>
+                </ResizablePanel>
+              </ResizablePanelGroup>
+            </div>
+            
+            {/* Mobile Content - Remaining width on mobile */}
+            <div className="lg:hidden flex-1 overflow-auto relative">
+              {children}
+            </div>
           </div>
-          
-          {/* Mobile Content - Remaining width on mobile */}
-          <div className="lg:hidden flex-1 overflow-auto">
-            {children}
-          </div>
-        </div>
-      </TooltipProvider>
+        </TooltipProvider>
+      </MobileSidebarContext.Provider>
     </>
   )
 }

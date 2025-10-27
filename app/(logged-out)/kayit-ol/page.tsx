@@ -22,7 +22,7 @@ export default function RegisterPage() {
   // Show loading state while checking authentication
   if (loading) {
     return (
-      <div className="grid min-h-svh lg:grid-cols-2">
+      <div className="grid min-h-svh lg:grid-cols-2 page-transition">
         <div 
           className="bg-muted relative hidden lg:block"
           style={{
@@ -32,7 +32,7 @@ export default function RegisterPage() {
             backgroundRepeat: 'no-repeat'
           }}
         />
-        <div className="flex flex-col gap-4 p-6 md:p-10">
+        <div className="flex flex-col gap-4 p-6 md:p-10 slide-in-from-right">
           <div className="flex justify-center gap-2 md:justify-start">
             <a href="#" className="flex items-center gap-2 font-medium">
               <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
@@ -42,7 +42,17 @@ export default function RegisterPage() {
             </a>
           </div>
           <div className="flex flex-1 items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex items-center gap-2 font-bold text-xl">
+                <div className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md animate-pulse">
+                  <GalleryVerticalEnd className="size-4" />
+                </div>
+                <span className="animate-pulse">Fitmail</span>
+              </div>
+              <div className="h-1 w-20 bg-primary/20 rounded-full overflow-hidden">
+                <div className="h-full bg-primary animate-[loading_1.5s_ease-in-out_infinite]" />
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -60,7 +70,7 @@ export default function RegisterPage() {
         description="Fitmail'e ücretsiz kayıt olun. Hızlı, güvenli ve akıllı e-posta deneyimi için hemen başlayın."
         keywords="kayıt, register, fitmail, email, e-posta, ücretsiz"
       />
-      <div className="grid min-h-svh lg:grid-cols-2">
+      <div className="grid min-h-svh lg:grid-cols-2 page-transition">
         <div 
           className="bg-muted relative hidden lg:block"
           style={{
@@ -70,7 +80,7 @@ export default function RegisterPage() {
             backgroundRepeat: 'no-repeat'
           }}
         />
-        <div className="flex flex-col gap-4 p-6 md:p-10">
+        <div className="flex flex-col gap-4 p-6 md:p-10 slide-in-from-right">
           <div className="flex justify-center gap-2 md:justify-start">
             <a href="#" className="flex items-center gap-2 font-medium">
               <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">

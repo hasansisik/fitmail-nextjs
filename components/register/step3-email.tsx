@@ -7,6 +7,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { useAppDispatch } from "@/redux/hook"
 import { checkPremiumCode } from "@/redux/actions/userActions"
 import { useEffect } from "react"
+import { Loader2 } from "lucide-react"
 
 interface Step3Props {
   formData: {
@@ -80,7 +81,7 @@ export function Step3Email({ formData, onInputChange, onNext, onBack, emailCheck
             />
             {emailCheck?.loading && (
               <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
               </div>
             )}
           </div>

@@ -12,7 +12,7 @@ export default function LoginPage() {
         description="Fitmail hesabınıza giriş yapın. Hızlı, güvenli ve akıllı e-posta deneyimi için giriş yapın."
         keywords="giriş, login, fitmail, email, e-posta"
       />
-      <div className="grid min-h-svh lg:grid-cols-2">
+      <div className="grid min-h-svh lg:grid-cols-2 page-transition">
         <div 
           className="bg-muted relative hidden lg:block"
           style={{
@@ -22,7 +22,7 @@ export default function LoginPage() {
             backgroundRepeat: 'no-repeat'
           }}
         />
-        <div className="flex flex-col gap-4 p-6 md:p-10">
+        <div className="flex flex-col gap-4 p-6 md:p-10 slide-in-from-right">
           <div className="flex justify-center gap-2 md:justify-start">
             <a href="#" className="flex items-center gap-2 font-medium">
               <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">

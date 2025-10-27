@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Zap, Target, Smartphone } from "lucide-react";
+import { Zap, Target, Smartphone, GalleryVerticalEnd } from "lucide-react";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/redux/hook";
@@ -27,15 +27,15 @@ export default function HomePage() {
   if (loading) {
     return (
       <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-8 p-6 md:p-10">
-        <div className="w-full max-w-2xl text-center space-y-8">
-          <div className="space-y-4">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-              Fitmail
-            </h1>
-            <div className="w-16 h-1 bg-primary mx-auto rounded-full"></div>
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex items-center gap-2 font-bold text-2xl">
+            <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-md animate-pulse">
+              <GalleryVerticalEnd className="size-5" />
+            </div>
+            <span className="animate-pulse">Fitmail</span>
           </div>
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="h-1 w-24 bg-primary/20 rounded-full overflow-hidden">
+            <div className="h-full bg-primary animate-[loading_1.5s_ease-in-out_infinite]" />
           </div>
         </div>
       </div>
