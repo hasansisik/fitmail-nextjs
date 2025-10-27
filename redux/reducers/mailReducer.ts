@@ -22,6 +22,9 @@ import {
   cleanupTrash,
   openComposeDialog,
   closeComposeDialog,
+  scheduleMail,
+  getScheduledMails,
+  cancelScheduledMail,
 } from "../actions/mailActions";
 
 interface MailState {
@@ -438,6 +441,67 @@ export const mailReducer = createReducer(initialState, (builder) => {
         originalMail: null,
         draftMail: null,
       };
+    })
+    // Schedule Mail
+    .addCase(scheduleMail.pending, (state) => {
+      state.mailsLoading = true;
+      state.mailsError = null;
+    })
+    .addCase(scheduleMail.fulfilled, (state, action) => {
+      state.mailsLoading = false;
+      state.message = action.payload.message;
+      state.mailsError = null;
+      
+      // Eğer planlı maillerdeyse, listeye ekle
+      if (state.currentFolder === 'scheduled' && action.payload.mail) {
+        const existingMailIndex = state.mails.findIndex(mail => mail._id === action.payload.mail._id);
+        if (existingMailIndex === -1) {
+          state.mails.unshift(action.payload.mail);
+        }
+      }
+      
+      // Eğer taslağı planlıyorsak, taslaklar listesinden çıkar
+      if (state.currentFolder === 'drafts' && action.payload.deletedDraftId) {
+        state.mails = state.mails.filter(mail => mail._id !== action.payload.deletedDraftId);
+      }
+    })
+    .addCase(scheduleMail.rejected, (state, action) => {
+      state.mailsLoading = false;
+      state.mailsError = action.payload as string;
+    })
+    // Get Scheduled Mails
+    .addCase(getScheduledMails.pending, (state) => {
+      state.mailsLoading = true;
+      state.mailsError = null;
+    })
+    .addCase(getScheduledMails.fulfilled, (state, action) => {
+      state.mailsLoading = false;
+      state.mails = action.payload.mails || [];
+      state.currentFolder = "scheduled";
+      state.mailsError = null;
+    })
+    .addCase(getScheduledMails.rejected, (state, action) => {
+      state.mailsLoading = false;
+      state.mailsError = action.payload as string;
+    })
+    // Cancel Scheduled Mail
+    .addCase(cancelScheduledMail.pending, (state) => {
+      state.mailsLoading = true;
+      state.mailsError = null;
+    })
+    .addCase(cancelScheduledMail.fulfilled, (state, action) => {
+      state.mailsLoading = false;
+      state.message = action.payload.message;
+      state.mailsError = null;
+      
+      // Planlı maillerden kaldır
+      if (state.currentFolder === 'scheduled') {
+        state.mails = state.mails.filter(mail => mail._id !== action.meta.arg);
+      }
+    })
+    .addCase(cancelScheduledMail.rejected, (state, action) => {
+      state.mailsLoading = false;
+      state.mailsError = action.payload as string;
     });
 });
 

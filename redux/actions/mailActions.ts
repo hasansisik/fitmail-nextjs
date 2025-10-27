@@ -693,3 +693,136 @@ export const closeComposeDialog = createAsyncThunk(
     return {};
   }
 );
+
+// Schedule Mail Action
+export const scheduleMail = createAsyncThunk(
+  "mail/scheduleMail",
+  async (mailData: {
+    to: string[];
+    cc?: string[];
+    bcc?: string[];
+    subject: string;
+    content: string;
+    htmlContent?: string;
+    draftId?: string;
+    scheduledSendAt: string;
+    attachments?: Array<{
+      filename: string;
+      data: File;
+      contentType: string;
+      size: number;
+      url?: string;
+    }>;
+  }, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
+      }
+
+      // Prepare FormData for file uploads
+      const formData = new FormData();
+      
+      // Add basic mail data
+      formData.append('to', JSON.stringify(mailData.to));
+      formData.append('subject', mailData.subject);
+      formData.append('content', mailData.content);
+      formData.append('htmlContent', mailData.htmlContent || mailData.content);
+      formData.append('scheduledSendAt', mailData.scheduledSendAt);
+      
+      if (mailData.cc) {
+        formData.append('cc', JSON.stringify(mailData.cc));
+      }
+      if (mailData.bcc) {
+        formData.append('bcc', JSON.stringify(mailData.bcc));
+      }
+      if (mailData.draftId) {
+        formData.append('draftId', mailData.draftId);
+      }
+      
+      // Add attachments
+      if (mailData.attachments && mailData.attachments.length > 0) {
+        const attachmentNames = mailData.attachments.map(att => att.filename);
+        const attachmentTypes = mailData.attachments.map(att => att.contentType);
+        const attachmentUrls = mailData.attachments.map(att => att.url || '');
+        
+        mailData.attachments.forEach((attachment) => {
+          formData.append(`attachments`, attachment.data);
+        });
+        
+        formData.append('attachmentNames', JSON.stringify(attachmentNames));
+        formData.append('attachmentTypes', JSON.stringify(attachmentTypes));
+        formData.append('attachmentUrls', JSON.stringify(attachmentUrls));
+      }
+
+      const config = {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      const { data } = await axios.post(`${server}/mail/schedule`, formData, config);
+      return data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+// Get Scheduled Mails Action
+export const getScheduledMails = createAsyncThunk(
+  "mail/getScheduledMails",
+  async (params: {
+    page?: number;
+    limit?: number;
+  } = {}, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
+      }
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      // Query parametrelerini oluştur
+      const queryParams = new URLSearchParams();
+      if (params.page) queryParams.append('page', params.page.toString());
+      if (params.limit) queryParams.append('limit', params.limit.toString());
+
+      const { data } = await axios.get(`${server}/mail/scheduled/list?${queryParams.toString()}`, config);
+      return data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || "Planlı mailler alınamadı");
+    }
+  }
+);
+
+// Cancel Scheduled Mail Action
+export const cancelScheduledMail = createAsyncThunk(
+  "mail/cancelScheduledMail",
+  async (mailId: string, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
+      }
+
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      const { data } = await axios.post(`${server}/mail/${mailId}/cancel-schedule`, {}, config);
+      return data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);

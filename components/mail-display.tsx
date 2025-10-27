@@ -1126,7 +1126,8 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                       multiple
                       onChange={handleFileSelect}
                       className="hidden"
-                      accept="*/*"
+                      accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
+                      capture="environment"
                     />
                     <Button
                       type="button"

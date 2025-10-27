@@ -32,7 +32,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useAppDispatch } from "@/redux/hook"
-import { sendMail, saveDraft } from "@/redux/actions/mailActions"
+import { sendMail, saveDraft, scheduleMail } from "@/redux/actions/mailActions"
 import { uploadFileToCloudinary } from "@/utils/cloudinary"
 import { toast } from "sonner"
 import { 
@@ -42,8 +42,15 @@ import {
   Paperclip, 
   FileText, 
   Trash2,
-  Info
+  Info,
+  Clock,
+  ChevronDown
 } from "lucide-react"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 interface SendMailDialogProps {
   open: boolean
@@ -82,6 +89,9 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
   const [bccRecipients, setBccRecipients] = useState<string[]>([])
   const [showSaveDraftDialog, setShowSaveDraftDialog] = useState(false)
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null)
+  const [showSchedulePopover, setShowSchedulePopover] = useState(false)
+  const [scheduledDate, setScheduledDate] = useState("")
+  const [scheduledTime, setScheduledTime] = useState("")
   
   // Seçili hesabı al (Redux'tan)
   const selectedAccountEmail = React.useMemo(() => {
@@ -424,6 +434,101 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       
       // Show error message
       const errorMessage = typeof error === 'string' ? error : error?.message || "Mail gönderilirken bir hata oluştu"
+      toast.error(errorMessage)
+    }
+  }
+
+  // Planlı gönderme
+  const handleScheduledSend = async () => {
+    if (toRecipients.length === 0) {
+      toast.error("Lütfen en az bir alıcı seçin!")
+      return
+    }
+    
+    if (!formData.subject.trim()) {
+      toast.error("Lütfen mail konusunu girin!")
+      return
+    }
+    
+    if (!formData.content.trim()) {
+      toast.error("Lütfen mail içeriğini girin!")
+      return
+    }
+
+    if (!scheduledDate || !scheduledTime) {
+      toast.error("Lütfen gönderim tarih ve saatini seçin!")
+      return
+    }
+
+    // Tarih ve saati birleştir
+    const scheduledDateTime = new Date(`${scheduledDate}T${scheduledTime}`)
+    const now = new Date()
+
+    if (scheduledDateTime <= now) {
+      toast.error("Planlı gönderim tarihi gelecekte olmalıdır!")
+      return
+    }
+
+    // Close dialog and popover immediately
+    setShowSchedulePopover(false)
+    onOpenChange(false)
+    
+    // Reset form immediately
+    const mailDataToSchedule = {
+      to: toRecipients,
+      cc: ccRecipients.length > 0 ? ccRecipients : undefined,
+      bcc: bccRecipients.length > 0 ? bccRecipients : undefined,
+      subject: formData.subject,
+      content: formData.content,
+      htmlContent: formData.content,
+      draftId: currentDraftId || undefined,
+      scheduledSendAt: scheduledDateTime.toISOString(),
+      attachments: attachments.map(attachment => ({
+        filename: attachment.name,
+        data: attachment.file,
+        contentType: attachment.type,
+        size: attachment.size,
+        url: attachment.url || undefined
+      }))
+    }
+    
+    setFormData({
+      to: "",
+      cc: "",
+      bcc: "",
+      subject: "",
+      content: ""
+    })
+    setToRecipients([])
+    setCcRecipients([])
+    setBccRecipients([])
+    setAttachments([])
+    setShowCC(false)
+    setShowBCC(false)
+    setScheduledDate("")
+    setScheduledTime("")
+
+    // Show toast and schedule mail in background
+    const loadingToastId = toast.loading("Mail planlanıyor...")
+
+    try {
+      console.log("Scheduling mail with data:", mailDataToSchedule)
+
+      const result = await dispatch(scheduleMail(mailDataToSchedule)).unwrap()
+      console.log("Mail scheduled successfully:", result)
+      
+      toast.dismiss(loadingToastId)
+      toast.success(result.message || "Mail başarıyla planlandı!")
+      
+      if (onMailSent) {
+        onMailSent()
+      }
+      
+    } catch (error: any) {
+      console.error("Schedule mail failed:", error)
+      toast.dismiss(loadingToastId)
+      
+      const errorMessage = typeof error === 'string' ? error : error?.message || "Mail planlanırken bir hata oluştu"
       toast.error(errorMessage)
     }
   }
@@ -843,7 +948,8 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                 multiple
                 onChange={handleFileSelect}
                 className="hidden"
-                accept="*/*"
+                accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
+                capture="environment"
               />
 
               {attachments.length > 0 && (
@@ -901,16 +1007,101 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                 İptal
               </Button>
               
-              <Button
-                type="submit"
-                disabled={toRecipients.length === 0 || !formData.subject || !formData.content}
-                size="sm"
-                onClick={handleSubmit}
-                className="text-xs lg:text-sm"
-              >
-                <Send className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
-                Gönder
-              </Button>
+              <div className="flex items-center gap-2">
+                {/* Planlı Gönderme Butonu */}
+                <Popover open={showSchedulePopover} onOpenChange={setShowSchedulePopover}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={toRecipients.length === 0 || !formData.subject || !formData.content}
+                      className="text-xs lg:text-sm"
+                    >
+                      <Clock className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
+                      <span className="hidden sm:inline">Planla</span>
+                      <ChevronDown className="h-3 w-3 lg:h-4 lg:w-4 ml-1" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" align="end">
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-medium mb-2">Planlı Gönderim</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Mail'i belirli bir tarih ve saatte göndermek için planla
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div>
+                          <Label htmlFor="schedule-date" className="text-sm">Tarih</Label>
+                          <Input
+                            id="schedule-date"
+                            type="date"
+                            value={scheduledDate}
+                            onChange={(e) => setScheduledDate(e.target.value)}
+                            min={new Date().toISOString().split('T')[0]}
+                            className="mt-1"
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="schedule-time" className="text-sm">Saat</Label>
+                          <Input
+                            id="schedule-time"
+                            type="time"
+                            value={scheduledTime}
+                            onChange={(e) => setScheduledTime(e.target.value)}
+                            className="mt-1"
+                          />
+                        </div>
+                        
+                        {scheduledDate && scheduledTime && (
+                          <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded text-sm">
+                            <p className="text-blue-900 dark:text-blue-100">
+                              Mail <strong>{new Date(`${scheduledDate}T${scheduledTime}`).toLocaleString('tr-TR')}</strong> tarihinde gönderilecek
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowSchedulePopover(false)}
+                          className="flex-1"
+                        >
+                          İptal
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleScheduledSend}
+                          disabled={!scheduledDate || !scheduledTime}
+                          className="flex-1"
+                        >
+                          <Clock className="h-4 w-4 mr-2" />
+                          Planla
+                        </Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                
+                {/* Hemen Gönder Butonu */}
+                <Button
+                  type="submit"
+                  disabled={toRecipients.length === 0 || !formData.subject || !formData.content}
+                  size="sm"
+                  onClick={handleSubmit}
+                  className="text-xs lg:text-sm"
+                >
+                  <Send className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
+                  Gönder
+                </Button>
+              </div>
             </div>
           </div>
           </div>

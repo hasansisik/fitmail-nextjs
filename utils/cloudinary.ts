@@ -1,12 +1,19 @@
-import crypto from 'crypto';
-
 const CLOUD_NAME = 'da2qwsrbv';
 const API_KEY = '712369776222516';
 const API_SECRET = '3uw0opJfkdYDp-XQsXclVIcbbKQ';
 
-function generateSignature(timestamp: number): string {
+// Browser-compatible SHA1 hash function
+async function generateSignature(timestamp: number): Promise<string> {
   const str = `timestamp=${timestamp}${API_SECRET}`;
-  return crypto.createHash('sha1').update(str).digest('hex');
+  
+  // Use Web Crypto API (works in browser and mobile)
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  return hashHex;
 }
 
 interface UploadResult {
@@ -16,10 +23,10 @@ interface UploadResult {
   };
 }
 
-export const uploadFileToCloudinary = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
+export const uploadFileToCloudinary = async (file: File): Promise<string> => {
+  try {
     const timestamp = Math.round(new Date().getTime() / 1000);
-    const signature = generateSignature(timestamp);
+    const signature = await generateSignature(timestamp);
 
     const formData = new FormData();
     formData.append('file', file);
@@ -35,26 +42,33 @@ export const uploadFileToCloudinary = (file: File): Promise<string> => {
       uploadEndpoint = 'image/upload';
     } else if (fileType.includes('pdf') || fileType.includes('document') || fileType.includes('text')) {
       uploadEndpoint = 'raw/upload';
+    } else if (fileType.startsWith('video/')) {
+      uploadEndpoint = 'video/upload';
+    } else if (fileType.startsWith('audio/')) {
+      uploadEndpoint = 'video/upload'; // Cloudinary uses video endpoint for audio
     } else {
       // Diğer dosyalar için raw upload kullan
       uploadEndpoint = 'raw/upload';
     }
 
-    fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${uploadEndpoint}`, {
+    console.log(`Uploading ${file.name} (${file.type}) to ${uploadEndpoint}`);
+
+    const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${uploadEndpoint}`, {
       method: 'POST',
       body: formData
-    })
-      .then(response => response.json())
-      .then(data => {
-        if (data.error) {
-          reject(new Error(data.error.message));
-        } else {
-          resolve(data.secure_url);
-        }
-      })
-      .catch(error => {
-        console.error('Upload error:', error);
-        reject(error);
-      });
-  });
+    });
+
+    const data = await response.json();
+
+    if (data.error) {
+      console.error('Cloudinary error:', data.error);
+      throw new Error(data.error.message);
+    }
+
+    console.log(`Successfully uploaded ${file.name}:`, data.secure_url);
+    return data.secure_url;
+  } catch (error) {
+    console.error('Upload error:', error);
+    throw error;
+  }
 };
