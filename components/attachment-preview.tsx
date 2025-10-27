@@ -247,21 +247,7 @@ export function AttachmentPreview({
       
       return (
         <div className="w-full min-h-[600px] rounded-lg overflow-hidden">
-          <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border-b border-blue-200 dark:border-blue-800">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <Shield className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                <div className="text-xs flex-1 min-w-0">
-                  <span className="font-medium text-blue-800 dark:text-blue-200">Güvenli PDF Görüntüleyici</span>
-                  <span className="text-blue-700 dark:text-blue-300 ml-2">Google Docs Viewer</span>
-                </div>
-              </div>
-              <Button onClick={onDownload} variant="outline" size="sm" className="flex-shrink-0">
-                <Download className="h-3 w-3 mr-1" />
-                İndir
-              </Button>
-            </div>
-          </div>
+    
           
           <div className="relative w-full h-[600px] bg-gray-50 dark:bg-gray-900">
             <iframe
