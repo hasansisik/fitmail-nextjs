@@ -210,16 +210,34 @@ export default function AccountPage() {
     };
   }, [showSearchSuggestions]);
 
+  // Yaş hesaplama fonksiyonu
+  const calculateAge = (birthDate: string): string => {
+    if (!birthDate) return '';
+    const birth = new Date(birthDate);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    
+    return age >= 0 ? age.toString() : '';
+  };
+
   // Kullanıcı verilerini form'a yükle
   useEffect(() => {
     if (user) {
+      const birthDateString = user.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : "";
+      const calculatedAge = calculateAge(birthDateString);
+      
       setFormData({
         name: user.name || "",
         surname: user.surname || "",
         email: user.email || "",
         recoveryEmail: user.recoveryEmail || "",
-        birthDate: user.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : "",
-        age: user.age || "",
+        birthDate: birthDateString,
+        age: calculatedAge || user.age || "",
         gender: user.gender || "",
         weight: user.weight || "",
         height: user.height || "",
@@ -392,10 +410,20 @@ export default function AccountPage() {
 
   // Form düzenleme fonksiyonları
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    if (field === 'birthDate') {
+      // Doğum tarihi değiştiğinde yaş otomatik hesaplanır
+      const calculatedAge = calculateAge(value);
+      setFormData(prev => ({
+        ...prev,
+        [field]: value,
+        age: calculatedAge
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -462,13 +490,16 @@ export default function AccountPage() {
     setIsEditing(false);
     // Reset form data to original user data
     if (user) {
+      const birthDateString = user.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : "";
+      const calculatedAge = calculateAge(birthDateString);
+      
       setFormData({
         name: user.name || "",
         surname: user.surname || "",
         email: user.email || "",
         recoveryEmail: user.recoveryEmail || "",
-        birthDate: user.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : "",
-        age: user.age || "",
+        birthDate: birthDateString,
+        age: calculatedAge || user.age || "",
         gender: user.gender || "",
         weight: user.weight || "",
         height: user.height || "",
@@ -1255,9 +1286,11 @@ export default function AccountPage() {
                               type="number"
                               value={formData.age}
                               onChange={(e) => handleInputChange('age', e.target.value)}
-                              disabled={!isEditing}
-                              className="mt-1"
+                              disabled={true}
+                              className="mt-1 bg-gray-50 cursor-not-allowed"
+                              placeholder="Doğum tarihine göre otomatik hesaplanır"
                             />
+                            <p className="text-xs text-gray-500 mt-1">Yaş, doğum tarihine göre otomatik hesaplanır</p>
                           </div>
                           <div>
                             <Label htmlFor="gender">Cinsiyet</Label>

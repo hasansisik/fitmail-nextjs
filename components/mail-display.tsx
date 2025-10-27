@@ -25,6 +25,9 @@ import {
   Loader2,
   Plus,
   Trash2 as TrashIcon,
+  MoreHorizontal,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react"
 
 import {
@@ -121,6 +124,7 @@ import { useAppDispatch } from "@/redux/hook"
 import { addReplyToMail, getMailById, toggleMailReadStatus, moveMailToFolder, deleteMail } from "@/redux/actions/mailActions"
 import { uploadFileToCloudinary } from "@/utils/cloudinary"
 import { AttachmentPreview } from "@/components/attachment-preview"
+import { RichTextEditor } from "@/components/rich-text-editor"
 
 interface MailDisplayProps {
   mail: ApiMail | null
@@ -147,6 +151,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [showConversation, setShowConversation] = useState(true) // Varsayılan olarak göster
+  const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set()) // Genişletilmiş mesajlar
   const [showArchiveDialog, setShowArchiveDialog] = useState(false)
   const [showTrashDialog, setShowTrashDialog] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
@@ -339,6 +344,15 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
     setAttachments(prev => prev.filter(att => att.id !== id))
   }
 
+  // HTML'i düz metne çevir
+  const stripHtml = (html: string) => {
+    if (!html) return ''
+    // HTML taglarını kaldır
+    const tmp = document.createElement('div')
+    tmp.innerHTML = html
+    return tmp.textContent || tmp.innerText || ''
+  }
+
   // Cevapla gönder
   const handleSendReply = async () => {
     if (!mail || !replyText.trim()) {
@@ -368,18 +382,23 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
       console.log("Reply added successfully:", result)
       toast.success("Cevap başarıyla gönderildi ve mail'e eklendi!")
       
-      // Mail'i yeniden yükle
-      setReplySent(true)
+      // Formu temizle
+      setIsReplying(false)
+      setReplyText("")
+      setAttachments([])
+      
+      // Mail'i hemen yeniden yükle
+      try {
+        await dispatch(getMailById(mail._id)).unwrap()
+        console.log("Mail reloaded successfully with updated conversation")
+      } catch (reloadError) {
+        console.error("Failed to reload mail:", reloadError)
+      }
       
       // Callback ile parent component'e mail gönderildiğini bildir
       if (onMailSent) {
         onMailSent()
       }
-      
-      // Formu temizle
-      setIsReplying(false)
-      setReplyText("")
-      setAttachments([])
       
     } catch (error: any) {
       console.error("Send reply failed:", error)
@@ -499,19 +518,28 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
   // Cevapla
   const handleReply = () => {
     setIsReplying(true)
-    setReplyText(`\n\n--- Orijinal Mesaj ---\n${mail?.content || mail?.htmlContent || ''}`)
+    // HTML formatında orijinal mesajı hazırla
+    const originalContent = mail?.htmlContent || mail?.content || ''
+    const formattedOriginal = `<p><br></p><p><br></p><p>--- Orijinal Mesaj ---</p><p>${originalContent.replace(/\n/g, '<br>')}</p>`
+    setReplyText(formattedOriginal)
   }
 
   // Cevapla Tümü
   const handleReplyAll = () => {
     setIsReplying(true)
-    setReplyText(`\n\n--- Orijinal Mesaj ---\n${mail?.content || mail?.htmlContent || ''}`)
+    // HTML formatında orijinal mesajı hazırla
+    const originalContent = mail?.htmlContent || mail?.content || ''
+    const formattedOriginal = `<p><br></p><p><br></p><p>--- Orijinal Mesaj ---</p><p>${originalContent.replace(/\n/g, '<br>')}</p>`
+    setReplyText(formattedOriginal)
   }
 
   // İlet
   const handleForward = () => {
     setIsReplying(true)
-    setReplyText(`\n\n--- İletilen Mesaj ---\nGönderen: ${mail?.from?.name || 'Bilinmeyen'} <${mail?.from?.email || 'Bilinmeyen'}>\nKonu: ${mail?.subject}\n\n${mail?.content || mail?.htmlContent || ''}`)
+    // HTML formatında iletilen mesajı hazırla
+    const originalContent = mail?.htmlContent || mail?.content || ''
+    const formattedForward = `<p><br></p><p><br></p><p>--- İletilen Mesaj ---</p><p>Gönderen: ${mail?.from?.name || 'Bilinmeyen'} &lt;${mail?.from?.email || 'Bilinmeyen'}&gt;</p><p>Konu: ${mail?.subject}</p><p><br></p><p>${originalContent.replace(/\n/g, '<br>')}</p>`
+    setReplyText(formattedForward)
   }
 
   // Erteleme fonksiyonları
@@ -533,6 +561,19 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
     }))
     setSelectedDate(undefined)
     console.log('Mail unsnoozed')
+  }
+
+  // Mesaj genişletme/daraltma
+  const toggleMessageExpansion = (messageId: string) => {
+    setExpandedMessages(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(messageId)) {
+        newSet.delete(messageId)
+      } else {
+        newSet.add(messageId)
+      }
+      return newSet
+    })
   }
 
   return (
@@ -633,7 +674,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
       </div>
       <Separator />
       {mail ? (
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col overflow-hidden">
           <div className="flex items-start p-2 sm:p-4">
             <div className="flex items-start gap-2 sm:gap-4 text-sm">
               <Avatar>
@@ -712,103 +753,159 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
             </>
           )}
           
-          <div className="flex-1 whitespace-pre-wrap p-2 sm:p-4 text-sm">
-            {mail.content || mail.htmlContent || 'İçerik yok'}
-          </div>
+          {/* Scrollable content area */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="whitespace-pre-wrap p-2 sm:p-4 text-sm">
+              {stripHtml(mail.content || mail.htmlContent || 'İçerik yok')}
+            </div>
           
-          {/* Karşılıklı Mesajlaşma */}
-          {mail.conversation && mail.conversation.length > 0 && (
+            {/* Karşılıklı Mesajlaşma */}
+            {mail.conversation && mail.conversation.length > 0 && (
             <>
               <Separator />
               <div className="p-2 sm:p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Konuşma Geçmişi</span>
-                    <span className="text-xs text-muted-foreground">({mail.conversation.length} cevap)</span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowConversation(!showConversation)}
-                    className="text-xs"
-                  >
-                    {showConversation ? "Gizle" : "Göster"}
-                  </Button>
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-sm font-medium">Konuşma Geçmişi</span>
+                  <span className="text-xs text-muted-foreground">({mail.conversation.length} cevap)</span>
                 </div>
                 
-                {showConversation && (
-                  <div className="space-y-4 max-h-96 overflow-y-auto">
-                    {mail.conversation.map((message) => (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {mail.conversation.map((message, index) => {
+                    const isExpanded = expandedMessages.has(message.id)
+                    const isLastMessage = index === mail.conversation!.length - 1
+                    
+                    return (
                       <div
                         key={message.id}
-                        className={`flex gap-3 p-3 rounded-lg ${
+                        className={`border rounded-lg transition-all ${
                           message.isFromMe 
-                            ? "bg-blue-50 dark:bg-blue-950/20 ml-8" 
-                            : "bg-gray-50 dark:bg-gray-900/50 mr-8"
+                            ? "bg-blue-50/50 dark:bg-blue-950/10 border-blue-200 dark:border-blue-900" 
+                            : "bg-gray-50/50 dark:bg-gray-900/30 border-gray-200 dark:border-gray-800"
                         }`}
                       >
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback className="text-xs">
-                            {message.sender.split(" ").map(n => n[0]).join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium">{message.sender}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {(() => {
-                                try {
-                                  const date = new Date(message.date)
-                                  if (isNaN(date.getTime())) return 'Geçersiz tarih'
-                                  
-                                  // Detaylı zaman hesaplama
-                                  const now = new Date()
-                                  const diffInMs = now.getTime() - date.getTime()
-                                  const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
-                                  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
-                                  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
-                                  
-                                  if (diffInMinutes < 1) {
-                                    return 'Az önce'
-                                  } else if (diffInMinutes < 60) {
-                                    return `${diffInMinutes} dakika önce`
-                                  } else if (diffInHours < 24) {
-                                    return `${diffInHours} saat önce`
-                                  } else if (diffInDays < 7) {
-                                    return `${diffInDays} gün önce`
-                                  } else if (diffInDays < 30) {
-                                    const weeks = Math.floor(diffInDays / 7)
-                                    return `${weeks} hafta önce`
-                                  } else if (diffInDays < 365) {
-                                    const months = Math.floor(diffInDays / 30)
-                                    return `${months} ay önce`
-                                  } else {
-                                    const years = Math.floor(diffInDays / 365)
-                                    return `${years} yıl önce`
-                                  }
-                                } catch (error) {
-                                  return 'Tarih hatası'
-                                }
-                              })()}
-                            </span>
-                            {message.isFromMe && (
-                              <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">
-                                Sen
+                        {/* Daraltılmış görünüm - 3 nokta ile */}
+                        {!isExpanded && (
+                          <div
+                            onClick={() => toggleMessageExpansion(message.id)}
+                            className="cursor-pointer hover:bg-muted/30 transition-colors"
+                          >
+                            <div className="flex items-center gap-3 p-3 pb-2">
+                              <Avatar className="h-8 w-8 flex-shrink-0">
+                                <AvatarFallback className="text-xs">
+                                  {message.sender.split(" ").map(n => n[0]).join("")}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium truncate">{message.sender}</span>
+                                  <span className="text-xs text-muted-foreground flex-shrink-0">
+                                    {(() => {
+                                      try {
+                                        const date = new Date(message.date)
+                                        if (isNaN(date.getTime())) return 'Geçersiz tarih'
+                                        
+                                        const now = new Date()
+                                        const diffInMs = now.getTime() - date.getTime()
+                                        const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
+                                        const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
+                                        const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
+                                        
+                                        if (diffInMinutes < 1) return 'Az önce'
+                                        else if (diffInMinutes < 60) return `${diffInMinutes}d`
+                                        else if (diffInHours < 24) return `${diffInHours}s`
+                                        else if (diffInDays < 7) return `${diffInDays}g`
+                                        else if (diffInDays < 30) return `${Math.floor(diffInDays / 7)}h`
+                                        else if (diffInDays < 365) return `${Math.floor(diffInDays / 30)}a`
+                                        else return `${Math.floor(diffInDays / 365)}y`
+                                      } catch (error) {
+                                        return ''
+                                      }
+                                    })()}
+                                  </span>
+                                </div>
+                              </div>
+                              <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            </div>
+                            {/* 3 nokta - ortada */}
+                            <div className="flex items-center  py-1 px-3">
+                              <MoreHorizontal className="h-5 w-5 text-muted-foreground/60" />
+                            </div>
+                            {/* Mesaj önizlemesi */}
+                            <div className="px-3 pb-3">
+                              <span className="text-xs text-muted-foreground line-clamp-1">
+                                {stripHtml(message.content).substring(0, 80)}...
                               </span>
-                            )}
+                            </div>
                           </div>
-                          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                        </div>
+                        )}
+                        
+                        {/* Genişletilmiş görünüm */}
+                        {isExpanded && (
+                          <div className="p-3">
+                            <div className="flex gap-3">
+                              <Avatar className="h-8 w-8 flex-shrink-0">
+                                <AvatarFallback className="text-xs">
+                                  {message.sender.split(" ").map(n => n[0]).join("")}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium">{message.sender}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {(() => {
+                                        try {
+                                          const date = new Date(message.date)
+                                          if (isNaN(date.getTime())) return 'Geçersiz tarih'
+                                          
+                                          const now = new Date()
+                                          const diffInMs = now.getTime() - date.getTime()
+                                          const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
+                                          const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
+                                          const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
+                                          
+                                          if (diffInMinutes < 1) return 'Az önce'
+                                          else if (diffInMinutes < 60) return `${diffInMinutes} dakika önce`
+                                          else if (diffInHours < 24) return `${diffInHours} saat önce`
+                                          else if (diffInDays < 7) return `${diffInDays} gün önce`
+                                          else if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} hafta önce`
+                                          else if (diffInDays < 365) return `${Math.floor(diffInDays / 30)} ay önce`
+                                          else return `${Math.floor(diffInDays / 365)} yıl önce`
+                                        } catch (error) {
+                                          return 'Tarih hatası'
+                                        }
+                                      })()}
+                                    </span>
+                                    {message.isFromMe && (
+                                      <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">
+                                        Sen
+                                      </span>
+                                    )}
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => toggleMessageExpansion(message.id)}
+                                    className="h-6 w-6 p-0"
+                                  >
+                                    <ChevronUp className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                <p className="text-sm whitespace-pre-wrap">{stripHtml(message.content)}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    )
+                  })}
+                </div>
               </div>
-            </>
-          )}
+              </>
+            )}
           
-          {/* Attachments */}
-          {mail.attachments && mail.attachments.length > 0 && (
+            {/* Attachments */}
+            {mail.attachments && mail.attachments.length > 0 && (
             <>
               <Separator />
               <div className="p-2 sm:p-4">
@@ -907,13 +1004,13 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                   })}
                 </div>
               </div>
-            </>
-          )}
+              </>
+            )}
+          </div>
           
-          <Separator className="mt-auto" />
-          
-          {/* Gmail benzeri cevapla kısmı */}
-          <div className="p-2 sm:p-4">
+          {/* Fixed footer - Gmail benzeri cevapla kısmı */}
+          <div className="border-t bg-background">
+            <div className="p-2 sm:p-4">
             {!isReplying ? (
               <div className="flex flex-wrap items-center gap-2">
                 <Button
@@ -949,11 +1046,10 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                   </Button>
                 </div>
                 
-                <Textarea
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  placeholder={`${mail.from?.name || 'Gönderen'} yanıtla...`}
-                  className="min-h-[100px]"
+                <RichTextEditor
+                  content={replyText}
+                  onChange={(content) => setReplyText(content)}
+                  placeholder={`${mail.from?.name || 'Gönderen'}'a yanıt yazın...`}
                 />
                 
                 {/* Yeni eklenen dosyalar */}
@@ -1074,6 +1170,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                 </div>
               </div>
             )}
+            </div>
           </div>
         </div>
       ) : (
