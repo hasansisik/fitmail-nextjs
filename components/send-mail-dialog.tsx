@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { RichTextEditor } from "@/components/rich-text-editor"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -25,7 +26,6 @@ import {
   X, 
   Paperclip, 
   FileText, 
-  Plus,
   Trash2
 } from "lucide-react"
 
@@ -49,7 +49,6 @@ interface Attachment {
 export function SendMailDialog({ open, onOpenChange, replyMode = null, originalMail = null, onMailSent }: SendMailDialogProps) {
   const dispatch = useAppDispatch()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [showCC, setShowCC] = useState(false)
   const [showBCC, setShowBCC] = useState(false)
@@ -72,10 +71,11 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
         case 'reply':
           // Sadece gönderene cevap ver
           setToRecipients([originalMail.from?.email || ''])
+          const replyContent = `\n\n--- Orijinal Mesaj ---\n${originalMail.content || originalMail.htmlContent || ''}`
           setFormData(prev => ({
             ...prev,
             subject: originalMail.subject?.startsWith('Re:') ? originalMail.subject : `Re: ${originalMail.subject}`,
-            content: `\n\n--- Orijinal Mesaj ---\n${originalMail.content || originalMail.htmlContent || ''}`
+            content: replyContent.includes('<') ? replyContent : `<p>${replyContent.replace(/\n/g, '<br>')}</p>`
           }))
           break
         case 'replyAll':
@@ -86,18 +86,20 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
             ...(originalMail.cc?.map((r: any) => r.email) || [])
           ].filter(Boolean)
           setToRecipients(allRecipients)
+          const replyAllContent = `\n\n--- Orijinal Mesaj ---\n${originalMail.content || originalMail.htmlContent || ''}`
           setFormData(prev => ({
             ...prev,
             subject: originalMail.subject?.startsWith('Re:') ? originalMail.subject : `Re: ${originalMail.subject}`,
-            content: `\n\n--- Orijinal Mesaj ---\n${originalMail.content || originalMail.htmlContent || ''}`
+            content: replyAllContent.includes('<') ? replyAllContent : `<p>${replyAllContent.replace(/\n/g, '<br>')}</p>`
           }))
           break
         case 'forward':
           // İlet
+          const forwardContent = `\n\n--- İletilen Mesaj ---\nGönderen: ${originalMail.from?.name || 'Bilinmeyen'} <${originalMail.from?.email || 'Bilinmeyen'}>\nKonu: ${originalMail.subject}\n\n${originalMail.content || originalMail.htmlContent || ''}`
           setFormData(prev => ({
             ...prev,
             subject: originalMail.subject?.startsWith('Fwd:') ? originalMail.subject : `Fwd: ${originalMail.subject}`,
-            content: `\n\n--- İletilen Mesaj ---\nGönderen: ${originalMail.from?.name || 'Bilinmeyen'} <${originalMail.from?.email || 'Bilinmeyen'}>\nKonu: ${originalMail.subject}\n\n${originalMail.content || originalMail.htmlContent || ''}`
+            content: forwardContent.includes('<') ? forwardContent : `<p>${forwardContent.replace(/\n/g, '<br>')}</p>`
           }))
           break
       }
@@ -306,34 +308,48 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       return
     }
 
-    setIsLoading(true)
-    const loadingToastId = toast.loading("Mail gönderiliyor...")
-
-    try {
-      // Prepare attachments for sending
-      const attachmentsData = attachments.map(attachment => ({
+    // Close dialog immediately
+    onOpenChange(false)
+    
+    // Reset form immediately so user can send another mail if needed
+    const mailDataToSend = {
+      to: toRecipients,
+      cc: ccRecipients.length > 0 ? ccRecipients : undefined,
+      bcc: bccRecipients.length > 0 ? bccRecipients : undefined,
+      subject: formData.subject,
+      content: formData.content,
+      htmlContent: formData.content, // Rich text editor already provides HTML
+      attachments: attachments.map(attachment => ({
         filename: attachment.name,
         data: attachment.file,
         contentType: attachment.type,
         size: attachment.size,
-        url: attachment.url || undefined // Cloudinary URL'sini ekle
-      }));
+        url: attachment.url || undefined
+      }))
+    }
+    
+    setFormData({
+      to: "",
+      cc: "",
+      bcc: "",
+      subject: "",
+      content: ""
+    })
+    setToRecipients([])
+    setCcRecipients([])
+    setBccRecipients([])
+    setAttachments([])
+    setShowCC(false)
+    setShowBCC(false)
 
-      // Prepare mail data
-      const mailData = {
-        to: toRecipients,
-        cc: ccRecipients.length > 0 ? ccRecipients : undefined,
-        bcc: bccRecipients.length > 0 ? bccRecipients : undefined,
-        subject: formData.subject,
-        content: formData.content,
-        htmlContent: formData.content.replace(/\n/g, '<br>'),
-        attachments: attachmentsData.length > 0 ? attachmentsData : undefined
-      }
+    // Show toast and send mail in background
+    const loadingToastId = toast.loading("Mail gönderiliyor...")
 
-      console.log("Sending mail with data:", mailData)
+    try {
+      console.log("Sending mail with data:", mailDataToSend)
 
       // Call Redux action for sending mail
-      const result = await dispatch(sendMail(mailData)).unwrap()
+      const result = await dispatch(sendMail(mailDataToSend)).unwrap()
       console.log("Mail sent successfully:", result)
       console.log("Sent mail folder:", result.mail?.folder)
       console.log("Sent mail status:", result.mail?.status)
@@ -349,22 +365,6 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
         onMailSent()
       }
       
-      // Reset form and close dialog
-      setFormData({
-        to: "",
-        cc: "",
-        bcc: "",
-        subject: "",
-        content: ""
-      })
-      setToRecipients([])
-      setCcRecipients([])
-      setBccRecipients([])
-      setAttachments([])
-      setShowCC(false)
-      setShowBCC(false)
-      onOpenChange(false)
-      
     } catch (error: any) {
       console.error("Send mail failed:", error)
       
@@ -374,28 +374,24 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       // Show error message
       const errorMessage = typeof error === 'string' ? error : error?.message || "Mail gönderilirken bir hata oluştu"
       toast.error(errorMessage)
-    } finally {
-      setIsLoading(false)
     }
   }
 
   const handleClose = () => {
-    if (!isLoading) {
-      setFormData({
-        to: "",
-        cc: "",
-        bcc: "",
-        subject: "",
-        content: ""
-      })
-      setToRecipients([])
-      setCcRecipients([])
-      setBccRecipients([])
-      setAttachments([])
-      setShowCC(false)
-      setShowBCC(false)
-      onOpenChange(false)
-    }
+    setFormData({
+      to: "",
+      cc: "",
+      bcc: "",
+      subject: "",
+      content: ""
+    })
+    setToRecipients([])
+    setCcRecipients([])
+    setBccRecipients([])
+    setAttachments([])
+    setShowCC(false)
+    setShowBCC(false)
+    onOpenChange(false)
   }
 
   return (
@@ -429,7 +425,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                 onKeyPress={(e) => handleEmailKeyPress(e, "to")}
                 onBlur={() => handleEmailBlur("to")}
                 required={toRecipients.length === 0}
-                disabled={isLoading || false}
+                disabled={false}
                 className={toRecipients.length > 0 ? "border-green-500" : ""}
               />
               <p className="text-xs text-muted-foreground">
@@ -452,7 +448,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                         size="sm"
                         className="h-5 w-5 p-0 rounded-full hover:bg-muted-foreground/20"
                         onClick={() => removeRecipient(email, 'to')}
-                        disabled={isLoading || false}
+                        disabled={false}
                       >
                         <X className="h-3 w-3" />
                       </Button>
@@ -471,7 +467,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                     id="cc-toggle"
                     checked={showCC}
                     onCheckedChange={setShowCC}
-                    disabled={isLoading || false}
+                    disabled={false}
                   />
                   <Label htmlFor="cc-toggle" className="text-sm">
                     {showCC ? 'Gizle' : 'Göster'}
@@ -487,7 +483,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                     onChange={(e) => handleEmailInputChange("cc", e.target.value)}
                     onKeyPress={(e) => handleEmailKeyPress(e, "cc")}
                     onBlur={() => handleEmailBlur("cc")}
-                    disabled={isLoading || false}
+                    disabled={false}
                   />
                   {/* CC Recipients Chips */}
                   {ccRecipients.length > 0 && (
@@ -501,7 +497,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                             size="sm"
                             className="h-5 w-5 p-0 rounded-full hover:bg-muted-foreground/20"
                             onClick={() => removeRecipient(email, 'cc')}
-                            disabled={isLoading || false}
+                            disabled={false}
                           >
                             <X className="h-3 w-3" />
                           </Button>
@@ -522,7 +518,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                     id="bcc-toggle"
                     checked={showBCC}
                     onCheckedChange={setShowBCC}
-                    disabled={isLoading || false}
+                    disabled={false}
                   />
                   <Label htmlFor="bcc-toggle" className="text-sm">
                     {showBCC ? 'Gizle' : 'Göster'}
@@ -538,7 +534,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                     onChange={(e) => handleEmailInputChange("bcc", e.target.value)}
                     onKeyPress={(e) => handleEmailKeyPress(e, "bcc")}
                     onBlur={() => handleEmailBlur("bcc")}
-                    disabled={isLoading || false}
+                    disabled={false}
                   />
                   {/* BCC Recipients Chips */}
                   {bccRecipients.length > 0 && (
@@ -552,7 +548,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                             size="sm"
                             className="h-5 w-5 p-0 rounded-full hover:bg-muted-foreground/20"
                             onClick={() => removeRecipient(email, 'bcc')}
-                            disabled={isLoading || false}
+                            disabled={false}
                           >
                             <X className="h-3 w-3" />
                           </Button>
@@ -573,22 +569,17 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                 value={formData.subject}
                 onChange={(e) => handleInputChange("subject", e.target.value)}
                 required
-                disabled={isLoading || false}
+                disabled={false}
               />
             </div>
 
             {/* Content Field */}
             <div className="space-y-2">
               <Label htmlFor="content">İçerik *</Label>
-              <Textarea
-                id="content"
+              <RichTextEditor
+                content={formData.content}
+                onChange={(content) => handleInputChange("content", content)}
                 placeholder="Mail içeriğinizi yazın..."
-                value={formData.content}
-                onChange={(e) => handleInputChange("content", e.target.value)}
-                required
-                disabled={isLoading || false}
-                rows={8}
-                className="resize-none"
               />
             </div>
 
@@ -601,7 +592,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                   variant="outline"
                   size="sm"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isLoading || false || isUploading}
+                  disabled={isUploading}
                 >
                   {isUploading ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -648,7 +639,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                         variant="ghost"
                         size="sm"
                         onClick={() => removeAttachment(attachment.id)}
-                        disabled={isLoading || false}
+                        disabled={false}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -664,7 +655,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={isLoading || false}
+              disabled={false}
             >
               <X className="h-4 w-4 mr-2" />
               İptal
@@ -673,19 +664,10 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
             
             <Button
               type="submit"
-              disabled={isLoading || false || toRecipients.length === 0 || !formData.subject || !formData.content}
+              disabled={toRecipients.length === 0 || !formData.subject || !formData.content}
             >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Gönderiliyor...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Gönder
-                </>
-              )}
+              <Send className="h-4 w-4 mr-2" />
+              Gönder
             </Button>
           </DialogFooter>
         </form>

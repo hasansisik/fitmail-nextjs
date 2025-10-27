@@ -19,6 +19,9 @@ import {
   updateUserRole,
   updateUserStatus,
   deleteUser,
+  switchUser,
+  getAllSessions,
+  removeSession,
 } from "../actions/userActions";
 
 interface UserState {
@@ -28,6 +31,7 @@ interface UserState {
   isAuthenticated?: boolean;
   isVerified?: boolean;
   message?: string | null;
+  sessions: any[];
   emailCheck: {
     loading: boolean;
     available: boolean | null;
@@ -55,6 +59,7 @@ const initialState: UserState = {
   isAuthenticated: false,
   isVerified: false,
   message: null,
+  sessions: [],
   emailCheck: {
     loading: false,
     available: null,
@@ -390,6 +395,37 @@ export const userReducer = createReducer(initialState, (builder) => {
     .addCase(deleteUser.rejected, (state, action) => {
       state.allUsers.loading = false;
       state.allUsers.error = action.payload as string;
+    })
+    
+    // Switch User
+    .addCase(switchUser.pending, (state) => {
+      state.loading = true;
+    })
+    .addCase(switchUser.fulfilled, (state, action) => {
+      state.loading = false;
+      state.user = action.payload;
+      state.isAuthenticated = true;
+      state.error = null;
+    })
+    .addCase(switchUser.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    })
+    
+    // Get All Sessions
+    .addCase(getAllSessions.fulfilled, (state, action) => {
+      state.sessions = action.payload;
+    })
+    
+    // Remove Session
+    .addCase(removeSession.fulfilled, (state, action) => {
+      state.sessions = action.payload;
+      // If no sessions left, log out
+      if (action.payload.length === 0) {
+        state.user = null;
+        state.isAuthenticated = false;
+        state.isVerified = false;
+      }
     });
 });
 

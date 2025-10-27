@@ -135,10 +135,38 @@ export const register = createAsyncThunk(
   async (payload: RegisterPayload, thunkAPI) => {
     try {
       const { data } = await axios.post(`${server}/auth/register`, payload);
-      // Store token and email in localStorage like login does
-      localStorage.setItem("accessToken", data.user.token);
-      localStorage.setItem("userEmail", data.user.email);
-      return data.user;
+      
+      // Store user session
+      const userSession = {
+        email: data.user.email,
+        token: data.user.token,
+        user: data.user,
+        loginTime: new Date().toISOString()
+      };
+      
+      // Get existing sessions
+      const existingSessions = JSON.parse(localStorage.getItem("userSessions") || "[]");
+      
+      // Check if this user is already in sessions
+      const existingIndex = existingSessions.findIndex((s: any) => s.email === data.user.email);
+      
+      if (existingIndex >= 0) {
+        // Update existing session
+        existingSessions[existingIndex] = userSession;
+      } else {
+        // Add new session
+        existingSessions.push(userSession);
+      }
+      
+      // Store all sessions
+      localStorage.setItem("userSessions", JSON.stringify(existingSessions));
+      
+      // Set current active user
+      localStorage.setItem("activeUserId", userSession.email);
+      localStorage.setItem("accessToken", userSession.token);
+      localStorage.setItem("userEmail", userSession.email);
+      
+      return userSession.user;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response.data.message);
     }
@@ -150,9 +178,38 @@ export const login = createAsyncThunk(
   async (payload: LoginPayload, thunkAPI) => {
     try {
       const { data } = await axios.post(`${server}/auth/login`, payload);
-      localStorage.setItem("accessToken", data.user.token);
-      localStorage.setItem("userEmail", data.user.email);
-      return data.user;
+      
+      // Store user session
+      const userSession = {
+        email: data.user.email,
+        token: data.user.token,
+        user: data.user,
+        loginTime: new Date().toISOString()
+      };
+      
+      // Get existing sessions
+      const existingSessions = JSON.parse(localStorage.getItem("userSessions") || "[]");
+      
+      // Check if this user is already in sessions
+      const existingIndex = existingSessions.findIndex((s: any) => s.email === data.user.email);
+      
+      if (existingIndex >= 0) {
+        // Update existing session
+        existingSessions[existingIndex] = userSession;
+      } else {
+        // Add new session
+        existingSessions.push(userSession);
+      }
+      
+      // Store all sessions
+      localStorage.setItem("userSessions", JSON.stringify(existingSessions));
+      
+      // Set current active user
+      localStorage.setItem("activeUserId", userSession.email);
+      localStorage.setItem("accessToken", userSession.token);
+      localStorage.setItem("userEmail", userSession.email);
+      
+      return userSession.user;
     } catch (error: any) {
       // Handle email verification required case
       if (error.response?.status === 403 && error.response?.data?.requiresVerification) {
@@ -222,18 +279,105 @@ export const loadUser = createAsyncThunk(
 export const logout = createAsyncThunk("user/logout", async (_, thunkAPI) => {
   try {
     const token = localStorage.getItem("accessToken");
-    const { data } = await axios.get(`${server}/auth/logout`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("userEmail");
-    return data.message;
+    const currentUserEmail = localStorage.getItem("userEmail");
+    
+    try {
+      await axios.get(`${server}/auth/logout`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      // Continue with logout even if API call fails
+      console.error("Logout API call failed:", error);
+    }
+    
+    // Remove current user from sessions
+    const existingSessions = JSON.parse(localStorage.getItem("userSessions") || "[]");
+    const updatedSessions = existingSessions.filter((s: any) => s.email !== currentUserEmail);
+    
+    if (updatedSessions.length > 0) {
+      // Switch to another session
+      const newActiveUser = updatedSessions[0];
+      localStorage.setItem("userSessions", JSON.stringify(updatedSessions));
+      localStorage.setItem("activeUserId", newActiveUser.email);
+      localStorage.setItem("accessToken", newActiveUser.token);
+      localStorage.setItem("userEmail", newActiveUser.email);
+    } else {
+      // No more sessions
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("userEmail");
+      localStorage.removeItem("userSessions");
+      localStorage.removeItem("activeUserId");
+    }
+    
+    return { message: "Logged out", remainingSessions: updatedSessions.length };
   } catch (error: any) {
-    return thunkAPI.rejectWithValue(error.response.data.message);
+    return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
   }
 });
+
+// Switch to another user session
+export const switchUser = createAsyncThunk(
+  "user/switchUser",
+  async (email: string, thunkAPI) => {
+    try {
+      const existingSessions = JSON.parse(localStorage.getItem("userSessions") || "[]");
+      const targetSession = existingSessions.find((s: any) => s.email === email);
+      
+      if (!targetSession) {
+        throw new Error("Session not found");
+      }
+      
+      // Switch to the target session
+      localStorage.setItem("activeUserId", targetSession.email);
+      localStorage.setItem("accessToken", targetSession.token);
+      localStorage.setItem("userEmail", targetSession.email);
+      
+      return targetSession.user;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
+// Get all active sessions
+export const getAllSessions = createAsyncThunk(
+  "user/getAllSessions",
+  async (_, thunkAPI) => {
+    try {
+      const sessions = JSON.parse(localStorage.getItem("userSessions") || "[]");
+      return sessions;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
+// Remove a specific session
+export const removeSession = createAsyncThunk(
+  "user/removeSession",
+  async (email: string, thunkAPI) => {
+    try {
+      const existingSessions = JSON.parse(localStorage.getItem("userSessions") || "[]");
+      const updatedSessions = existingSessions.filter((s: any) => s.email !== email);
+      
+      localStorage.setItem("userSessions", JSON.stringify(updatedSessions));
+      
+      // If we removed the active session, switch to another one
+      if (localStorage.getItem("userEmail") === email && updatedSessions.length > 0) {
+        const newActiveUser = updatedSessions[0];
+        localStorage.setItem("activeUserId", newActiveUser.email);
+        localStorage.setItem("accessToken", newActiveUser.token);
+        localStorage.setItem("userEmail", newActiveUser.email);
+      }
+      
+      return updatedSessions;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
 
 export const verifyEmail = createAsyncThunk(
   "user/verifyEmail",

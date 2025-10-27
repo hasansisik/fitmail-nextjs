@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { useAppDispatch } from "@/redux/hook"
-import { logout } from "@/redux/actions/userActions"
+import { logout, switchUser, getAllSessions, removeSession } from "@/redux/actions/userActions"
 import { getMailsByCategory, getMailsByLabelCategory, getMailStats, clearSelectedMail } from "@/redux/actions/mailActions"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
@@ -50,6 +50,13 @@ import {
 import { useAppSelector } from "@/redux/hook"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SendMailDialog } from "@/components/send-mail-dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 // Dinamik navigation array'leri - mail stats kullanacak
 const getMainNav = (mailStats: any) => [
@@ -174,7 +181,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
   const pathname = usePathname()
   const router = useRouter()
   const dispatch = useAppDispatch()
-  const { user } = useAppSelector((state) => state.user)
+  const { user, sessions } = useAppSelector((state) => state.user)
   const { mailStats, statsLoading, statsError } = useAppSelector((state) => state.mail)
   
   const [internalIsCollapsed, setInternalIsCollapsed] = useState(false)
@@ -183,13 +190,50 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
   const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : internalIsCollapsed
   const setIsCollapsed = onCollapse || setInternalIsCollapsed
   
-  // Sidebar yüklendiğinde mail stats'ı çek
+  // Sidebar yüklendiğinde mail stats'ı çek ve sessions'ı yükle
   useEffect(() => {
+    // Load sessions first
+    dispatch(getAllSessions())
+    
+    // Then load mail stats if user exists
     if (user && !mailStats) {
       console.log('Sidebar: getMailStats çağrılıyor')
       dispatch(getMailStats())
     }
   }, [dispatch, user, mailStats])
+  
+  // Account switch handler
+  const handleAccountSwitch = async (email: string) => {
+    if (email === "__add_account__") {
+      return // Don't switch if "add account" was clicked
+    }
+    
+    try {
+      await dispatch(switchUser(email)).unwrap()
+      // Reload user data
+      window.location.reload()
+      toast.success("Hesap değiştirildi")
+    } catch (error: any) {
+      console.error("Account switch failed:", error)
+      toast.error("Hesap değiştirilemedi")
+    }
+  }
+  
+  // Remove account handler
+  const handleRemoveAccount = async (email: string) => {
+    try {
+      await dispatch(removeSession(email)).unwrap()
+      if (email === user?.email) {
+        // If we removed the current account, log out
+        await handleLogout()
+      } else {
+        toast.success("Hesap kaldırıldı")
+      }
+    } catch (error: any) {
+      console.error("Remove account failed:", error)
+      toast.error("Hesap kaldırılamadı")
+    }
+  }
 
   // Kategori tıklama handler'ı
   const handleCategoryClick = async (category: string, e?: React.MouseEvent) => {
@@ -444,17 +488,81 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       {/* User Account Section */}
       {!isCollapsed && (
         <div className="px-2 py-3">
-          <div className="flex items-center gap-3 mb-8">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src="" alt={`${user?.name} ${user?.surname}`} />
-              <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
-                {userInitials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium">{user?.name} {user?.surname}</span>
-              <span className="text-xs text-muted-foreground">{user?.email}</span>
-            </div>
+          <div className="mb-8">
+            <Select value={user?.email} onValueChange={handleAccountSwitch}>
+              <SelectTrigger className="h-auto py-2 px-3 rounded-md hover:bg-accent transition-colors cursor-pointer bg-background w-full border-0 shadow-none">
+                <SelectValue>
+                  <div className="flex items-center gap-3 w-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src="" alt={`${user?.name} ${user?.surname}`} />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
+                        {userInitials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col items-start flex-1 min-w-0">
+                      <span className="text-sm font-medium truncate w-full">
+                        {user?.name} {user?.surname}
+                      </span>
+                      <span className="text-xs text-muted-foreground truncate w-full">
+                        {user?.email}
+                      </span>
+                    </div>
+                  </div>
+                </SelectValue>
+              </SelectTrigger>
+                <SelectContent>
+                  {sessions && sessions.length > 0 ? (
+                    sessions.map((session: any) => (
+                      <SelectItem key={session.email} value={session.email}>
+                        <div className="flex items-center gap-2 w-full">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                              {session.user?.name?.[0]}{session.user?.surname?.[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col flex-1 min-w-0">
+                            <span className="text-sm font-medium truncate">
+                              {session.user?.name} {session.user?.surname}
+                            </span>
+                            <span className="text-xs text-muted-foreground truncate">
+                              {session.email}
+                            </span>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value={user?.email} disabled>
+                      <div className="flex items-center gap-2 w-full">
+                        <Avatar className="h-6 w-6">
+                          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                            {userInitials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <span className="text-sm font-medium truncate">
+                            {user?.name} {user?.surname}
+                          </span>
+                          <span className="text-xs text-muted-foreground truncate">
+                            {user?.email}
+                          </span>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  )}
+                  <div className="border-t mt-1 pt-2 pb-1 px-2">
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault()
+                        window.open('/giris', '_blank')
+                      }}
+                      className="w-full text-sm text-primary hover:text-primary/80 text-center py-2 rounded hover:bg-accent transition-colors"
+                    >
+                      + Farklı Hesap Ekle
+                    </button>
+                  </div>
+                </SelectContent>
+            </Select>
           </div>
           
           {/* Mail Gönderme Butonu */}
