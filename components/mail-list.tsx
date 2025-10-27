@@ -74,6 +74,7 @@ interface MailListProps {
   categoryTitle?: string
   isSelectMode?: boolean
   onSelectModeChange?: (isSelectMode: boolean) => void
+  onDraftClick?: (draft: ApiMail) => void
 }
 
 export function MailList({ 
@@ -82,7 +83,8 @@ export function MailList({
   error = null, 
   categoryTitle = "Gelen Kutusu",
   isSelectMode = false,
-  onSelectModeChange
+  onSelectModeChange,
+  onDraftClick
 }: MailListProps) {
   const router = useRouter()
   const dispatch = useAppDispatch()
@@ -388,9 +390,14 @@ export function MailList({
                     if (isSelectMode) {
                       toggleSelectMail(item._id)
                     } else {
-                      // Kategori bilgisini al ve URL'ye yönlendir
-                      const category = getCategorySlug(categoryTitle)
-                      router.push(`/mail/${category}/${item._id}`)
+                      // Eğer taslak ise ve onDraftClick varsa, modalı aç
+                      if (categoryTitle === "Taslaklar" && onDraftClick) {
+                        onDraftClick(item)
+                      } else {
+                        // Kategori bilgisini al ve URL'ye yönlendir
+                        const category = getCategorySlug(categoryTitle)
+                        router.push(`/mail/${category}/${item._id}`)
+                      }
                     }
                   }}
                 />

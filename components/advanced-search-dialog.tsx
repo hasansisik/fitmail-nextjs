@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Filter, X } from "lucide-react"
+import { Filter, X, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -11,6 +11,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -101,9 +106,19 @@ export function AdvancedSearchDialog({
         <div className="grid gap-4 py-4">
           {/* From */}
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="from" className="text-right">
-              Gönderen
-            </Label>
+            <div className="flex items-center justify-end gap-2">
+              <Label htmlFor="from" className="text-right">
+                Gönderen
+              </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>E-postayı gönderen kişinin adını veya e-posta adresini arayın</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <div className="col-span-3">
               <Input
                 id="from"
@@ -116,9 +131,19 @@ export function AdvancedSearchDialog({
 
           {/* To */}
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="to" className="text-right">
-              Alıcı
-            </Label>
+            <div className="flex items-center justify-end gap-2">
+              <Label htmlFor="to" className="text-right">
+                Alıcı
+              </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>E-postanın gönderildiği kişinin adını veya e-posta adresini arayın</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <div className="col-span-3">
               <Input
                 id="to"
@@ -131,9 +156,19 @@ export function AdvancedSearchDialog({
 
           {/* Subject */}
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="subject" className="text-right">
-              Konu
-            </Label>
+            <div className="flex items-center justify-end gap-2">
+              <Label htmlFor="subject" className="text-right">
+                Konu
+              </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>E-postanın konu satırında geçen kelimeleri arayın</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <div className="col-span-3">
               <Input
                 id="subject"
@@ -146,9 +181,19 @@ export function AdvancedSearchDialog({
 
           {/* Has the words */}
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="hasTheWords" className="text-right">
-              Kelimeleri içerir
-            </Label>
+            <div className="flex items-center justify-end gap-2">
+              <Label htmlFor="hasTheWords" className="text-right">
+                Kelimeleri içerir
+              </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>E-posta içeriğinde bulunması gereken kelimeleri girin. Sadece bu kelimeleri içeren mailler listelenecek.</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <div className="col-span-3">
               <Input
                 id="hasTheWords"
@@ -161,9 +206,19 @@ export function AdvancedSearchDialog({
 
           {/* Doesn't have */}
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="doesntHave" className="text-right">
-              İçermesin
-            </Label>
+            <div className="flex items-center justify-end gap-2">
+              <Label htmlFor="doesntHave" className="text-right">
+                İçermesin
+              </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>E-posta içeriğinde bulunmaması gereken kelimeleri girin. Bu kelimeleri içeren mailler listeden çıkarılacak.</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <div className="col-span-3">
               <Input
                 id="doesntHave"
@@ -176,9 +231,19 @@ export function AdvancedSearchDialog({
 
           {/* Is Read */}
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="isRead" className="text-right">
-              Okunma Durumu
-            </Label>
+            <div className="flex items-center justify-end gap-2">
+              <Label htmlFor="isRead" className="text-right">
+                Okunma Durumu
+              </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>Sadece okunmuş veya okunmamış mailleri görmek için filtreleyin</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <div className="col-span-3">
               <Select
                 value={filters.isRead}
@@ -213,6 +278,14 @@ export function AdvancedSearchDialog({
               >
                 Ek dosyası olan mailler
               </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>Sadece dosya eki (resim, belge, video vb.) içeren e-postaları listeleyin</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
         </div>

@@ -28,6 +28,86 @@ axios.interceptors.response.use(
   }
 );
 
+// Save Draft Action
+export const saveDraft = createAsyncThunk(
+  "mail/saveDraft",
+  async (draftData: {
+    to?: string[];
+    cc?: string[];
+    bcc?: string[];
+    subject?: string;
+    content?: string;
+    htmlContent?: string;
+    draftId?: string;
+    attachments?: Array<{
+      filename: string;
+      data: File;
+      contentType: string;
+      size: number;
+      url?: string;
+    }>;
+  }, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
+      }
+
+      // Prepare FormData for file uploads
+      const formData = new FormData();
+      
+      // Add basic draft data
+      if (draftData.to && draftData.to.length > 0) {
+        formData.append('to', JSON.stringify(draftData.to));
+      }
+      if (draftData.subject) {
+        formData.append('subject', draftData.subject);
+      }
+      if (draftData.content) {
+        formData.append('content', draftData.content);
+        formData.append('htmlContent', draftData.htmlContent || draftData.content);
+      }
+      
+      if (draftData.cc) {
+        formData.append('cc', JSON.stringify(draftData.cc));
+      }
+      if (draftData.bcc) {
+        formData.append('bcc', JSON.stringify(draftData.bcc));
+      }
+      if (draftData.draftId) {
+        formData.append('draftId', draftData.draftId);
+      }
+      
+      // Add attachments
+      if (draftData.attachments && draftData.attachments.length > 0) {
+        const attachmentNames = draftData.attachments.map(att => att.filename);
+        const attachmentTypes = draftData.attachments.map(att => att.contentType);
+        const attachmentUrls = draftData.attachments.map(att => att.url || '');
+        
+        draftData.attachments.forEach((attachment) => {
+          formData.append(`attachments`, attachment.data);
+        });
+        
+        formData.append('attachmentNames', JSON.stringify(attachmentNames));
+        formData.append('attachmentTypes', JSON.stringify(attachmentTypes));
+        formData.append('attachmentUrls', JSON.stringify(attachmentUrls));
+      }
+
+      const config = {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      const { data } = await axios.post(`${server}/mail/save-draft`, formData, config);
+      return data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
 // Send Mail Action
 export const sendMail = createAsyncThunk(
   "mail/sendMail",
@@ -38,6 +118,7 @@ export const sendMail = createAsyncThunk(
     subject: string;
     content: string;
     htmlContent?: string;
+    draftId?: string;
     attachments?: Array<{
       filename: string;
       data: File;
@@ -66,6 +147,9 @@ export const sendMail = createAsyncThunk(
       }
       if (mailData.bcc) {
         formData.append('bcc', JSON.stringify(mailData.bcc));
+      }
+      if (mailData.draftId) {
+        formData.append('draftId', mailData.draftId);
       }
       
       // Add attachments

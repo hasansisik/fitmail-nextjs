@@ -16,8 +16,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { useAppDispatch } from "@/redux/hook"
-import { sendMail } from "@/redux/actions/mailActions"
+import { sendMail, saveDraft } from "@/redux/actions/mailActions"
 import { uploadFileToCloudinary } from "@/utils/cloudinary"
 import { toast } from "sonner"
 import { 
@@ -26,7 +41,8 @@ import {
   X, 
   Paperclip, 
   FileText, 
-  Trash2
+  Trash2,
+  Info
 } from "lucide-react"
 
 interface SendMailDialogProps {
@@ -34,6 +50,7 @@ interface SendMailDialogProps {
   onOpenChange: (open: boolean) => void
   replyMode?: 'reply' | 'replyAll' | 'forward' | null
   originalMail?: any
+  draftMail?: any
   onMailSent?: () => void
 }
 
@@ -46,7 +63,7 @@ interface Attachment {
   url?: string | null
 }
 
-export function SendMailDialog({ open, onOpenChange, replyMode = null, originalMail = null, onMailSent }: SendMailDialogProps) {
+export function SendMailDialog({ open, onOpenChange, replyMode = null, originalMail = null, draftMail = null, onMailSent }: SendMailDialogProps) {
   const dispatch = useAppDispatch()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
@@ -63,10 +80,34 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
   const [toRecipients, setToRecipients] = useState<string[]>([])
   const [ccRecipients, setCcRecipients] = useState<string[]>([])
   const [bccRecipients, setBccRecipients] = useState<string[]>([])
+  const [showSaveDraftDialog, setShowSaveDraftDialog] = useState(false)
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null)
 
-  // Reply mode'a göre form verilerini otomatik doldur
+  // Reply mode veya draft mode'a göre form verilerini otomatik doldur
   React.useEffect(() => {
-    if (replyMode && originalMail && open) {
+    if (draftMail && open) {
+      // Taslağı yükle
+      setCurrentDraftId(draftMail._id)
+      setToRecipients(draftMail.to?.map((r: any) => r.email) || [])
+      setCcRecipients(draftMail.cc?.map((r: any) => r.email) || [])
+      setBccRecipients(draftMail.bcc?.map((r: any) => r.email) || [])
+      setFormData({
+        to: "",
+        cc: "",
+        bcc: "",
+        subject: draftMail.subject || '',
+        content: draftMail.htmlContent || draftMail.content || ''
+      })
+      setShowCC(draftMail.cc && draftMail.cc.length > 0)
+      setShowBCC(draftMail.bcc && draftMail.bcc.length > 0)
+      
+      // Attachments varsa yükle (ama File objesi yok, sadece göster)
+      if (draftMail.attachments && draftMail.attachments.length > 0) {
+        // Taslaktaki attachments'ı göster ama File objesi oluşturamayız
+        // Bu yüzden kullanıcının yeniden yüklemesi gerekecek
+        console.log('Draft has attachments:', draftMail.attachments)
+      }
+    } else if (replyMode && originalMail && open) {
       switch (replyMode) {
         case 'reply':
           // Sadece gönderene cevap ver
@@ -103,7 +144,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
           }))
           break
       }
-    } else if (!replyMode && open) {
+    } else if (!replyMode && !draftMail && open) {
       // Yeni mail için formu temizle
       setFormData({
         to: "",
@@ -115,8 +156,9 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       setToRecipients([])
       setCcRecipients([])
       setBccRecipients([])
+      setCurrentDraftId(null)
     }
-  }, [replyMode, originalMail, open])
+  }, [replyMode, originalMail, draftMail, open])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -319,6 +361,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       subject: formData.subject,
       content: formData.content,
       htmlContent: formData.content, // Rich text editor already provides HTML
+      draftId: currentDraftId || undefined, // Eğer taslaktan gönderiyorsak ID'yi ekle
       attachments: attachments.map(attachment => ({
         filename: attachment.name,
         data: attachment.file,
@@ -377,7 +420,99 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     }
   }
 
+  // Form içeriğinin olup olmadığını kontrol et
+  const hasFormContent = () => {
+    return toRecipients.length > 0 || 
+           ccRecipients.length > 0 || 
+           bccRecipients.length > 0 || 
+           formData.subject.trim() !== "" || 
+           formData.content.trim() !== "" ||
+           attachments.length > 0
+  }
+
+  // Taslak kaydetme fonksiyonu
+  const handleSaveDraft = async () => {
+    try {
+      const draftData = {
+        to: toRecipients.length > 0 ? toRecipients : undefined,
+        cc: ccRecipients.length > 0 ? ccRecipients : undefined,
+        bcc: bccRecipients.length > 0 ? bccRecipients : undefined,
+        subject: formData.subject.trim() || undefined,
+        content: formData.content.trim() || undefined,
+        htmlContent: formData.content.trim() || undefined,
+        draftId: currentDraftId || undefined,
+        attachments: attachments.map(attachment => ({
+          filename: attachment.name,
+          data: attachment.file,
+          contentType: attachment.type,
+          size: attachment.size,
+          url: attachment.url || undefined
+        }))
+      }
+
+      const result = await dispatch(saveDraft(draftData)).unwrap()
+      
+      // Taslak ID'sini kaydet (güncelleme için)
+      if (result.draft && result.draft._id) {
+        setCurrentDraftId(result.draft._id)
+      }
+      
+      toast.success("Taslak kaydedildi!")
+      
+      // Formu temizle ve dialogu kapat
+      setFormData({
+        to: "",
+        cc: "",
+        bcc: "",
+        subject: "",
+        content: ""
+      })
+      setToRecipients([])
+      setCcRecipients([])
+      setBccRecipients([])
+      setAttachments([])
+      setShowCC(false)
+      setShowBCC(false)
+      setCurrentDraftId(null)
+      onOpenChange(false)
+      
+      // Mail listesini yenile
+      if (onMailSent) {
+        onMailSent()
+      }
+    } catch (error: any) {
+      console.error("Save draft failed:", error)
+      toast.error(typeof error === 'string' ? error : error?.message || "Taslak kaydedilemedi")
+    }
+  }
+
   const handleClose = () => {
+    // Eğer form içeriği varsa ve taslak değilse, kaydetme dialogunu göster
+    if (hasFormContent()) {
+      setShowSaveDraftDialog(true)
+    } else {
+      // İçerik yoksa direkt kapat
+      setFormData({
+        to: "",
+        cc: "",
+        bcc: "",
+        subject: "",
+        content: ""
+      })
+      setToRecipients([])
+      setCcRecipients([])
+      setBccRecipients([])
+      setAttachments([])
+      setShowCC(false)
+      setShowBCC(false)
+      setCurrentDraftId(null)
+      onOpenChange(false)
+    }
+  }
+
+  // Taslak kaydetmeden kapat
+  const handleCloseWithoutSaving = () => {
+    setShowSaveDraftDialog(false)
     setFormData({
       to: "",
       cc: "",
@@ -391,7 +526,14 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     setAttachments([])
     setShowCC(false)
     setShowBCC(false)
+    setCurrentDraftId(null)
     onOpenChange(false)
+  }
+
+  // Taslak kaydet ve kapat
+  const handleSaveAndClose = async () => {
+    setShowSaveDraftDialog(false)
+    await handleSaveDraft()
   }
 
   return (
@@ -416,7 +558,17 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
           <div className="grid gap-4">
             {/* To Field */}
             <div className="space-y-2">
-              <Label htmlFor="to">Alıcı *</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="to">Alıcı *</Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>Mailinizin gönderileceği kişinin e-posta adresi. Alıcı, e-postayı kim gönderdiğini görebilir ve diğer alıcıları da görebilir.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <Input
                 id="to"
                 placeholder="ornek@email.com (Enter/Tab ile ekle)"
@@ -461,7 +613,17 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
             {/* CC Field */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="cc">Kopya (CC)</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="cc">Kopya (CC)</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p><strong>CC (Carbon Copy)</strong> - Kopya alıcılar. Bu kişiler mailin bir kopyasını alır ve tüm alıcılar birbirlerini görebilir. Bilgilendirme amaçlı kullanılır.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="cc-toggle"
@@ -512,7 +674,17 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
             {/* BCC Field */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="bcc">Gizli Kopya (BCC)</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="bcc">Gizli Kopya (BCC)</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p><strong>BCC (Blind Carbon Copy)</strong> - Gizli kopya alıcılar. Bu kişilerin e-posta aldığı diğer alıcılar tarafından görünmez. Gizlilik gerektiğinde kullanılır.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="bcc-toggle"
@@ -562,7 +734,17 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
 
             {/* Subject Field */}
             <div className="space-y-2">
-              <Label htmlFor="subject">Konu *</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="subject">Konu *</Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>E-postanızın konusu. Alıcının gelen kutusunda ilk göreceği metin. Açık ve anlaşılır bir konu yazmanız önerilir.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <Input
                 id="subject"
                 placeholder="Mail konusu"
@@ -575,7 +757,17 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
 
             {/* Content Field */}
             <div className="space-y-2">
-              <Label htmlFor="content">İçerik *</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="content">İçerik *</Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>E-postanızın ana metni. Zengin metin düzenleyici ile metin biçimlendirme, bağlantı ekleme ve daha fazlasını yapabilirsiniz.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <RichTextEditor
                 content={formData.content}
                 onChange={(content) => handleInputChange("content", content)}
@@ -586,7 +778,17 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                         {/* Attachments Field */}
                         <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>Ekler</Label>
+                <div className="flex items-center gap-2">
+                  <Label>Ekler</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>E-postanıza dosya ekleyebilirsiniz. Belgeler, resimler, videolar ve diğer dosya türleri desteklenir. Dosyalar güvenli bir şekilde Cloudinary'ye yüklenir.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <Button
                   type="button"
                   variant="outline"
@@ -672,6 +874,27 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
           </DialogFooter>
         </form>
       </DialogContent>
+
+      {/* Taslak Kaydetme Onay Dialogu */}
+      <AlertDialog open={showSaveDraftDialog} onOpenChange={setShowSaveDraftDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Taslak olarak kaydetmek istiyor musunuz?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Yazdığınız mail henüz gönderilmedi. Bu maili taslak olarak kaydetmek ister misiniz? 
+              Kaydedilen taslağı daha sonra Taslaklar bölümünden bulabilir ve gönderebilirsiniz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCloseWithoutSaving}>
+              Kaydetme
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleSaveAndClose}>
+              Taslak Olarak Kaydet
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   )
 }

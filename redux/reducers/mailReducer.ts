@@ -1,6 +1,7 @@
 import { createReducer } from "@reduxjs/toolkit";
 import {
   sendMail,
+  saveDraft,
   getMailsByCategory,
   getMailsByLabelCategory,
   getMailStats,
@@ -48,6 +49,32 @@ const initialState: MailState = {
 
 export const mailReducer = createReducer(initialState, (builder) => {
   builder
+    // Save Draft
+    .addCase(saveDraft.pending, (state) => {
+      state.mailsLoading = true;
+      state.mailsError = null;
+    })
+    .addCase(saveDraft.fulfilled, (state, action) => {
+      state.mailsLoading = false;
+      state.message = action.payload.message;
+      state.mailsError = null;
+      
+      // Eğer taslaklar kutusundaysak, taslağı listeye ekle veya güncelle
+      if (state.currentFolder === 'drafts' && action.payload.draft) {
+        const existingDraftIndex = state.mails.findIndex(mail => mail._id === action.payload.draft._id);
+        if (existingDraftIndex === -1) {
+          // Taslağı listenin başına ekle (en yeni taslak en üstte)
+          state.mails.unshift(action.payload.draft);
+        } else {
+          // Mevcut taslağı güncelle
+          state.mails[existingDraftIndex] = action.payload.draft;
+        }
+      }
+    })
+    .addCase(saveDraft.rejected, (state, action) => {
+      state.mailsLoading = false;
+      state.mailsError = action.payload as string;
+    })
     // Send Mail
     .addCase(sendMail.pending, (state) => {
       state.mailsLoading = true;
@@ -66,6 +93,12 @@ export const mailReducer = createReducer(initialState, (builder) => {
           // Mail'i listenin başına ekle (en yeni mail en üstte)
           state.mails.unshift(action.payload.mail);
         }
+      }
+      
+      // Eğer taslağı gönderiyorsak, taslaklar listesinden çıkar
+      if (state.currentFolder === 'drafts' && action.payload.deletedDraftId) {
+        // Silinen taslağı listeden çıkar
+        state.mails = state.mails.filter(mail => mail._id !== action.payload.deletedDraftId);
       }
     })
     .addCase(sendMail.rejected, (state, action) => {

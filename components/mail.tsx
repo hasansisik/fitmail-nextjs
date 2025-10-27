@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, Plus, ArrowLeft, X, CheckSquare, RefreshCw, Trash2, Filter, Menu } from "lucide-react"
+import { Search, Plus, ArrowLeft, X, CheckSquare, RefreshCw, Trash2, Filter, Menu, Info } from "lucide-react"
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,11 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { MailDisplay } from "@/components/mail-display"
 import { MailList } from "@/components/mail-list"
 import { SendMailDialog } from "@/components/send-mail-dialog"
@@ -119,6 +124,7 @@ export function Mail({
   const [showAdvancedSearch, setShowAdvancedSearch] = React.useState(false)
   const [isSelectMode, setIsSelectMode] = React.useState(false)
   const [isRefreshing, setIsRefreshing] = React.useState(false)
+  const [draftToEdit, setDraftToEdit] = React.useState<any>(null)
   const [mail, { clearSelection }] = useMail()
   const dispatch = useAppDispatch()
   const pathname = usePathname()
@@ -310,6 +316,20 @@ export function Mail({
     }
   }
 
+  // Taslak tıklama fonksiyonu
+  const handleDraftClick = (draft: any) => {
+    setDraftToEdit(draft)
+    setShowSendDialog(true)
+  }
+
+  // Mail gönderme dialogu kapandığında taslağı temizle
+  const handleSendDialogClose = (open: boolean) => {
+    setShowSendDialog(open)
+    if (!open) {
+      setDraftToEdit(null)
+    }
+  }
+
   return (
     <div className="h-full flex flex-col lg:flex-row">
       {/* Mail Listesi - Sadece mail seçili değilse göster */}
@@ -337,46 +357,74 @@ export function Mail({
                 <h1 className="text-lg sm:text-xl font-bold">{categoryTitle}</h1>
               </div>
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleRefresh}
-                  disabled={isRefreshing || mailsLoading}
-                  className="h-8"
-                >
-                  <RefreshCw className={`h-4 w-4 sm:mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  <span className="hidden sm:inline">Yenile</span>
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleRefresh}
+                      disabled={isRefreshing || mailsLoading}
+                      className="h-8"
+                    >
+                      <RefreshCw className={`h-4 w-4 sm:mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                      <span className="hidden sm:inline">Yenile</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Mail listesini yenile ve yeni mailleri getir</p>
+                  </TooltipContent>
+                </Tooltip>
                 {/* Çöp kutusu temizleme butonu - sadece trash sayfasında göster */}
                 {pathname.includes('/trash') && (
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={handleCleanupTrash}
-                    disabled={mailsLoading}
-                    className="h-8"
-                  >
-                    <Trash2 className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Eski Mailleri Temizle</span>
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={handleCleanupTrash}
+                        disabled={mailsLoading}
+                        className="h-8"
+                      >
+                        <Trash2 className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Eski Mailleri Temizle</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>30 günden eski tüm mailleri kalıcı olarak sil</p>
+                    </TooltipContent>
+                  </Tooltip>
                 )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setIsSelectMode(!isSelectMode)}
-                  className="h-8"
-                >
-                  <CheckSquare className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">{isSelectMode ? 'Seçimi İptal' : 'Seç'}</span>
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => setShowSendDialog(true)}
-                  className="h-8"
-                >
-                  <Plus className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Yeni Mail</span>
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsSelectMode(!isSelectMode)}
+                      className="h-8"
+                    >
+                      <CheckSquare className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">{isSelectMode ? 'Seçimi İptal' : 'Seç'}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Birden fazla mail seçmek için seçim modunu aç</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      onClick={() => setShowSendDialog(true)}
+                      className="h-8"
+                    >
+                      <Plus className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Yeni Mail</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Yeni bir e-posta oluştur ve gönder</p>
+                  </TooltipContent>
+                </Tooltip>
                 <TabsList className="w-full sm:w-auto">
                   <TabsTrigger
                     value="all"
@@ -418,21 +466,28 @@ export function Mail({
                       </Button>
                     )}
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="default"
-                    onClick={() => setShowAdvancedSearch(true)}
-                    className="flex items-center gap-2 relative"
-                  >
-                    <Filter className="h-4 w-4" />
-                    <span className="hidden sm:inline">Filtre</span>
-                    {activeFilterCount > 0 && (
-                      <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
-                        {activeFilterCount}
-                      </span>
-                    )}
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="default"
+                        onClick={() => setShowAdvancedSearch(true)}
+                        className="flex items-center gap-2 relative"
+                      >
+                        <Filter className="h-4 w-4" />
+                        <span className="hidden sm:inline">Filtre</span>
+                        {activeFilterCount > 0 && (
+                          <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
+                            {activeFilterCount}
+                          </span>
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Gelişmiş filtreleme seçenekleri: gönderen, alıcı, konu, içerik ve ek filtreleri</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
                 {/* Clear filters button */}
                 {(searchQuery || activeFilterCount > 0) && (
@@ -461,6 +516,7 @@ export function Mail({
                 categoryTitle={categoryTitle}
                 isSelectMode={isSelectMode}
                 onSelectModeChange={setIsSelectMode}
+                onDraftClick={categoryTitle === "Taslaklar" ? handleDraftClick : undefined}
               />
             </TabsContent>
             <TabsContent value="unread" className="m-0">
@@ -471,6 +527,7 @@ export function Mail({
                 categoryTitle={categoryTitle}
                 isSelectMode={isSelectMode}
                 onSelectModeChange={setIsSelectMode}
+                onDraftClick={categoryTitle === "Taslaklar" ? handleDraftClick : undefined}
               />
             </TabsContent>
           </Tabs>
@@ -527,7 +584,8 @@ export function Mail({
       {/* Send Mail Dialog */}
       <SendMailDialog
         open={showSendDialog}
-        onOpenChange={setShowSendDialog}
+        onOpenChange={handleSendDialogClose}
+        draftMail={draftToEdit}
         onMailSent={handleRefresh}
       />
 
