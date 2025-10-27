@@ -75,6 +75,7 @@ interface MailListProps {
   isSelectMode?: boolean
   onSelectModeChange?: (isSelectMode: boolean) => void
   onDraftClick?: (draft: ApiMail) => void
+  onRefresh?: () => void
 }
 
 export function MailList({ 
@@ -84,7 +85,8 @@ export function MailList({
   categoryTitle = "Gelen Kutusu",
   isSelectMode = false,
   onSelectModeChange,
-  onDraftClick
+  onDraftClick,
+  onRefresh
 }: MailListProps) {
   const router = useRouter()
   const dispatch = useAppDispatch()
@@ -133,11 +135,20 @@ export function MailList({
     try {
       switch (action) {
         case 'delete':
-          // Her maili tek tek çöp kutusuna taşı
-          for (const mailId of selectedMailIds) {
-            await dispatch(deleteMail(mailId)).unwrap()
+          // Çöp kutusundaysa kalıcı sil, değilse çöp kutusuna taşı
+          if (categoryTitle === "Çöp Kutusu") {
+            // Kalıcı silme için her maili tek tek sil
+            for (const mailId of selectedMailIds) {
+              await dispatch(deleteMail(mailId)).unwrap()
+            }
+            toast.success(`${selectedMailIds.length} mail kalıcı olarak silindi!`)
+          } else {
+            // Her maili tek tek çöp kutusuna taşı
+            for (const mailId of selectedMailIds) {
+              await dispatch(deleteMail(mailId)).unwrap()
+            }
+            toast.success(`${selectedMailIds.length} mail çöp kutusuna taşındı!`)
           }
-          toast.success(`${selectedMailIds.length} mail çöp kutusuna taşındı!`)
           break
           
         case 'archive':
@@ -182,6 +193,11 @@ export function MailList({
       // Seçimi temizle ve select mode'u kapat
       setSelectedMails(new Set())
       onSelectModeChange?.(false)
+      
+      // Mail listesini ve stats'ı yenile
+      if (onRefresh) {
+        onRefresh()
+      }
       
     } catch (error: any) {
       console.error("Bulk action failed:", error)

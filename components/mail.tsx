@@ -536,6 +536,7 @@ export function Mail({
                 isSelectMode={isSelectMode}
                 onSelectModeChange={setIsSelectMode}
                 onDraftClick={categoryTitle === "Taslaklar" ? handleDraftClick : undefined}
+                onRefresh={handleRefresh}
               />
             </TabsContent>
             <TabsContent value="unread" className="m-0">
@@ -547,6 +548,7 @@ export function Mail({
                 isSelectMode={isSelectMode}
                 onSelectModeChange={setIsSelectMode}
                 onDraftClick={categoryTitle === "Taslaklar" ? handleDraftClick : undefined}
+                onRefresh={handleRefresh}
               />
             </TabsContent>
           </Tabs>
