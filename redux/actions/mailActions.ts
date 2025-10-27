@@ -183,6 +183,42 @@ export const sendMail = createAsyncThunk(
 );
 
 // Get Mails by Category Action
+// Get Starred Mails
+export const getStarredMails = createAsyncThunk(
+  "mail/getStarredMails",
+  async (params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    isRead?: boolean;
+  } = {}, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
+      }
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      // Query parametrelerini oluştur
+      const queryParams = new URLSearchParams();
+      if (params.page) queryParams.append('page', params.page.toString());
+      if (params.limit) queryParams.append('limit', params.limit.toString());
+      if (params.search) queryParams.append('search', params.search);
+      if (params.isRead !== undefined) queryParams.append('isRead', params.isRead.toString());
+
+      const { data } = await axios.get(`${server}/mail/starred/list?${queryParams.toString()}`, config);
+      return data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || "Yıldızlı mailler alınamadı");
+    }
+  }
+);
+
 export const getMailsByCategory = createAsyncThunk(
   "mail/getMailsByCategory",
   async (params: {

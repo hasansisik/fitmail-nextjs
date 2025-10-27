@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { useAppDispatch } from "@/redux/hook"
 import { logout, switchUser, getAllSessions, removeSession } from "@/redux/actions/userActions"
-import { getMailsByCategory, getMailsByLabelCategory, getMailStats, clearSelectedMail } from "@/redux/actions/mailActions"
+import { getMailsByCategory, getMailsByLabelCategory, getMailStats, clearSelectedMail, getStarredMails } from "@/redux/actions/mailActions"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { toast } from "sonner"
@@ -46,6 +46,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Star,
 } from "lucide-react"
 import { useAppSelector } from "@/redux/hook"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -111,6 +112,14 @@ const getMainNav = (mailStats: any) => [
 ]
 
 const getCategoryNav = (mailStats: any) => [
+  {
+    title: "Yıldızlı",
+    label: (mailStats?.starred || 0) > 0 ? (mailStats?.starred || 0).toString() : "",
+    icon: Star,
+    variant: "ghost" as const,
+    href: "/mail/starred",
+    category: "starred"
+  },
   {
     title: "Sosyal",
     label: (mailStats?.social || 0) > 0 ? (mailStats?.social || 0).toString() : "",
@@ -259,15 +268,23 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
     // Önce seçili maili temizle (mail detay sayfasından çıkarken)
     await dispatch(clearSelectedMail())
     
+    // Starred kategorisi için özel action kullan
+    if (category === 'starred') {
+      dispatch(getStarredMails({
+        page: 1,
+        limit: 50
+      }))
+    } 
     // Kategori sayfaları için label category kullan
-    if (['social', 'updates', 'forums', 'shopping', 'promotions'].includes(category)) {
+    else if (['social', 'updates', 'forums', 'shopping', 'promotions'].includes(category)) {
       dispatch(getMailsByLabelCategory({
         category: category,
         page: 1,
         limit: 50
       }))
-    } else {
-      // Klasör sayfaları için normal category kullan
+    } 
+    // Klasör sayfaları için normal category kullan
+    else {
       dispatch(getMailsByCategory({
         folder: category,
         page: 1,

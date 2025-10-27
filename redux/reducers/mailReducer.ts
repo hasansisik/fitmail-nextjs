@@ -4,6 +4,7 @@ import {
   saveDraft,
   getMailsByCategory,
   getMailsByLabelCategory,
+  getStarredMails,
   getMailStats,
   getMailById,
   moveMailToCategory,
@@ -117,6 +118,21 @@ export const mailReducer = createReducer(initialState, (builder) => {
       state.mailsError = null;
     })
     .addCase(getMailsByCategory.rejected, (state, action) => {
+      state.mailsLoading = false;
+      state.mailsError = action.payload as string;
+    })
+    // Get Starred Mails
+    .addCase(getStarredMails.pending, (state) => {
+      state.mailsLoading = true;
+      state.mailsError = null;
+    })
+    .addCase(getStarredMails.fulfilled, (state, action) => {
+      state.mailsLoading = false;
+      state.mails = action.payload.mails || [];
+      state.currentFolder = "starred";
+      state.mailsError = null;
+    })
+    .addCase(getStarredMails.rejected, (state, action) => {
       state.mailsLoading = false;
       state.mailsError = action.payload as string;
     })
