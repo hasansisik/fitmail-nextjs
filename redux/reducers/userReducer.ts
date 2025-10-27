@@ -151,7 +151,7 @@ export const userReducer = createReducer(initialState, (builder) => {
       state.isAuthenticated = false;
       state.isVerified = false;
       state.user = null;
-      state.message = action.payload;
+      state.message = typeof action.payload === 'string' ? action.payload : action.payload?.message || 'Çıkış yapıldı';
     })
     .addCase(logout.rejected, (state, action) => {
       state.loading = false;
