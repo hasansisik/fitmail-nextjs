@@ -1,8 +1,8 @@
 // Development server
-export const server: string = "http://localhost:5003/v1";
+export const server: string = "https://mail-backend-mu.vercel.app/v1";
 
 // Production server
-export const server2: string = "http://localhost:5003/v1";
+export const server2: string = "https://mail-backend-mu.vercel.app/v1";
 
 // Active server based on environment
 export const activeServer: string = process.env.NODE_ENV === 'production' ? server2 : server;
@@ -11,17 +11,17 @@ export const activeServer: string = process.env.NODE_ENV === 'production' ? serv
 export const domains = {
   // Development domains
   development: {
-    main: 'localhost:3000',
-    account: 'account.localhost:3000',
-    panel: 'panel.localhost:3000',
-    protocol: 'http'
+    main: 'gozdedijital.xyz',
+    account: 'account.gozdedijital.xyz',
+    panel: 'panel.gozdedijital.xyz',
+    protocol: 'https'
   },
   // Production domains
   production: {
-    main: 'localhost:3000',
-    account: 'account.localhost:3000',
-    panel: 'panel.localhost:3000',
-    protocol: 'http'
+    main: 'gozdedijital.xyz',
+    account: 'account.gozdedijital.xyz',
+    panel: 'panel.gozdedijital.xyz',
+    protocol: 'https'
   }
 };
 

@@ -288,6 +288,13 @@ export default function AccountPage() {
     }
   }, [message, error]);
 
+  // 2FA status check
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      dispatch(get2FAStatus());
+    }
+  }, [dispatch, isAuthenticated, user]);
+
   // Giriş sayfalarını render et
   if (pathname === '/giris') {
     return <LoginPage />;
@@ -733,12 +740,6 @@ export default function AccountPage() {
   };
 
   // 2FA Functions
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      dispatch(get2FAStatus());
-    }
-  }, [dispatch, isAuthenticated, user]);
-
   const handleEnable2FA = async () => {
     try {
       await dispatch(enable2FA()).unwrap();
