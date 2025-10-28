@@ -32,7 +32,8 @@ import {
   Link,
   Languages,
   HelpCircle,
-  Grid3x3
+  Grid3x3,
+  Grip
 } from 'lucide-react';
 import { loadUser, editProfile, changePassword, verifyPassword, updateSettings, deleteAccount, switchUser, getAllSessions, removeSession, enable2FA, verify2FA, disable2FA, get2FAStatus } from '@/redux/actions/userActions';
 import { RootState, AppDispatch } from '@/redux/store';
@@ -871,7 +872,7 @@ export default function AccountPage() {
                   onClick={() => setShowAppsMenu(!showAppsMenu)}
                   className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full"
                 >
-                  <Grid3x3 className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <Grip className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
 
                 {/* Apps Menu */}
