@@ -1204,7 +1204,7 @@ export default function AccountPage() {
               <div className="mt-12">
                 {activeNav === 'home' && (
                   <div className="space-y-6">
-                    <h2 className="text-2xl font-semibold text-gray-900">Ana Sayfa</h2>
+                    <h2 className="text-xl font-semibold text-gray-900">Ana Sayfa</h2>
 
                     {/* Profil Yönetimi Kartı */}
                     <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
