@@ -31,7 +31,8 @@ import {
   GalleryVerticalEnd,
   Link,
   Languages,
-  HelpCircle
+  HelpCircle,
+  Grid3x3
 } from 'lucide-react';
 import { loadUser, editProfile, changePassword, verifyPassword, updateSettings, deleteAccount, switchUser, getAllSessions, removeSession, enable2FA, verify2FA, disable2FA, get2FAStatus } from '@/redux/actions/userActions';
 import { RootState, AppDispatch } from '@/redux/store';
@@ -62,7 +63,7 @@ import { formatRelativeTime } from '@/lib/dateUtils';
 import { uploadFileToCloudinary } from '@/utils/cloudinary';
 import ReactCrop, { centerCrop, makeAspectCrop, Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { activeDomains } from "@/config";
+import { activeDomains, getMainDomainUrl } from "@/config";
 import LoginPage from "./(logged-out)/giris/page";
 import RegisterPage from "./(logged-out)/kayit-ol/page";
 
@@ -93,6 +94,7 @@ export default function AccountPage() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
+  const [showAppsMenu, setShowAppsMenu] = useState(false);
 
   // 2FA state
   const [show2FADialog, setShow2FADialog] = useState(false);
@@ -217,6 +219,23 @@ export default function AccountPage() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showSearchSuggestions]);
+
+  // Apps menüsünü dışına tıklayınca kapat
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showAppsMenu) {
+        const target = event.target as Element;
+        if (!target.closest('.apps-menu-container')) {
+          setShowAppsMenu(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAppsMenu]);
 
   // Yaş hesaplama fonksiyonu
   const calculateAge = (birthDate: string): string => {
@@ -845,6 +864,40 @@ export default function AccountPage() {
               >
                 <Info className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
+              
+              {/* Google Apps Button */}
+              <div className="relative apps-menu-container">
+                <button
+                  onClick={() => setShowAppsMenu(!showAppsMenu)}
+                  className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full"
+                >
+                  <Grid3x3 className="h-4 w-4 sm:h-5 sm:w-5" />
+                </button>
+
+                {/* Apps Menu */}
+                {showAppsMenu && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-2xl border border-gray-200 z-50">
+                    <div className="p-4">
+                      <h3 className="text-sm font-medium text-gray-700 mb-3">Fitmail Uygulamaları</h3>
+                      <div className="grid grid-cols-3 gap-4">
+                        <button
+                          onClick={() => {
+                            window.location.href = getMainDomainUrl('/mail');
+                            setShowAppsMenu(false);
+                          }}
+                          className="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                        >
+                          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <Mail className="w-6 h-6 text-blue-600" />
+                          </div>
+                          <span className="text-xs text-gray-700 font-medium">Fitmail</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="relative profile-menu-container">
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
