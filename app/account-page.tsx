@@ -383,9 +383,8 @@ export default function AccountPage() {
       if (typeof window !== 'undefined') {
         localStorage.setItem('selectedAccountEmail', email);
       }
-      await dispatch(switchUser(email)).unwrap();
-      toast.success("Hesap değiştirildi");
-      window.location.reload();
+      // Çerez tabanlı oturum tek kullanıcıdır; farklı hesaba geçiş için yeniden giriş gerekli
+      window.location.href = `/giris?email=${encodeURIComponent(email)}`;
     } catch (error: any) {
       console.error("Account switch failed:", error);
       toast.error("Hesap değiştirilemedi");

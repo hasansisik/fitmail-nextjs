@@ -260,10 +260,10 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       if (typeof window !== 'undefined') {
         localStorage.setItem('selectedAccountEmail', email)
       }
-      await dispatch(switchUser(email)).unwrap()
-      // Reload user data ve mailleri yenile
-      window.location.reload()
-      toast.success("Hesap değiştirildi")
+      // Çerez tabanlı oturum tek kullanıcıyı taşır; farklı hesaba geçmek için yeniden giriş gerekir
+      // Giriş sayfasına yönlendirip e-postayı önceden dolduralım
+      router.push(`/giris?email=${encodeURIComponent(email)}`)
+      toast.message("Hesap değişimi için tekrar giriş yapın")
     } catch (error: any) {
       console.error("Account switch failed:", error)
       toast.error("Hesap değiştirilemedi")
