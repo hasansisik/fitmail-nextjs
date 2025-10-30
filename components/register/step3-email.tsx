@@ -129,7 +129,7 @@ export function Step3Email({ formData, onInputChange, onNext, onBack, emailCheck
           {formData.premiumCode && formData.premiumCode.length === 5 && (
             <p className={`text-xs text-center ${
               premiumCodeCheck?.loading 
-                ? 'text-blue-600' 
+                ? 'text-purple-800' 
                 : premiumCodeCheck?.valid === true 
                   ? 'text-green-600' 
                   : premiumCodeCheck?.valid === false 

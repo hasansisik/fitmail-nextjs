@@ -603,7 +603,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                 size="icon" 
                 disabled={!mail}
                 onClick={handleArchive}
-                className={mailStatus.isArchived ? "bg-blue-100 text-blue-600" : ""}
+                className={mailStatus.isArchived ? "bg-blue-100 text-purple-800" : ""}
               >
                 <Archive className="h-4 w-4" />
                 <span className="sr-only">Arşivle</span>
@@ -743,7 +743,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
               <Separator />
               <div className="p-4 bg-muted/30">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="text-sm font-medium text-blue-600 dark:text-blue-400">↳ Yanıt</span>
+                  <span className="text-sm font-medium text-purple-800 dark:text-blue-400">↳ Yanıt</span>
                   <span className="text-xs text-muted-foreground">Orijinal konu: {originalSubject}</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
@@ -779,7 +779,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                         key={message.id}
                         className={`border rounded-lg transition-all ${
                           message.isFromMe 
-                            ? "bg-blue-50/50 dark:bg-blue-950/10 border-blue-200 dark:border-blue-900" 
+                            ? "bg-purple-200/30 dark:bg-blue-950/10 border-blue-200 dark:border-blue-900" 
                             : "bg-gray-50/50 dark:bg-gray-900/30 border-gray-200 dark:border-gray-800"
                         }`}
                       >
@@ -877,7 +877,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                                       })()}
                                     </span>
                                     {message.isFromMe && (
-                                      <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">
+                                      <span className="text-xs bg-blue-100 text-purple-800 px-2 py-0.5 rounded">
                                         Sen
                                       </span>
                                     )}

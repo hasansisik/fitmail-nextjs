@@ -888,8 +888,8 @@ export default function AccountPage() {
                           }}
                           className="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-lg transition-colors"
                         >
-                          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <Mail className="w-6 h-6 text-blue-600" />
+                      <div className="w-12 h-12 bg-[#490e6f]/10 rounded-lg flex items-center justify-center">
+                            <Mail className="w-6 h-6 text-[#490e6f]" />
                           </div>
                           <span className="text-xs text-gray-700 font-medium">Fitmail</span>
                         </button>
@@ -904,7 +904,7 @@ export default function AccountPage() {
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
                   className="p-1 hover:bg-gray-100 rounded-full"
                 >
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-blue-500 overflow-hidden">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-[#490e6f] overflow-hidden">
                     <img
                       src={getProfileImage()}
                       alt="Profile"
@@ -933,7 +933,7 @@ export default function AccountPage() {
                       <div className="flex flex-col items-center">
                         <button
                           onClick={handleAvatarClick}
-                          className="w-24 h-24 rounded-full border-2 border-blue-500 overflow-hidden mb-3 relative group cursor-pointer"
+                          className="w-24 h-24 rounded-full border-2 border-[#490e6f] overflow-hidden mb-3 relative group cursor-pointer"
                         >
                           {hasProfileImage() && getProfileImage() ? (
                             <img
@@ -942,7 +942,7 @@ export default function AccountPage() {
                               className="w-full h-full object-cover"
                             />
                           ) : null}
-                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-600 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none">
+                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#490e6f] text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none">
                             <Camera className="w-5 h-5" />
                           </div>
                         </button>
@@ -953,7 +953,7 @@ export default function AccountPage() {
                           onClick={() => {
                             handleOpenSection('personal');
                           }}
-                          className="mt-4 px-4 py-2 text-blue-600 border border-blue-600 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
+                          className="mt-4 px-4 py-2 text-[#490e6f] border border-[#490e6f] rounded-lg text-sm font-medium hover:bg-[#490e6f]/10 transition-colors"
                         >
                           Fitmail Hesabınızı yönetin
                         </button>
@@ -1049,7 +1049,7 @@ export default function AccountPage() {
                           window.open('/giris', '_blank');
                           setShowProfileMenu(false);
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#490e6f] hover:bg-[#490e6f]/10 rounded-lg transition-colors"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1109,11 +1109,11 @@ export default function AccountPage() {
                     key={item.id}
                     onClick={() => setActiveNav(item.id)}
                     className={`flex items-center px-3 py-2 lg:px-4 lg:py-3 text-sm font-medium transition-all duration-200 rounded-lg lg:rounded-r-full ${isActive
-                        ? 'bg-blue-50 text-blue-700'
+                        ? 'bg-[#490e6f]/10 text-[#490e6f]'
                         : 'text-gray-700 hover:bg-gray-50'
                       }`}
                   >
-                    <Icon className={`mr-2 lg:mr-3 h-4 w-4 lg:h-5 lg:w-5 ${isActive ? 'text-blue-700' : 'text-gray-600'}`} />
+                    <Icon className={`mr-2 lg:mr-3 h-4 w-4 lg:h-5 lg:w-5 ${isActive ? 'text-[#490e6f]' : 'text-gray-600'}`} />
                     <span className="text-xs sm:text-sm">{item.label}</span>
                   </button>
                 );
@@ -1127,7 +1127,7 @@ export default function AccountPage() {
               {/* Profile Section */}
               <div className="text-center mb-6 sm:mb-8">
                 <div className="relative w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 group">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-blue-500 overflow-hidden">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-[#490e6f] overflow-hidden">
                     <img
                       src={getProfileImage()}
                       alt={getUserDisplayName()}
@@ -1136,7 +1136,7 @@ export default function AccountPage() {
                   </div>
                   <button
                     onClick={handleAvatarClick}
-                    className="absolute -bottom-1 -right-1 bg-blue-600 text-white p-1.5 sm:p-2 rounded-full shadow-lg hover:bg-blue-700 transition-colors opacity-0 group-hover:opacity-100"
+                    className="absolute -bottom-1 -right-1 bg-[#490e6f] text-white p-1.5 sm:p-2 rounded-full shadow-lg hover:bg-[#490e6f] transition-colors opacity-0 group-hover:opacity-100"
                   >
                     <Camera className="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
@@ -1167,7 +1167,7 @@ export default function AccountPage() {
                     onChange={handleSearchInputChange}
                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                     onFocus={() => searchQuery.length > 0 && setShowSearchSuggestions(true)}
-                    className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 text-base sm:text-lg border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 text-base sm:text-lg border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#490e6f] focus:border-transparent"
                   />
 
                   {/* Arama Önerileri */}
@@ -1179,8 +1179,8 @@ export default function AccountPage() {
                           onClick={() => handleSearch(suggestion.id)}
                           className="w-full flex items-center space-x-3 p-4 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
                         >
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <suggestion.icon className="w-4 h-4 text-blue-600" />
+                          <div className="w-8 h-8 bg-[#490e6f]/10 rounded-full flex items-center justify-center">
+                            <suggestion.icon className="w-4 h-4 text-[#490e6f]" />
                           </div>
                           <div>
                             <p className="font-medium text-gray-900">{suggestion.label}</p>
@@ -1213,7 +1213,7 @@ export default function AccountPage() {
                         Fitmail hizmetlerinde profilinizin nasıl göründüğünü yönetin ve kişisel bilgilerinizi güncelleyin.
                       </p>
                       <div className="flex items-center space-x-3 sm:space-x-4 mb-4">
-                        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-blue-500 overflow-hidden">
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-[#490e6f] overflow-hidden">
                           <img
                             src={getProfileImage()}
                             alt={getUserDisplayName()}
@@ -1227,7 +1227,7 @@ export default function AccountPage() {
                       </div>
                       <button
                         onClick={() => setActiveNav('personal')}
-                        className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium"
+                        className="text-[#490e6f] hover:text-[#490e6f] text-xs sm:text-sm font-medium"
                       >
                         Profili düzenle →
                       </button>
@@ -1250,8 +1250,8 @@ export default function AccountPage() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                          <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <Lock className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
+                          <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[#490e6f]/10 rounded-full flex items-center justify-center">
+                            <Lock className="w-3 h-3 sm:w-4 sm:h-4 text-[#490e6f]" />
                           </div>
                           <div>
                             <p className="text-xs sm:text-sm font-medium text-gray-900">Güvenlik</p>
@@ -1261,7 +1261,7 @@ export default function AccountPage() {
                       </div>
                       <button
                         onClick={() => setActiveNav('privacy')}
-                        className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium"
+                        className="text-[#490e6f] hover:text-[#490e6f] text-xs sm:text-sm font-medium"
                       >
                         Güvenlik ayarları →
                       </button>
@@ -1278,21 +1278,21 @@ export default function AccountPage() {
                           onClick={() => setActiveNav('language')}
                           className="flex items-center space-x-2 p-2 sm:p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
                         >
-                          <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                          <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-[#490e6f]" />
                           <span className="text-xs sm:text-sm font-medium text-gray-700">Dil ve Bölge</span>
                         </button>
                         <button
                           onClick={() => setActiveNav('accounts')}
                           className="flex items-center space-x-2 p-2 sm:p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
                         >
-                          <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                          <Users className="w-4 h-4 sm:w-5 sm:h-5 text-[#490e6f]" />
                           <span className="text-xs sm:text-sm font-medium text-gray-700">Bağlı Hesaplar</span>
                         </button>
                         <button
                           onClick={() => setActiveNav('about')}
                           className="flex items-center space-x-2 p-2 sm:p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
                         >
-                          <Info className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                          <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#490e6f]" />
                           <span className="text-xs sm:text-sm font-medium text-gray-700">Hakkında</span>
                         </button>
                       </div>
@@ -1460,7 +1460,7 @@ export default function AccountPage() {
                               onChange={(e) => handleInputChange('bio', e.target.value)}
                               disabled={!isEditing}
                               rows={3}
-                              className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#490e6f] focus:border-transparent"
                               placeholder="Kendiniz hakkında kısa bir açıklama yazın..."
                             />
                           </div>
@@ -1545,7 +1545,7 @@ export default function AccountPage() {
                           </Button>
                           <Button
                             onClick={handleSaveProfile}
-                            className="bg-blue-600 hover:bg-blue-700"
+                            className="bg-[#490e6f] hover:bg-[#490e6f]"
                           >
                             Kaydet
                           </Button>
@@ -1620,7 +1620,7 @@ export default function AccountPage() {
                               variant="default"
                               size="sm"
                               onClick={handleEnable2FA}
-                              className="ml-4 bg-blue-600 hover:bg-blue-700"
+                              className="ml-4 bg-[#490e6f] hover:bg-[#490e6f]"
                             >
                               Aktifleştir
                             </Button>
@@ -1684,8 +1684,8 @@ export default function AccountPage() {
                   <div className="space-y-6">
                     <h2 className="text-2xl font-semibold text-gray-900">Bağlı Hesaplar</h2>
                     <div className="p-6 text-center">
-                      <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Users className="w-8 h-8 text-blue-600" />
+                      <div className="w-16 h-16 mx-auto mb-4 bg-[#490e6f]/10 rounded-full flex items-center justify-center">
+                        <Users className="w-8 h-8 text-[#490e6f]" />
                       </div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">Yakında Gelecek</h3>
                       <p className="text-gray-600 text-sm">
@@ -1819,7 +1819,7 @@ export default function AccountPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <div className="w-2 h-2 bg-[#490e6f] rounded-full"></div>
                               <span className="text-sm font-medium">Kişisel Veri Yönetimi</span>
                             </div>
                             <p className="text-xs text-gray-500 ml-4">Ad, soyad, e-posta ve kişisel bilgilerinizi güncelleyin</p>

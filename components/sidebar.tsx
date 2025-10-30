@@ -616,7 +616,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
           {/* Mail Gönderme Butonu */}
           <button
             onClick={() => setIsSendDialogOpen(true)}
-            className="w-full flex items-center gap-2 px-3 py-2 mb-4 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2 mb-4 text-sm font-medium text-white bg-purple-800 hover:bg-purple-800 rounded-md transition-colors"
           >
             <Send className="h-4 w-4" />
             Yeni Mail
@@ -640,7 +640,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => setIsSendDialogOpen(true)}
-                    className="flex items-center justify-center w-8 h-8 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                    className="flex items-center justify-center w-8 h-8 text-white bg-purple-800 hover:bg-purple-800 rounded-lg transition-colors"
                   >
                     <Send className="h-4 w-4" />
                   </button>

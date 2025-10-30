@@ -115,8 +115,8 @@ export function MailItem({ mail, onAction, onClick }: MailItemProps) {
     >
       <div
         className={cn(
-          "flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent w-full cursor-pointer",
-          isReply && "border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20"
+          "flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-purple-200/20 w-full cursor-pointer",
+          isReply && "border-l-4 border-l-purple-700 bg-purple-200/15 dark:bg-purple-200/20"
         )}
         onClick={handleClick}
       >
@@ -125,7 +125,7 @@ export function MailItem({ mail, onAction, onClick }: MailItemProps) {
             <div className="flex items-center gap-2">
               <div className="font-semibold">{mail.from?.name || 'Bilinmeyen Gönderen'}</div>
               {!mail.isRead && (
-                <span className="flex h-2 w-2 rounded-full bg-blue-600" />
+                <span className="flex h-2 w-2 rounded-full bg-purple-800" />
               )}
               {isReply && (
                 <Badge variant="outline" className="text-xs px-2 py-0.5">
@@ -187,7 +187,7 @@ export function MailItem({ mail, onAction, onClick }: MailItemProps) {
           <div className="text-xs font-medium">
             {isReply ? (
               <div className="flex items-center gap-2">
-                <span className="text-blue-600 dark:text-blue-400">↳</span>
+                <span className="text-purple-800 dark:text-[#490e6f]">↳</span>
                 <span className="text-muted-foreground">Yanıt:</span>
                 <span>{originalSubject}</span>
               </div>

@@ -11,16 +11,16 @@ export const activeServer: string = process.env.NODE_ENV === 'production' ? serv
 export const domains = {
   // Development domains
   development: {
-    main: 'localhost',
-    account: 'account.localhost',
-    panel: 'panel.localhost',
+    main: 'localhost:3000',
+    account: 'account.localhost:3000',
+    panel: 'panel.localhost:3000',
     protocol: 'http'
   },
   // Production domains
   production: {
-    main: 'localhost',
-    account: 'account.localhost',
-    panel: 'panel.localhost',
+    main: 'localhost:3000',
+    account: 'account.localhost:3000',
+    panel: 'panel.localhost:3000',
     protocol: 'http'
   }
 };

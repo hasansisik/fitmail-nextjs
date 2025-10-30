@@ -5,8 +5,8 @@ export function middleware(request: NextRequest) {
   const { pathname, hostname } = request.nextUrl
   
   // Check if this is a subdomain request
-  const isAccountSubdomain = hostname === 'account.localhost'
-  const isPanelSubdomain = hostname === 'panel.localhost'
+  const isAccountSubdomain = hostname === 'account.localhost:3000'
+  const isPanelSubdomain = hostname === 'panel.localhost:3000'
   
   // Allowed paths for subdomains (logged-out pages)
   const allowedSubdomainPaths = [
