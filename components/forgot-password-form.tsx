@@ -68,7 +68,7 @@ export function ForgotPasswordForm({
     
     // Validate input
     if (!recoveryHint || recoveryHint.trim() === '') {
-      toast.error("Lütfen kurtarıcı e-posta adresinizin bir kısmını girin!")
+      toast.error("Lütfen kurtarıcı e-posta adresinizi eksiksiz girin!")
       return
     }
     
@@ -186,19 +186,19 @@ export function ForgotPasswordForm({
           </p>
         </div>
         <div className="grid gap-3">
-          <Label htmlFor="recoveryHint">Doğrulama</Label>
+          <Label htmlFor="recoveryHint">Kurtarıcı E-posta Adresiniz</Label>
           <Input 
             id="recoveryHint" 
             name="recoveryHint" 
             type="text" 
-            placeholder="Kurtarıcı e-postanın ilk 3 harfi veya domain" 
+            placeholder="ornek@gmail.com" 
             value={recoveryHint}
             onChange={(e) => setRecoveryHint(e.target.value)}
             required 
             className="h-10"
           />
           <p className="text-xs text-muted-foreground">
-            Örnek: "abc" veya "gmail.com" gibi kurtarıcı e-postanızın bir kısmını girin
+            Lütfen kayıtlı olan kurtarıcı e-posta adresinizi eksiksiz girin.
           </p>
         </div>
         <div className="flex gap-3">
