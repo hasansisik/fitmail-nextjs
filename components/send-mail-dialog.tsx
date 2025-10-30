@@ -77,6 +77,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
   const [showCC, setShowCC] = useState(false)
   const [showBCC, setShowBCC] = useState(false)
   const [attachments, setAttachments] = useState<Attachment[]>([])
+  const [isTouchDevice, setIsTouchDevice] = useState(false)
   const [formData, setFormData] = useState({
     to: "",
     cc: "",
@@ -177,6 +178,58 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       setCurrentDraftId(null)
     }
   }, [replyMode, originalMail, draftMail, open])
+
+  // Cihazın dokunmatik olup olmadığını belirle (Tooltip dokunmatik cihazlarda çalışmaz)
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const touch = window.matchMedia('(hover: none), (pointer: coarse)').matches
+      setIsTouchDevice(touch)
+    }
+  }, [])
+
+  // Bilgi ikonları için yardımcı bileşen: Desktop'ta Tooltip, mobilde AlertDialog
+  const InfoHelp: React.FC<{ label?: string; children: React.ReactNode }> = ({ label = 'Bilgi', children }) => {
+    const [openInfo, setOpenInfo] = useState(false)
+    if (isTouchDevice) {
+      return (
+        <>
+          <button
+            type="button"
+            aria-label={label}
+            onClick={() => setOpenInfo(true)}
+            className="p-0.5 text-muted-foreground"
+          >
+            <Info className="h-3 w-3 lg:h-4 lg:w-4" />
+          </button>
+          <AlertDialog open={openInfo} onOpenChange={setOpenInfo}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{label}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {children}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogAction>Tamam</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      )
+    }
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button type="button" aria-label={label} className="p-0.5 text-muted-foreground">
+            <Info className="h-3 w-3 lg:h-4 lg:w-4" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">
+          <div>{children}</div>
+        </TooltipContent>
+      </Tooltip>
+    )
+  }
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -720,14 +773,9 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
             <div className="space-y-1.5 lg:space-y-2">
               <div className="flex items-center gap-2">
                 <Label htmlFor="to" className="text-xs lg:text-sm">Alıcı *</Label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-3 w-3 lg:h-4 lg:w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p>Mailinizin gönderileceği kişinin e-posta adresi. Alıcı, e-postayı kim gönderdiğini görebilir ve diğer alıcıları da görebilir.</p>
-                  </TooltipContent>
-                </Tooltip>
+                <InfoHelp label="Alıcı hakkında bilgi">
+                  Mailinizin gönderileceği kişinin e-posta adresi. Alıcı, e-postayı kim gönderdiğini görebilir ve diğer alıcıları da görebilir.
+                </InfoHelp>
               </div>
               <Input
                 id="to"
@@ -775,14 +823,9 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="cc">Kopya (CC)</Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p><strong>CC (Carbon Copy)</strong> - Kopya alıcılar. Bu kişiler mailin bir kopyasını alır ve tüm alıcılar birbirlerini görebilir. Bilgilendirme amaçlı kullanılır.</p>
-                    </TooltipContent>
-                  </Tooltip>
+                  <InfoHelp label="CC nedir?">
+                    <strong>CC (Carbon Copy)</strong> - Kopya alıcılar. Bu kişiler mailin bir kopyasını alır ve tüm alıcılar birbirlerini görebilir. Bilgilendirme amaçlı kullanılır.
+                  </InfoHelp>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Switch
@@ -836,14 +879,9 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="bcc">Gizli Kopya (BCC)</Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p><strong>BCC (Blind Carbon Copy)</strong> - Gizli kopya alıcılar. Bu kişilerin e-posta aldığı diğer alıcılar tarafından görünmez. Gizlilik gerektiğinde kullanılır.</p>
-                    </TooltipContent>
-                  </Tooltip>
+                  <InfoHelp label="BCC nedir?">
+                    <strong>BCC (Blind Carbon Copy)</strong> - Gizli kopya alıcılar. Bu kişilerin e-posta aldığı diğer alıcılar tarafından görünmez. Gizlilik gerektiğinde kullanılır.
+                  </InfoHelp>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Switch
@@ -896,14 +934,9 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Label htmlFor="subject">Konu *</Label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p>E-postanızın konusu. Alıcının gelen kutusunda ilk göreceği metin. Açık ve anlaşılır bir konu yazmanız önerilir.</p>
-                  </TooltipContent>
-                </Tooltip>
+                <InfoHelp label="Konu hakkında bilgi">
+                  E-postanızın konusu. Alıcının gelen kutusunda ilk göreceği metin. Açık ve anlaşılır bir konu yazmanız önerilir.
+                </InfoHelp>
               </div>
               <Input
                 id="subject"
@@ -919,14 +952,9 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Label htmlFor="content">İçerik *</Label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p>E-postanızın ana metni. Zengin metin düzenleyici ile metin biçimlendirme, bağlantı ekleme ve daha fazlasını yapabilirsiniz.</p>
-                  </TooltipContent>
-                </Tooltip>
+                <InfoHelp label="İçerik hakkında bilgi">
+                  E-postanızın ana metni. Zengin metin düzenleyici ile metin biçimlendirme, bağlantı ekleme ve daha fazlasını yapabilirsiniz.
+                </InfoHelp>
               </div>
               <RichTextEditor
                 content={formData.content}
@@ -940,14 +968,9 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Label>Ekler</Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p>E-postanıza dosya ekleyebilirsiniz. Belgeler, resimler, videolar ve diğer dosya türleri desteklenir. Dosyalar güvenli bir şekilde Cloudinary'ye yüklenir.</p>
-                    </TooltipContent>
-                  </Tooltip>
+                  <InfoHelp label="Ekler hakkında bilgi">
+                    E-postanıza dosya ekleyebilirsiniz. Belgeler, resimler, videolar ve diğer dosya türleri desteklenir. Dosyalar güvenli bir şekilde Cloudinary'ye yüklenir.
+                  </InfoHelp>
                 </div>
                 <Button
                   type="button"
