@@ -52,7 +52,7 @@ export default function HomePage() {
       <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-8 p-6 md:p-10">
         <div className="w-full max-w-2xl text-center space-y-8">
           {/* Logo/Title */}
-          <div className="space-y-4">
+          <div className="space-y-4 flex justify-center items-center">
             <AppLogo size="lg" />
           </div>
 
