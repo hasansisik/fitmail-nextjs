@@ -389,21 +389,11 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
-  // Mobilde kamera/dosya seçtirerek dosya seçiciyi aç
+  // Direkt dosya seçiciyi aç
   const openFileChooser = () => {
     try {
       if (typeof window !== 'undefined' && fileInputRef.current) {
-        const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-        if (isMobile) {
-          const useCamera = window.confirm('Kamera ile fotoğraf çekmek ister misiniz? İptal: Dosyadan seç')
-          if (useCamera) {
-            fileInputRef.current.setAttribute('capture', 'environment')
-          } else {
-            fileInputRef.current.removeAttribute('capture')
-          }
-        } else {
-          fileInputRef.current.removeAttribute('capture')
-        }
+        fileInputRef.current.removeAttribute('capture')
         fileInputRef.current.click()
       }
     } catch (_) {
