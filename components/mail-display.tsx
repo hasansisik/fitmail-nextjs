@@ -344,6 +344,29 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
     setAttachments(prev => prev.filter(att => att.id !== id))
   }
 
+  // Mobilde kamera/dosya seçtirerek dosya seçiciyi aç
+  const openFileChooser = () => {
+    try {
+      if (typeof window !== 'undefined' && fileInputRef.current) {
+        const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+        if (isMobile) {
+          const useCamera = window.confirm('Kamera ile fotoğraf çekmek ister misiniz? İptal: Dosyadan seç')
+          if (useCamera) {
+            fileInputRef.current.setAttribute('capture', 'environment')
+          } else {
+            fileInputRef.current.removeAttribute('capture')
+          }
+        } else {
+          fileInputRef.current.removeAttribute('capture')
+        }
+        fileInputRef.current.click()
+      }
+    } catch (_) {
+      fileInputRef.current?.removeAttribute('capture')
+      fileInputRef.current?.click()
+    }
+  }
+
   // HTML'i düz metne çevir
   const stripHtml = (html: string) => {
     if (!html) return ''
@@ -1127,13 +1150,12 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                       onChange={handleFileSelect}
                       className="hidden"
                       accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
-                      capture="environment"
                     />
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={openFileChooser}
                       disabled={isUploading}
                       className="flex items-center gap-2"
                     >

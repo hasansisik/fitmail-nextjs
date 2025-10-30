@@ -349,6 +349,29 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
+  // Mobilde kamera/dosya seçtirerek dosya seçiciyi aç
+  const openFileChooser = () => {
+    try {
+      if (typeof window !== 'undefined' && fileInputRef.current) {
+        const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+        if (isMobile) {
+          const useCamera = window.confirm('Kamera ile fotoğraf çekmek ister misiniz? İptal: Dosyadan seç')
+          if (useCamera) {
+            fileInputRef.current.setAttribute('capture', 'environment')
+          } else {
+            fileInputRef.current.removeAttribute('capture')
+          }
+        } else {
+          fileInputRef.current.removeAttribute('capture')
+        }
+        fileInputRef.current.click()
+      }
+    } catch (_) {
+      fileInputRef.current?.removeAttribute('capture')
+      fileInputRef.current?.click()
+    }
+  }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -930,7 +953,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => fileInputRef.current?.click()}
+                onClick={openFileChooser}
                   disabled={isUploading}
                 >
                   {isUploading ? (
@@ -949,7 +972,6 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                 onChange={handleFileSelect}
                 className="hidden"
                 accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
-                capture="environment"
               />
 
               {attachments.length > 0 && (

@@ -620,7 +620,27 @@ export default function AccountPage() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/jpeg,image/jpg,image/png,image/gif,image/webp';
-    input.setAttribute('capture', 'environment');
+
+    // Mobilde seçim sorusu: Kamera mı Dosya mı?
+    try {
+      if (typeof window !== 'undefined') {
+        const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if (isMobile) {
+          const useCamera = window.confirm('Kamera ile fotoğraf çekmek ister misiniz? İptal: Dosyadan seç');
+          if (useCamera) {
+            input.setAttribute('capture', 'environment');
+          } else {
+            input.removeAttribute('capture');
+          }
+        } else {
+          input.removeAttribute('capture');
+        }
+      }
+    } catch (_) {
+      // Her durumda capture olmadan devam et
+      input.removeAttribute('capture');
+    }
+
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
