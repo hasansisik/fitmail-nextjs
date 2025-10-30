@@ -166,18 +166,8 @@ export default function AccountPage() {
   const { user, loading, isAuthenticated, error, message, sessions, twoFactor } = useSelector((state: RootState) => state.user);
 
   useEffect(() => {
-    // Sadece client-side'da çalış
-    if (typeof window === 'undefined') return;
-
-    // Token kontrolü
-    const token = localStorage.getItem("accessToken");
-
-    if (token && !isAuthenticated && !loading) {
-      // Token varsa kullanıcı bilgilerini yükle
+    if (!isAuthenticated && !loading) {
       dispatch(loadUser());
-    } else if (!token && !loading) {
-      // Token yoksa giriş sayfasına yönlendir
-      window.location.href = '/giris';
     }
   }, [dispatch, isAuthenticated, loading]);
 
@@ -291,6 +281,26 @@ export default function AccountPage() {
           ...user.settings
         }));
       }
+
+      // Subdomainler arası ortak oturum listesi: mevcut kullanıcıyı localStorage userSessions'a senkronla
+      try {
+        const existingSessions = JSON.parse(localStorage.getItem("userSessions") || "[]");
+        const idx = existingSessions.findIndex((s: any) => s.email === user.email);
+        const sessionPayload = {
+          email: user.email,
+          token: null, // token çerezde, burada tutmuyoruz
+          user: user,
+          loginTime: new Date().toISOString()
+        };
+        if (idx >= 0) {
+          existingSessions[idx] = sessionPayload;
+        } else {
+          existingSessions.push(sessionPayload);
+        }
+        localStorage.setItem("userSessions", JSON.stringify(existingSessions));
+        // Seçili hesabı da garanti altına al
+        localStorage.setItem('selectedAccountEmail', user.email);
+      } catch (_) {}
     }
   }, [user]);
 
@@ -842,19 +852,9 @@ export default function AccountPage() {
     );
   }
 
-  // Kullanıcı giriş yapmamışsa (client-side kontrol)
-  if (typeof window !== 'undefined' && !isAuthenticated && !loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <AppLogoWithLoading size="lg" />
-          <div className="h-1 w-24 bg-primary/20 rounded-full overflow-hidden">
-            <div className="h-full bg-primary animate-[loading_1.5s_ease-in-out_infinite]" />
-          </div>
-          <p className="text-muted-foreground text-sm mt-2">Yönlendiriliyor...</p>
-        </div>
-      </div>
-    );
+  // Kullanıcı giriş yapmamışsa login sayfasını render et (URL değiştirmeden)
+  if (!isAuthenticated && !loading) {
+    return <LoginPage />;
   }
 
   return (

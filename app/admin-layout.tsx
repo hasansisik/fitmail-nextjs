@@ -16,12 +16,8 @@ export default function AdminLayout({
   const { user, loading, isAuthenticated } = useSelector((state: RootState) => state.user);
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (token && !isAuthenticated && !loading) {
+    if (!isAuthenticated && !loading) {
       dispatch(loadUser());
-    } else if (!token && !loading) {
-      // No token, redirect to login
-      window.location.href = '/giris';
     }
   }, [dispatch, isAuthenticated, loading]);
 
@@ -45,14 +41,7 @@ export default function AdminLayout({
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <h1 className="text-xl font-semibold text-black mb-4">Giriş Gerekli1</h1>
-          <p className="text-gray-600 mb-6">Bu sayfaya erişmek için giriş yapmanız gerekiyor.</p>
-          <a 
-            href="/giris" 
-            className="inline-flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
-          >
-            Giriş Yap
-          </a>
+          <AppLogoWithLoading size="lg" />
         </div>
       </div>
     );

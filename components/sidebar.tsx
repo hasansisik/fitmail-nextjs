@@ -210,6 +210,30 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       console.log('Sidebar: getMailStats çağrılıyor')
       dispatch(getMailStats())
     }
+
+    // Mevcut kullanıcı oturumunu userSessions'a senkronla ve seçili hesabı ayarla
+    try {
+      if (user && user.email) {
+        const existingSessions = JSON.parse(localStorage.getItem("userSessions") || "[]")
+        const idx = existingSessions.findIndex((s: any) => s.email === user.email)
+        const sessionPayload = {
+          email: user.email,
+          token: null, // token çerezde
+          user: user,
+          loginTime: new Date().toISOString()
+        }
+        if (idx >= 0) {
+          existingSessions[idx] = sessionPayload
+        } else {
+          existingSessions.push(sessionPayload)
+        }
+        localStorage.setItem("userSessions", JSON.stringify(existingSessions))
+        // Seçili hesabı garanti altına al (geçişlerden sonra reducer da güncelliyor)
+        if (!localStorage.getItem('selectedAccountEmail')) {
+          localStorage.setItem('selectedAccountEmail', user.email)
+        }
+      }
+    } catch (_) {}
   }, [dispatch, user, mailStats])
   
   // Seçili hesap değiştiğinde mail stats'ı yenile
