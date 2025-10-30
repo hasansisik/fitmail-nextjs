@@ -400,25 +400,7 @@ export function Mail({
                   </TooltipContent>
                 </Tooltip>
                 {/* Çöp kutusu temizleme butonu - sadece trash sayfasında göster */}
-                {pathname.includes('/trash') && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={handleCleanupTrash}
-                        disabled={mailsLoading}
-                        className="h-8"
-                      >
-                        <Trash2 className="h-4 w-4 sm:mr-2" />
-                        <span className="hidden sm:inline">Eski Mailleri Temizle</span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>30 günden eski tüm mailleri kalıcı olarak sil</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
+                
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
