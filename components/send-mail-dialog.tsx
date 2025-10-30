@@ -93,14 +93,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
   const [showSchedulePopover, setShowSchedulePopover] = useState(false)
   const [scheduledDate, setScheduledDate] = useState("")
   const [scheduledTime, setScheduledTime] = useState("")
-  
-  // Seçili hesabı al (Redux'tan)
-  const selectedAccountEmail = React.useMemo(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('selectedAccountEmail')
-    }
-    return null
-  }, [])
+
 
   // Reply mode veya draft mode'a göre form verilerini otomatik doldur
   React.useEffect(() => {
@@ -120,12 +113,6 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       setShowCC(draftMail.cc && draftMail.cc.length > 0)
       setShowBCC(draftMail.bcc && draftMail.bcc.length > 0)
       
-      // Attachments varsa yükle (ama File objesi yok, sadece göster)
-      if (draftMail.attachments && draftMail.attachments.length > 0) {
-        // Taslaktaki attachments'ı göster ama File objesi oluşturamayız
-        // Bu yüzden kullanıcının yeniden yüklemesi gerekecek
-        console.log('Draft has attachments:', draftMail.attachments)
-      }
     } else if (replyMode && originalMail && open) {
       switch (replyMode) {
         case 'reply':
@@ -487,8 +474,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
 
       // Call Redux action for sending mail
       const result = await dispatch(sendMail(mailDataToSend)).unwrap()
-      console.log("Mail sent successfully:", result)
-      console.log("Sent mail folder:", result.mail?.folder)
+
       console.log("Sent mail status:", result.mail?.status)
       
       // Dismiss loading toast
@@ -588,10 +574,8 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     const loadingToastId = toast.loading("Mail planlanıyor...")
 
     try {
-      console.log("Scheduling mail with data:", mailDataToSchedule)
 
       const result = await dispatch(scheduleMail(mailDataToSchedule)).unwrap()
-      console.log("Mail scheduled successfully:", result)
       
       toast.dismiss(loadingToastId)
       toast.success(result.message || "Mail başarıyla planlandı!")

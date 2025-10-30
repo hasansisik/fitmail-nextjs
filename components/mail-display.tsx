@@ -263,13 +263,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
   }
 
   // Dosya preview - güvenli modal ile
-  const handlePreview = (attachment: any) => {
-    console.log('=== PREVIEW CLICKED ===')
-    console.log('Attachment object:', attachment)
-    console.log('Attachment URL:', attachment.url)
-    console.log('Attachment type:', attachment.type || attachment.contentType || attachment.mimeType)
-    console.log('======================')
-    
+  const handlePreview = (attachment: any) => {  
     setPreviewAttachment(attachment)
     setShowPreview(true)
   }
@@ -384,7 +378,6 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
     }
 
     try {
-      console.log("Sending reply to mail:", mail._id, "Content:", replyText)
 
       // Attachment'ları hazırla
       const attachmentsData = attachments.map(attachment => ({
@@ -402,7 +395,6 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
         attachments: attachmentsData.length > 0 ? attachmentsData : undefined
       })).unwrap()
       
-      console.log("Reply added successfully:", result)
       toast.success("Cevap başarıyla gönderildi ve mail'e eklendi!")
       
       // Formu temizle
@@ -413,7 +405,6 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
       // Mail'i hemen yeniden yükle
       try {
         await dispatch(getMailById(mail._id)).unwrap()
-        console.log("Mail reloaded successfully with updated conversation")
       } catch (reloadError) {
         console.error("Failed to reload mail:", reloadError)
       }
@@ -531,13 +522,6 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
       setShowTrashDialog(false)
     }
   }
-
-  // Yıldızla
-  const handleStar = () => {
-    setMailStatus(prev => ({ ...prev, isStarred: !prev.isStarred }))
-    console.log('Mail starred:', !mailStatus.isStarred)
-  }
-
   // Cevapla
   const handleReply = () => {
     setIsReplying(true)
@@ -572,7 +556,6 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
       isSnoozed: true, 
       snoozeDate: snoozeDate.toISOString() 
     }))
-    console.log(`Mail snoozed until ${label}:`, snoozeDate)
   }
 
   // Erteleme iptal et
@@ -583,7 +566,6 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
       snoozeDate: undefined 
     }))
     setSelectedDate(undefined)
-    console.log('Mail unsnoozed')
   }
 
   // Mesaj genişletme/daraltma

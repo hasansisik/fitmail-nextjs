@@ -17,7 +17,6 @@ export default function StarredMailPage() {
   // Yıldızlı mailleri yükle
   useEffect(() => {
     if (user) {
-      console.log('Starred page loading mails')
       
       dispatch(getStarredMails({
         page: 1,

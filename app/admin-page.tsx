@@ -49,8 +49,6 @@ export default function AdminPage() {
   const { user, loading, isAuthenticated, allUsers } = useSelector((state: RootState) => state.user);
   const { premiums, loading: premiumLoading } = useSelector((state: RootState) => state.premium);
 
-  console.log(user.role);
-
   const [activeTab, setActiveTab] = useState<'users' | 'premium'>('users');
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
   const [showAddDomainDialog, setShowAddDomainDialog] = useState(false);

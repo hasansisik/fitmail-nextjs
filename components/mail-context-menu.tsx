@@ -191,7 +191,6 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
           toast.success(mail.isStarred ? 'Mail yıldız işareti kaldırıldı' : 'Mail yıldızlı olarak işaretlendi')
           break
         default:
-          console.log(`Bilinmeyen action: ${action}`)
       }
     } catch (error) {
       console.error('Mail işlemi başarısız:', error)

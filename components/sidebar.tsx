@@ -209,7 +209,6 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
     
     // Then load mail stats if user exists
     if (user && !mailStats) {
-      console.log('Sidebar: getMailStats çağrılıyor')
       dispatch(getMailStats())
     }
 
@@ -241,7 +240,6 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
   // Seçili hesap değiştiğinde mail stats'ı yenile
   useEffect(() => {
     if (user && selectedAccountEmail) {
-      console.log('Sidebar: Seçili hesap değişti, mail stats yenileniyor:', selectedAccountEmail)
       dispatch(getMailStats())
     }
   }, [selectedAccountEmail, dispatch, user])
@@ -293,9 +291,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
   const handleCategoryClick = async (category: string, e?: React.MouseEvent) => {
     e?.preventDefault()
     e?.stopPropagation()
-    
-    console.log(`Kategori tıklandı: ${category}`)
-    
+        
     // Önce seçili maili temizle (mail detay sayfasından çıkarken)
     await dispatch(clearSelectedMail())
     
@@ -505,7 +501,6 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
           <TooltipTrigger asChild>
             <button
               onClick={(e) => {
-                console.log('Collapsed button clicked:', link.category)
                 handleCategoryClick(link.category, e)
               }}
               className={cn(
@@ -531,7 +526,6 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
         <button
           key={index}
           onClick={(e) => {
-            console.log('Expanded button clicked:', link.category)
             handleCategoryClick(link.category, e)
           }}
           className={cn(

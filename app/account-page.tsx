@@ -525,7 +525,6 @@ export default function AccountPage() {
         profileData.address = addressData;
       }
 
-      console.log('Sending profile data:', profileData);
       const result = await dispatch(editProfile(profileData));
 
       if (editProfile.fulfilled.match(result)) {

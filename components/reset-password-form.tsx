@@ -68,7 +68,6 @@ export function ResetPasswordForm({
       newPassword: newPassword
     }
     
-    console.log("Reset password data:", resetData)
     const loadingToastId = toast.loading("Şifre sıfırlanıyor...")
     
     try {

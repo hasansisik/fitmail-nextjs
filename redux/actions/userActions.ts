@@ -686,7 +686,6 @@ export const createPremium = createAsyncThunk(
   "premium/createPremium",
   async (premiumData: CreatePremiumPayload, thunkAPI) => {
     try {
-      console.log(premiumData);
       const response = await axios.post(`${server}/premium`, premiumData);
       return response.data;
     } catch (error: any) {

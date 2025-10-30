@@ -241,13 +241,11 @@ export function RegisterForm({
       premiumCode: formData.premiumCode || undefined
     }
     
-    console.log("Registration data:", registrationData)
     const loadingToastId = toast.loading("Kayıt yapılıyor...")
     
     try {
       // Call Redux action for registration
       const result = await dispatch(register(registrationData)).unwrap()
-      console.log("Registration result:", result)
       
       // Dismiss loading toast
       toast.dismiss(loadingToastId)

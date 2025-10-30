@@ -100,16 +100,6 @@ export function AttachmentPreview({
     }
   }
 
-  // Debug: URL'yi konsola yazdır
-  console.log('AttachmentPreview - Attachment data:', {
-    filename,
-    originalType: type,
-    detectedType,
-    url: attachment.url,
-    hasUrl: !!attachment.url,
-    fullAttachment: attachment
-  })
-
   // Güvenli dosya türleri
   const isSafeImage = detectedType.startsWith("image/") && 
     (detectedType.includes("jpeg") || detectedType.includes("jpg") || detectedType.includes("png") || detectedType.includes("gif") || detectedType.includes("webp"))

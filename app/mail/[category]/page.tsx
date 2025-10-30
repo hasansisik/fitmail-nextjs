@@ -47,7 +47,6 @@ export default function MailCategoryPage({ params }: MailCategoryPageProps) {
   useEffect(() => {
     if (user && params) {
       params.then(({ category: categoryParam }) => {
-        console.log('Category page loading mails for:', categoryParam)
         
         // Kategori state'ini güncelle
         setCategory(categoryParam)

@@ -51,8 +51,6 @@ export const uploadFileToCloudinary = async (file: File): Promise<string> => {
       uploadEndpoint = 'raw/upload';
     }
 
-    console.log(`Uploading ${file.name} (${file.type}) to ${uploadEndpoint}`);
-
     const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${uploadEndpoint}`, {
       method: 'POST',
       body: formData
@@ -65,7 +63,6 @@ export const uploadFileToCloudinary = async (file: File): Promise<string> => {
       throw new Error(data.error.message);
     }
 
-    console.log(`Successfully uploaded ${file.name}:`, data.secure_url);
     return data.secure_url;
   } catch (error) {
     console.error('Upload error:', error);

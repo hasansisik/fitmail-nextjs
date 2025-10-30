@@ -248,16 +248,9 @@ export const getMailsByLabelCategory = createAsyncThunk(
     isRead?: boolean;
   }, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      };
+      const config = {} as any;
 
       // Query parametrelerini oluştur
       const queryParams = new URLSearchParams();
@@ -280,16 +273,9 @@ export const getMailStats = createAsyncThunk(
   "mail/getMailStats",
   async (_, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      };
+      const config = {} as any;
 
       const { data } = await axios.get(`${server}/mail/stats/overview`, config);
       return data;
@@ -304,15 +290,11 @@ export const moveMailToCategory = createAsyncThunk(
   "mail/moveMailToCategory",
   async ({ mailId, category }: { mailId: string; category: string }, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
       const config = {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       };
 
@@ -329,15 +311,11 @@ export const removeMailFromCategory = createAsyncThunk(
   "mail/removeMailFromCategory",
   async ({ mailId, category }: { mailId: string; category: string }, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
       const config = {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       };
 
@@ -354,16 +332,9 @@ export const toggleMailReadStatus = createAsyncThunk(
   "mail/toggleMailReadStatus",
   async (mailId: string, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      };
+      const config = {} as any;
 
       const { data } = await axios.patch(`${server}/mail/${mailId}/read`, {}, config);
       return data;
@@ -378,15 +349,11 @@ export const moveMailToFolder = createAsyncThunk(
   "mail/moveMailToFolder",
   async ({ mailId, folder }: { mailId: string; folder: string }, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
       const config = {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       };
 
@@ -403,16 +370,9 @@ export const deleteMail = createAsyncThunk(
   "mail/deleteMail",
   async (mailId: string, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      };
+      const config = {} as any;
 
       const { data } = await axios.delete(`${server}/mail/${mailId}`, config);
       return { mailId, message: data.message };
@@ -427,15 +387,11 @@ export const manageMailLabels = createAsyncThunk(
   "mail/manageMailLabels",
   async ({ mailId, action, label }: { mailId: string; action: 'add' | 'remove'; label: string }, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
       const config = {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       };
 
@@ -452,15 +408,11 @@ export const markMailAsImportant = createAsyncThunk(
   "mail/markMailAsImportant",
   async (mailId: string, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
       const config = {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       };
 
@@ -477,15 +429,11 @@ export const markMailAsStarred = createAsyncThunk(
   "mail/markMailAsStarred",
   async (mailId: string, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
       const config = {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       };
 
@@ -502,15 +450,11 @@ export const snoozeMail = createAsyncThunk(
   "mail/snoozeMail",
   async ({ mailId, snoozeUntil }: { mailId: string; snoozeUntil: string }, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
       const config = {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       };
 
@@ -527,16 +471,9 @@ export const getMailById = createAsyncThunk(
   "mail/getMailById",
   async (mailId: string, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      };
+      const config = {} as any;
 
       const { data } = await axios.get(`${server}/mail/${mailId}`, config);
       return data;
@@ -581,10 +518,7 @@ export const addReplyToMail = createAsyncThunk(
     }>;
   }, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
       // Eğer attachment varsa FormData kullan, yoksa JSON
       if (attachments && attachments.length > 0) {
@@ -607,7 +541,6 @@ export const addReplyToMail = createAsyncThunk(
         const config = {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${token}`,
           },
         };
 
@@ -618,7 +551,6 @@ export const addReplyToMail = createAsyncThunk(
         const config = {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
         };
 
@@ -636,15 +568,11 @@ export const cleanupTrash = createAsyncThunk(
   "mail/cleanupTrash",
   async (_, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
       const config = {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       };
 
@@ -696,10 +624,7 @@ export const scheduleMail = createAsyncThunk(
     }>;
   }, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
       // Prepare FormData for file uploads
       const formData = new FormData();
@@ -739,7 +664,6 @@ export const scheduleMail = createAsyncThunk(
       const config = {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
         },
       };
 
@@ -759,16 +683,9 @@ export const getScheduledMails = createAsyncThunk(
     limit?: number;
   } = {}, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      };
+      const config = {} as any;
 
       // Query parametrelerini oluştur
       const queryParams = new URLSearchParams();
@@ -788,15 +705,11 @@ export const cancelScheduledMail = createAsyncThunk(
   "mail/cancelScheduledMail",
   async (mailId: string, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
       const config = {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       };
 

@@ -124,7 +124,6 @@ export function MailList({
   
   const handleBulkAction = async (action: string) => {
     const selectedMailIds = Array.from(selectedMails)
-    console.log(`Bulk action: ${action}`, selectedMailIds)
     
     if (selectedMailIds.length === 0) {
       toast.error("Hiç mail seçilmedi!")
@@ -227,7 +226,6 @@ export function MailList({
   }
   
   const handleMailAction = (action: string, mailId: string, data?: any) => {
-    console.log(`Action: ${action}, Mail ID: ${mailId}`, data)
     
     switch (action) {
       case "reply":
@@ -259,7 +257,6 @@ export function MailList({
         break
       case "move":
         // Implement move functionality
-        console.log(`Moving mail to: ${data?.category}`)
         break
       case "createNewCategory":
         // Implement create new category functionality
@@ -269,7 +266,6 @@ export function MailList({
         break
       case "toggleLabel":
         // Implement toggle label functionality
-        console.log(`Toggling label: ${data?.label}, checked: ${data?.checked}`)
         break
       case "createNewLabel":
         // Implement create new label functionality
@@ -281,7 +277,6 @@ export function MailList({
         // Implement mute functionality
         break
       default:
-        console.log(`Unknown action: ${action}`)
     }
   }
 

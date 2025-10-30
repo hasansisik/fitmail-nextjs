@@ -48,13 +48,11 @@ export function LoginForm({
       password: password
     }
     
-    console.log("Login data:", loginData)
     const loadingToastId = toast.loading("Giriş yapılıyor...")
     
     try {
       // Call Redux action for login
       const result = await dispatch(login(loginData)).unwrap()
-      console.log("Login result:", result)
       
       // Dismiss loading toast
       toast.dismiss(loadingToastId)

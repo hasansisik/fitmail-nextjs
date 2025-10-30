@@ -36,13 +36,11 @@ export function ForgotPasswordForm({
     // Add @gozdedijital.xyz domain
     const fullEmail = `${cleanEmail}@gozdedijital.xyz`
     
-    console.log("Verifying recovery email for:", fullEmail)
     const loadingToastId = toast.loading("Kurtarıcı e-posta kontrol ediliyor...")
     
     try {
       // Step 1: Verify that user has a recovery email
       const result = await dispatch(verifyRecoveryEmail({ email: fullEmail })).unwrap()
-      console.log("Recovery email verification result:", result)
       
       // Dismiss loading toast
       toast.dismiss(loadingToastId)
@@ -52,8 +50,6 @@ export function ForgotPasswordForm({
       setStep('recovery')
       toast.success("Kurtarıcı e-posta bulundu!")
     } catch (error: any) {
-      console.error("Recovery email verification failed:", error)
-      
       // Dismiss loading toast
       toast.dismiss(loadingToastId)
       
@@ -92,8 +88,7 @@ export function ForgotPasswordForm({
       setStep('sending')
       const sendingToastId = toast.loading("Şifre sıfırlama kodu gönderiliyor...")
       
-      const result = await dispatch(forgotPassword(fullEmail)).unwrap()
-      console.log("Forgot password result:", result)
+      await dispatch(forgotPassword(fullEmail)).unwrap()
       
       // Dismiss loading toast
       toast.dismiss(sendingToastId)
@@ -103,8 +98,6 @@ export function ForgotPasswordForm({
       // Redirect to reset password page with email parameter
       router.push(`/sifre-sifirla?email=${encodeURIComponent(cleanEmail)}`)
     } catch (error: any) {
-      console.error("Recovery verification or password reset failed:", error)
-      
       // Dismiss loading toast
       toast.dismiss(loadingToastId)
       
