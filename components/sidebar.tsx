@@ -256,6 +256,10 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
     }
     
     try {
+      // Seçili hesabı kalıcılaştır
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('selectedAccountEmail', email)
+      }
       await dispatch(switchUser(email)).unwrap()
       // Reload user data ve mailleri yenile
       window.location.reload()
@@ -579,7 +583,9 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
               </SelectTrigger>
                 <SelectContent>
                   {sessions && sessions.length > 0 ? (
-                    sessions.map((session: any) => (
+                    sessions
+                      .filter((session: any) => session.email !== (selectedAccountEmail || user?.email))
+                      .map((session: any) => (
                       <SelectItem key={session.email} value={session.email}>
                         <div className="flex items-center gap-2 w-full">
                           <Avatar className="h-6 w-6">
@@ -601,7 +607,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
                           </div>
                         </div>
                       </SelectItem>
-                    ))
+                      ))
                   ) : (
                     <SelectItem value={user?.email} disabled>
                       <div className="flex items-center gap-2 w-full">

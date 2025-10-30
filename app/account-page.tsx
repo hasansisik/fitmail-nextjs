@@ -379,6 +379,10 @@ export default function AccountPage() {
   // Hesap değiştirme fonksiyonu
   const handleAccountSwitch = async (email: string) => {
     try {
+      // Önce seçili hesabı localStorage'a yaz
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('selectedAccountEmail', email);
+      }
       await dispatch(switchUser(email)).unwrap();
       toast.success("Hesap değiştirildi");
       window.location.reload();
