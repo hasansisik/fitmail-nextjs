@@ -6,8 +6,7 @@ export function middleware(request: NextRequest) {
   
   // Check if this is a subdomain request
   const isAccountSubdomain = hostname === 'account.gozdedijital.xyz'
-  const isPanelSubdomain = hostname === 'panel.gozdedijital.xyz'
-  
+  const isPanelSubdomain = hostname === 'panel.gozdedijital.xyz'  
   // Allowed paths for subdomains (logged-out pages)
   const allowedSubdomainPaths = [
     '/giris',
