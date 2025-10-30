@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link";
-import { AppLogoWithLoading } from "@/components/app-logo";
+import { AppLogo, AppLogoWithLoading } from "@/components/app-logo";
 import { Button } from "@/components/ui/button";
 import { Zap, Target, Smartphone } from "lucide-react";
 import { useEffect } from "react";
@@ -53,10 +53,7 @@ export default function HomePage() {
         <div className="w-full max-w-2xl text-center space-y-8">
           {/* Logo/Title */}
           <div className="space-y-4">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-              Fitmail
-            </h1>
-            <div className="w-16 h-1 bg-primary mx-auto rounded-full"></div>
+            <AppLogo size="lg" />
           </div>
 
           {/* Description */}
