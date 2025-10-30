@@ -72,8 +72,7 @@ export function ResetPasswordForm({
     
     try {
       // Call Redux action for reset password
-      const result = await dispatch(resetPassword(resetData)).unwrap()
-      console.log("Reset password result:", result)
+      await dispatch(resetPassword(resetData)).unwrap()
       
       // Dismiss loading toast
       toast.dismiss(loadingToastId)
@@ -87,8 +86,6 @@ export function ResetPasswordForm({
         router.push("/giris")
       }, 2000)
     } catch (error: any) {
-      console.error("Reset password failed:", error)
-      
       // Dismiss loading toast
       toast.dismiss(loadingToastId)
       

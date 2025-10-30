@@ -71,7 +71,6 @@ export function ForgotPasswordForm({
     const cleanEmail = email.replace('@', '').trim()
     const fullEmail = `${cleanEmail}@gozdedijital.xyz`
     
-    console.log("Verifying recovery email hint:", recoveryHint)
     const loadingToastId = toast.loading("Doğrulanıyor...")
     
     try {
