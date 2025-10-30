@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { AppLogoWithLoading } from '@/components/app-logo';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/redux/store';
@@ -87,6 +88,11 @@ export default function AdminPage() {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;
+  };
+
+  // Fiyat formatlama fonksiyonu - binlik ayırıcı nokta, TL sona
+  const formatPrice = (price: number) => {
+    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' TL';
   };
 
   const handleAddUser = async () => {
@@ -228,7 +234,13 @@ export default function AdminPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <Crown className="w-6 h-6 text-black" />
+              <Image 
+                src="/logo.png" 
+                alt="Fitmail Logo" 
+                width={32} 
+                height={32}
+                className="w-8 h-8"
+              />
               <h1 className="text-xl font-semibold text-black">Admin Panel</h1>
             </div>
             <div className="flex items-center space-x-4">
@@ -601,7 +613,7 @@ export default function AdminPage() {
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Fiyat:</span>
-                        <span className="text-lg font-bold text-black">₺{plan.price}</span>
+                        <span className="text-lg font-bold text-black">{formatPrice(plan.price)}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Kod:</span>
