@@ -65,7 +65,7 @@ import { formatRelativeTime } from '@/lib/dateUtils';
 import { uploadFileToCloudinary } from '@/utils/cloudinary';
 import ReactCrop, { centerCrop, makeAspectCrop, Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { activeDomains, getMainDomainUrl } from "@/config";
+import { activeDomains, getMainDomainUrl, server } from "@/config";
 import LoginPage from "./(logged-out)/giris/page";
 import RegisterPage from "./(logged-out)/kayit-ol/page";
 
@@ -383,8 +383,14 @@ export default function AccountPage() {
       if (typeof window !== 'undefined') {
         localStorage.setItem('selectedAccountEmail', email);
       }
-      // Çerez tabanlı oturum tek kullanıcıdır; farklı hesaba geçiş için yeniden giriş gerekli
-      window.location.href = `/giris?email=${encodeURIComponent(email)}`;
+      // Daha önce oturum açılmışsa sunucuda aktif hesabı çerezle güncelle
+      await fetch(`${server}/auth/switch-active`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email })
+      })
+      window.location.reload();
     } catch (error: any) {
       console.error("Account switch failed:", error);
       toast.error("Hesap değiştirilemedi");
@@ -981,9 +987,16 @@ export default function AccountPage() {
                           <h3 className="text-sm font-medium text-gray-700">Diğer Hesaplar</h3>
                         </div>
                         <div className="space-y-1 max-h-80 overflow-y-auto">
-                          {sessions
-                            .filter((session: any) => session.email !== user?.email)
-                            .map((session: any) => (
+                          {(() => {
+                            const activeEmail = user?.email;
+                            const seen = new Set<string>();
+                            const normalized = (sessions || []).filter((s: any) => s && s.email && s.email !== activeEmail)
+                              .filter((s: any) => {
+                                if (seen.has(s.email)) return false;
+                                seen.add(s.email);
+                                return true;
+                              });
+                            return normalized.map((session: any) => (
                               <div
                                 key={session.email}
                                 className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer group"
@@ -1027,14 +1040,15 @@ export default function AccountPage() {
                                     ) : (
                                       <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                                         <span className="text-white font-medium text-xs">
-                                          {session.user?.name?.[0]?.toUpperCase() || ''}{session.user?.surname?.[0]?.toUpperCase() || ''}
+                                          {(session.user?.name?.[0] || session.email?.[0] || '').toUpperCase()}
+                                          {(session.user?.surname?.[0] || session.email?.split('@')[0]?.[1] || '').toUpperCase()}
                                         </span>
                                       </div>
                                     )}
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium text-gray-900 truncate">
-                                      {session.user?.name || ''} {session.user?.surname || ''}
+                                      {(session.user?.name && session.user?.surname) ? `${session.user.name} ${session.user.surname}` : (session.email?.split('@')[0] || '')}
                                     </p>
                                     <p className="text-xs text-gray-500 truncate">{session.email}</p>
                                   </div>
@@ -1051,7 +1065,8 @@ export default function AccountPage() {
                                   </svg>
                                 </button>
                               </div>
-                            ))}
+                            ));
+                          })()}
                         </div>
                       </div>
                     )}

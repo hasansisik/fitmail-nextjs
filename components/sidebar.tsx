@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import axios from "axios"
+import { server } from "@/config"
 import { usePathname, useRouter } from "next/navigation"
 import { useAppDispatch } from "@/redux/hook"
 import { logout, switchUser, getAllSessions, removeSession } from "@/redux/actions/userActions"
@@ -260,10 +262,11 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       if (typeof window !== 'undefined') {
         localStorage.setItem('selectedAccountEmail', email)
       }
-      // Çerez tabanlı oturum tek kullanıcıyı taşır; farklı hesaba geçmek için yeniden giriş gerekir
-      // Giriş sayfasına yönlendirip e-postayı önceden dolduralım
-      router.push(`/giris?email=${encodeURIComponent(email)}`)
-      toast.message("Hesap değişimi için tekrar giriş yapın")
+      // Sunucuda daha önce oturum açılmışsa, tekrar giriş istemeden aktif hesabı güncelle
+      await axios.post(`${server}/auth/switch-active`, { email }, { withCredentials: true })
+      // Kullanıcı ve istatistikleri yenile
+      window.location.reload()
+      toast.success("Hesap değiştirildi")
     } catch (error: any) {
       console.error("Account switch failed:", error)
       toast.error("Hesap değiştirilemedi")
