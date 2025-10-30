@@ -2,6 +2,9 @@ import axios from "axios";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { server } from "@/config";
 
+// Çapraz subdomain çerezleri için tüm isteklerde cookie gönder
+axios.defaults.withCredentials = true;
+
 // Add axios interceptor to handle token errors and suppress certain errors in console
 axios.interceptors.response.use(
   (response) => response,
@@ -161,9 +164,8 @@ export const register = createAsyncThunk(
       // Store all sessions
       localStorage.setItem("userSessions", JSON.stringify(existingSessions));
       
-      // Set current active user
+      // Set current active user (token çerezde, localStorage'a yazmıyoruz)
       localStorage.setItem("activeUserId", userSession.email);
-      localStorage.setItem("accessToken", userSession.token);
       localStorage.setItem("userEmail", userSession.email);
       
       return userSession.user;
@@ -213,9 +215,8 @@ export const login = createAsyncThunk(
       // Store all sessions
       localStorage.setItem("userSessions", JSON.stringify(existingSessions));
       
-      // Set current active user
+      // Set current active user (token çerezde, localStorage'a yazmıyoruz)
       localStorage.setItem("activeUserId", userSession.email);
-      localStorage.setItem("accessToken", userSession.token);
       localStorage.setItem("userEmail", userSession.email);
       
       return userSession.user;
@@ -245,36 +246,20 @@ export const loadUser = createAsyncThunk(
   "user/loadUser",
   async (_, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      
-      if (!token) {
-        throw new Error("");
-      }
-      
-      const { data } = await axios.get(`${server}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const { data } = await axios.get(`${server}/auth/me`);
       // Store user email for potential verification redirects
       if (data.user.email) {
         localStorage.setItem("userEmail", data.user.email);
       }
       return data.user;
     } catch (error: any) {
-      // Handle 404 errors silently (user not found or invalid token)
+      // Handle 404 errors silently (user not found)
       if (error.response?.status === 404) {
-        // Clear invalid token and return silent error
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("userEmail");
         return thunkAPI.rejectWithValue("User not found");
       }
       
       // Handle inactive user case - user gets kicked out
       if (error.response?.status === 401 && error.response?.data?.requiresLogout) {
-        // Clear local storage and return special error
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("userEmail");
         return thunkAPI.rejectWithValue({
           message: error.response.data.message,
           requiresLogout: true
@@ -287,15 +272,10 @@ export const loadUser = createAsyncThunk(
 
 export const logout = createAsyncThunk("user/logout", async (_, thunkAPI) => {
   try {
-    const token = localStorage.getItem("accessToken");
     const currentUserEmail = localStorage.getItem("userEmail");
     
     try {
-      await axios.get(`${server}/auth/logout`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      await axios.get(`${server}/auth/logout`);
     } catch (error) {
       // Continue with logout even if API call fails
       console.error("Logout API call failed:", error);
@@ -310,11 +290,9 @@ export const logout = createAsyncThunk("user/logout", async (_, thunkAPI) => {
       const newActiveUser = updatedSessions[0];
       localStorage.setItem("userSessions", JSON.stringify(updatedSessions));
       localStorage.setItem("activeUserId", newActiveUser.email);
-      localStorage.setItem("accessToken", newActiveUser.token);
       localStorage.setItem("userEmail", newActiveUser.email);
     } else {
       // No more sessions
-      localStorage.removeItem("accessToken");
       localStorage.removeItem("userEmail");
       localStorage.removeItem("userSessions");
       localStorage.removeItem("activeUserId");
@@ -338,9 +316,8 @@ export const switchUser = createAsyncThunk(
         throw new Error("Session not found");
       }
       
-      // Switch to the target session
+      // Switch to the target session (token çerezde)
       localStorage.setItem("activeUserId", targetSession.email);
-      localStorage.setItem("accessToken", targetSession.token);
       localStorage.setItem("userEmail", targetSession.email);
       
       return targetSession.user;
@@ -377,7 +354,6 @@ export const removeSession = createAsyncThunk(
       if (localStorage.getItem("userEmail") === email && updatedSessions.length > 0) {
         const newActiveUser = updatedSessions[0];
         localStorage.setItem("activeUserId", newActiveUser.email);
-        localStorage.setItem("accessToken", newActiveUser.token);
         localStorage.setItem("userEmail", newActiveUser.email);
       }
       
@@ -480,11 +456,9 @@ export const editProfile = createAsyncThunk(
   "user/editProfile",
   async (formData: EditProfilePayload, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
       const config = {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       };
       const response = await axios.post(
@@ -507,11 +481,9 @@ export const verifyPassword = createAsyncThunk(
   "user/verifyPassword",
   async (password: string, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
       const config = {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       };
       const response = await axios.post(
@@ -534,11 +506,9 @@ export const changePassword = createAsyncThunk(
   "user/changePassword",
   async (formData: ChangePasswordPayload, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
       const config = {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       };
       const response = await axios.post(
@@ -561,11 +531,9 @@ export const updateSettings = createAsyncThunk(
   "user/updateSettings",
   async (formData: UpdateSettingsPayload, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
       const config = {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       };
       const response = await axios.post(
@@ -589,11 +557,6 @@ export const updateSettings = createAsyncThunk(
 export const updateTheme = createAsyncThunk(
   "user/updateTheme",
   async (theme: string, thunkAPI) => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      return { theme }; // Return theme even if no token
-    }
-    
     // Fire and forget - don't wait for response
     axios.post(
       `${server}/auth/edit-profile`,
@@ -601,7 +564,6 @@ export const updateTheme = createAsyncThunk(
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         timeout: 3000, // 3 second timeout
       }
@@ -652,11 +614,9 @@ export const deleteAccount = createAsyncThunk(
   "user/deleteAccount",
   async (_, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
       const config = {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       };
       const response = await axios.delete(`${server}/auth/delete-account`, config);
@@ -709,14 +669,7 @@ export const getAllPremiums = createAsyncThunk(
   "premium/getAllPremiums",
   async (_, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      };
-      const response = await axios.get(`${server}/premium`, config);
+      const response = await axios.get(`${server}/premium`);
       return response.data;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(
@@ -733,15 +686,8 @@ export const createPremium = createAsyncThunk(
   "premium/createPremium",
   async (premiumData: CreatePremiumPayload, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      };
       console.log(premiumData);
-      const response = await axios.post(`${server}/premium`, premiumData, config);
+      const response = await axios.post(`${server}/premium`, premiumData);
       return response.data;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(
@@ -758,15 +704,8 @@ export const updatePremium = createAsyncThunk(
   "premium/updatePremium",
   async (premiumData: UpdatePremiumPayload, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      };
       const { id, ...updateData } = premiumData;
-      const response = await axios.put(`${server}/premium/${id}`, updateData, config);
+      const response = await axios.put(`${server}/premium/${id}`, updateData);
       return response.data;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(
@@ -783,14 +722,7 @@ export const deletePremium = createAsyncThunk(
   "premium/deletePremium",
   async (id: string, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      };
-      const response = await axios.delete(`${server}/premium/${id}`, config);
+      const response = await axios.delete(`${server}/premium/${id}`);
       return { id, ...response.data };
     } catch (error: any) {
       return thunkAPI.rejectWithValue(
@@ -807,14 +739,7 @@ export const togglePremiumStatus = createAsyncThunk(
   "premium/togglePremiumStatus",
   async (id: string, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      };
-      const response = await axios.patch(`${server}/premium/${id}/toggle`, {}, config);
+      const response = await axios.patch(`${server}/premium/${id}/toggle`, {});
       return response.data;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(
@@ -855,15 +780,7 @@ export const getAllUsers = createAsyncThunk(
   "user/getAllUsers",
   async (params: { role?: string; status?: string; search?: string; page?: number; limit?: number } = {}, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        params
-      };
-      const response = await axios.get(`${server}/auth/users`, config);
+      const response = await axios.get(`${server}/auth/users`, { params });
       return response.data;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(
@@ -880,14 +797,7 @@ export const updateUserRole = createAsyncThunk(
   "user/updateUserRole",
   async (payload: UpdateUserRolePayload, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      };
-      const response = await axios.patch(`${server}/auth/users/${payload.id}/role`, { role: payload.role }, config);
+      const response = await axios.patch(`${server}/auth/users/${payload.id}/role`, { role: payload.role });
       return response.data;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(
@@ -904,14 +814,7 @@ export const updateUserStatus = createAsyncThunk(
   "user/updateUserStatus",
   async (payload: UpdateUserStatusPayload, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      };
-      const response = await axios.patch(`${server}/auth/users/${payload.id}/status`, { status: payload.status }, config);
+      const response = await axios.patch(`${server}/auth/users/${payload.id}/status`, { status: payload.status });
       return response.data;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(
@@ -928,14 +831,7 @@ export const deleteUser = createAsyncThunk(
   "user/deleteUser",
   async (id: string, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      };
-      const response = await axios.delete(`${server}/auth/users/${id}`, config);
+      const response = await axios.delete(`${server}/auth/users/${id}`);
       return { id, ...response.data };
     } catch (error: any) {
       return thunkAPI.rejectWithValue(
@@ -952,14 +848,7 @@ export const enable2FA = createAsyncThunk(
   "user/enable2FA",
   async (_, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      };
-      const response = await axios.post(`${server}/auth/2fa/enable`, {}, config);
+      const response = await axios.post(`${server}/auth/2fa/enable`, {});
       return response.data;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(
@@ -975,14 +864,7 @@ export const verify2FA = createAsyncThunk(
   "user/verify2FA",
   async (token: string, thunkAPI) => {
     try {
-      const accessToken = localStorage.getItem("accessToken");
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-      };
-      const response = await axios.post(`${server}/auth/2fa/verify`, { token }, config);
+      const response = await axios.post(`${server}/auth/2fa/verify`, { token });
       return response.data;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(
@@ -998,14 +880,7 @@ export const disable2FA = createAsyncThunk(
   "user/disable2FA",
   async (password: string, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      };
-      const response = await axios.post(`${server}/auth/2fa/disable`, { password }, config);
+      const response = await axios.post(`${server}/auth/2fa/disable`, { password });
       return response.data;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(
@@ -1048,9 +923,8 @@ export const verify2FALogin = createAsyncThunk(
       // Store all sessions
       localStorage.setItem("userSessions", JSON.stringify(existingSessions));
       
-      // Set current active user
+      // Set current active user (token çerezde tutuluyor)
       localStorage.setItem("activeUserId", userSession.email);
-      localStorage.setItem("accessToken", userSession.token);
       localStorage.setItem("userEmail", userSession.email);
       
       return response.data.user;
@@ -1068,14 +942,7 @@ export const get2FAStatus = createAsyncThunk(
   "user/get2FAStatus",
   async (_, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      };
-      const response = await axios.get(`${server}/auth/2fa/status`, config);
+      const response = await axios.get(`${server}/auth/2fa/status`);
       return response.data;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(

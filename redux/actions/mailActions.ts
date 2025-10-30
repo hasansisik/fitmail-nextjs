@@ -2,6 +2,9 @@ import axios from "axios";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { server } from "@/config";
 
+// Çapraz subdomain çerezleri için
+axios.defaults.withCredentials = true;
+
 // Add axios interceptor to handle token errors and redirect to login
 axios.interceptors.response.use(
   (response) => response,
@@ -48,10 +51,7 @@ export const saveDraft = createAsyncThunk(
     }>;
   }, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
       // Prepare FormData for file uploads
       const formData = new FormData();
@@ -96,7 +96,6 @@ export const saveDraft = createAsyncThunk(
       const config = {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
         },
       };
 
@@ -128,10 +127,7 @@ export const sendMail = createAsyncThunk(
     }>;
   }, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
       // Prepare FormData for file uploads
       const formData = new FormData();
@@ -170,7 +166,6 @@ export const sendMail = createAsyncThunk(
       const config = {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
         },
       };
 
@@ -193,16 +188,9 @@ export const getStarredMails = createAsyncThunk(
     isRead?: boolean;
   } = {}, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      };
+      const config = {} as any;
 
       // Query parametrelerini oluştur
       const queryParams = new URLSearchParams();
@@ -229,16 +217,9 @@ export const getMailsByCategory = createAsyncThunk(
     isRead?: boolean;
   }, thunkAPI) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        return thunkAPI.rejectWithValue("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
-      }
+      // Cookie tabanlı auth kullanılıyor
 
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      };
+      const config = {} as any;
 
       // Query parametrelerini oluştur
       const queryParams = new URLSearchParams();
