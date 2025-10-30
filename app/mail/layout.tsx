@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { AppLogoWithLoading } from "@/components/app-logo"
 import { useState, useEffect, createContext, useContext } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { useAppSelector } from "@/redux/hook"
@@ -12,7 +13,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
-import { GalleryVerticalEnd } from "lucide-react"
+ 
 
 type MobileSidebarState = 'hidden' | 'collapsed' | 'expanded'
 
@@ -102,12 +103,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <div className="flex items-center gap-2 font-bold text-xl">
-            <div className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md animate-pulse">
-              <GalleryVerticalEnd className="size-4" />
-            </div>
-            <span className="animate-pulse">Fitmail</span>
-          </div>
+          <AppLogoWithLoading size="md" />
           <div className="h-1 w-20 bg-primary/20 rounded-full overflow-hidden">
             <div className="h-full bg-primary animate-[loading_1.5s_ease-in-out_infinite]" />
           </div>

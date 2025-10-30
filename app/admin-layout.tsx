@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
+import { AppLogoWithLoading } from '@/components/app-logo';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/redux/store';
 import { loadUser } from '@/redux/actions/userActions';
-import { GalleryVerticalEnd } from 'lucide-react';
+ 
 
 export default function AdminLayout({
   children,
@@ -31,12 +32,7 @@ export default function AdminLayout({
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <div className="flex items-center gap-2 font-bold text-2xl">
-            <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-md animate-pulse">
-              <GalleryVerticalEnd className="size-5" />
-            </div>
-            <span className="animate-pulse">Fitmail</span>
-          </div>
+          <AppLogoWithLoading size="lg" />
           <div className="h-1 w-24 bg-primary/20 rounded-full overflow-hidden">
             <div className="h-full bg-primary animate-[loading_1.5s_ease-in-out_infinite]" />
           </div>

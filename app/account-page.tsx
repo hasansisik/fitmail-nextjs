@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { AppLogo, AppLogoWithLoading } from '@/components/app-logo';
+import Image from 'next/image';
 import { useSelector, useDispatch } from 'react-redux';
 import { usePathname } from 'next/navigation';
 import {
@@ -28,7 +30,6 @@ import {
   Home,
   UserCheck,
   ShieldCheck,
-  GalleryVerticalEnd,
   Link,
   Languages,
   HelpCircle,
@@ -811,12 +812,7 @@ export default function AccountPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="flex items-center gap-2 font-bold text-2xl">
-            <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-md animate-pulse">
-              <GalleryVerticalEnd className="size-5" />
-            </div>
-            <span className="animate-pulse">Fitmail</span>
-          </div>
+          <AppLogoWithLoading size="lg" />
           <div className="h-1 w-24 bg-primary/20 rounded-full overflow-hidden">
             <div className="h-full bg-primary animate-[loading_1.5s_ease-in-out_infinite]" />
           </div>
@@ -831,12 +827,7 @@ export default function AccountPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="flex items-center gap-2 font-bold text-2xl">
-            <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-md animate-pulse">
-              <GalleryVerticalEnd className="size-5" />
-            </div>
-            <span className="animate-pulse">Fitmail</span>
-          </div>
+          <AppLogoWithLoading size="lg" />
           <div className="h-1 w-24 bg-primary/20 rounded-full overflow-hidden">
             <div className="h-full bg-primary animate-[loading_1.5s_ease-in-out_infinite]" />
           </div>
@@ -854,7 +845,7 @@ export default function AccountPage() {
           <div className="flex justify-between items-center h-14 sm:h-16">
             {/* Logo */}
             <div className="flex items-center">
-              <span className="text-gray-900 font-bold text-lg sm:text-xl">Fitmail</span>
+              <AppLogo size="sm" />
             </div>
 
             {/* Header Actions */}
@@ -865,7 +856,7 @@ export default function AccountPage() {
               >
                 <Info className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
-              
+
               {/* Google Apps Button */}
               <div className="relative apps-menu-container">
                 <button
@@ -888,8 +879,8 @@ export default function AccountPage() {
                           }}
                           className="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-lg transition-colors"
                         >
-                      <div className="w-12 h-12 bg-[#490e6f]/10 rounded-lg flex items-center justify-center">
-                            <Mail className="w-6 h-6 text-[#490e6f]" />
+                          <div className="w-12 h-12 bg-[#490e6f]/10 rounded-lg flex items-center justify-center overflow-hidden">
+                            <Image src="/logo.png" alt="Fitmail" width={36} height={36} />
                           </div>
                           <span className="text-xs text-gray-700 font-medium">Fitmail</span>
                         </button>
@@ -1109,8 +1100,8 @@ export default function AccountPage() {
                     key={item.id}
                     onClick={() => setActiveNav(item.id)}
                     className={`flex items-center px-3 py-2 lg:px-4 lg:py-3 text-sm font-medium transition-all duration-200 rounded-lg lg:rounded-r-full ${isActive
-                        ? 'bg-[#490e6f]/10 text-[#490e6f]'
-                        : 'text-gray-700 hover:bg-gray-50'
+                      ? 'bg-[#490e6f]/10 text-[#490e6f]'
+                      : 'text-gray-700 hover:bg-gray-50'
                       }`}
                   >
                     <Icon className={`mr-2 lg:mr-3 h-4 w-4 lg:h-5 lg:w-5 ${isActive ? 'text-[#490e6f]' : 'text-gray-600'}`} />
