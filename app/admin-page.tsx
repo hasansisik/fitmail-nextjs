@@ -173,7 +173,10 @@ export default function AdminPage() {
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("userEmail");
-    window.location.href = '/giris';
+    // Sadece zaten /giris'te değilsek yönlendir
+    if (typeof window !== 'undefined' && !window.location.pathname.includes('/giris')) {
+      window.location.href = '/giris';
+    }
   };
 
   // Loading state

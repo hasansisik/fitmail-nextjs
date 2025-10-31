@@ -91,12 +91,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     setIsClient(true)
   }, [])
 
-  // Redirect unauthenticated users to login
+  // Redirect unauthenticated users to login (only once, avoid loops)
   useEffect(() => {
-    if (isClient && !loading && !isAuthenticated) {
+    if (isClient && !loading && !isAuthenticated && pathname !== '/giris') {
       router.push("/giris")
     }
-  }, [isAuthenticated, loading, router, isClient])
+  }, [isAuthenticated, loading, router, isClient, pathname])
 
   // Show loading state while checking authentication or before client hydration
   if (!isClient || loading) {

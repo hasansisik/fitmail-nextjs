@@ -15,8 +15,12 @@ axios.interceptors.response.use(
       localStorage.removeItem("accessToken");
       localStorage.removeItem("userEmail");
       
-      // Redirect to login if not already there
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/giris')) {
+      // Redirect to login if not already there and not on auth pages
+      if (typeof window !== 'undefined' && 
+          !window.location.pathname.includes('/giris') &&
+          !window.location.pathname.includes('/kayit-ol') &&
+          !window.location.pathname.includes('/sifremi-unuttum') &&
+          !window.location.pathname.includes('/sifre-sifirla')) {
         window.location.href = '/giris';
       }
       

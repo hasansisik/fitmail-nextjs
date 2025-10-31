@@ -312,7 +312,11 @@ export default function AccountPage() {
     if (error) {
       if (error.includes('Oturum süreniz dolmuş') || error.includes('requiresLogout')) {
         toast.error('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
-        window.location.href = '/giris';
+        // Axios interceptor zaten yönlendirme yapacak, burada tekrar yönlendirme yapmıyoruz
+        // Sadece pathname kontrolü yaparak döngüyü önlüyoruz
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('/giris')) {
+          window.location.href = '/giris';
+        }
       } else {
         toast.error(error);
       }
@@ -373,7 +377,10 @@ export default function AccountPage() {
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("userEmail");
-    window.location.href = '/giris';
+    // Sadece zaten /giris'te değilsek yönlendir
+    if (typeof window !== 'undefined' && !window.location.pathname.includes('/giris')) {
+      window.location.href = '/giris';
+    }
   };
 
   // Hesap değiştirme fonksiyonu
@@ -763,7 +770,10 @@ export default function AccountPage() {
       // Çıkış yap ve login sayfasına yönlendir
       localStorage.removeItem("accessToken");
       localStorage.removeItem("userEmail");
-      window.location.href = '/giris';
+      // Sadece zaten /giris'te değilsek yönlendir
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/giris')) {
+        window.location.href = '/giris';
+      }
     } catch (error) {
       console.error('Account deletion error:', error);
       toast.error('Hesap silinirken hata oluştu');
