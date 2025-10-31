@@ -30,13 +30,15 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Uygulama başladığında kullanıcı bilgilerini yükle
-    // Auth sayfalarında loadUser çağrısı yapmayalım (gerekli değil ve döngüye neden olabilir)
-    const isAuthPage = pathname === '/giris' || 
-                       pathname === '/kayit-ol' || 
-                       pathname === '/sifremi-unuttum' || 
-                       pathname === '/sifre-sifirla';
+    // Auth sayfalarında ve ana sayfada loadUser çağrısı yapmayalım (yönlendirme döngüsünü önlemek için)
+    const isAuthPage = pathname === '/giris' ||
+      pathname === '/kayit-ol' ||
+      pathname === '/sifremi-unuttum' ||
+      pathname === '/sifre-sifirla';
     
-    if (!isAuthPage) {
+    const isHomePage = pathname === '/';
+
+    if (!isAuthPage && !isHomePage) {
       dispatch(loadUser());
     }
   }, [dispatch, pathname]);
@@ -45,14 +47,14 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     // Global subdomain yönlendirme kontrolü
     if (typeof window !== 'undefined') {
       const hostname = window.location.hostname;
-      
+
       // Subdomain'lerde sadece /mail path'ini ana domain'e yönlendir
       // Diğer path'ler (giris, kayit-ol vs.) subdomain'de kalabilir
       if (isSubdomain(hostname) && pathname === '/mail') {
         // Ana domain'e yönlendir
         const mainDomain = getMainDomainFromSubdomain(hostname);
         const redirectUrl = `${activeDomains.protocol}://${mainDomain}${pathname}`;
-        
+
         setIsRedirecting(true);
         window.location.href = redirectUrl;
         return;
@@ -77,7 +79,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <Metadata 
+      <Metadata
         title="Fitmail - Hızlı, Güvenli ve Akıllı E-posta"
         description="Fitmail ile e-postalarınızı yönetin, organize edin ve iletişiminizi güçlendirin. Modern arayüzü ve güçlü özellikleriyle e-posta deneyiminizi yeniden tanımlayın."
         keywords="email, e-posta, mail, güvenli email, hızlı email, akıllı email, fitmail"
@@ -103,7 +105,7 @@ export default function RootLayout({
           <LayoutContent>
             {children}
           </LayoutContent>
-          <Toaster 
+          <Toaster
             position="top-right"
             expand={true}
             richColors
