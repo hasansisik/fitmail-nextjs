@@ -1,52 +1,12 @@
 "use client"
 
 import Link from "next/link";
-import { AppLogo, AppLogoWithLoading } from "@/components/app-logo";
+import { AppLogo } from "@/components/app-logo";
 import { Button } from "@/components/ui/button";
 import { Zap, Target, Smartphone } from "lucide-react";
-import { useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { useAppSelector } from "@/redux/hook";
 import { Metadata } from "@/components/metadata";
-import { isSubdomain } from "@/config";
 
 export default function HomePage() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const { user, isAuthenticated, loading } = useAppSelector((state) => state.user);
-
-  // Redirect authenticated users to /mail (only on main domain and if not already there)
-  useEffect(() => {
-    if (!loading && isAuthenticated && user) {
-      // Sadece ana domain'deyse ve zaten /mail'de değilsek /mail'e yönlendir
-      if (typeof window !== 'undefined' && 
-          !isSubdomain(window.location.hostname) &&
-          pathname !== '/mail' &&
-          !pathname.includes('/giris') &&
-          !pathname.includes('/kayit-ol')) {
-        router.push("/mail");
-      }
-    }
-  }, [isAuthenticated, loading, user, router, pathname]);
-
-  // Show loading state while checking authentication
-  if (loading) {
-    return (
-      <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-8 p-6 md:p-10">
-          <div className="flex flex-col items-center gap-3">
-          <AppLogoWithLoading size="lg" />
-          <div className="h-1 w-24 bg-primary/20 rounded-full overflow-hidden">
-            <div className="h-full bg-primary animate-[loading_1.5s_ease-in-out_infinite]" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Don't render the homepage if user is authenticated (will redirect)
-  if (isAuthenticated && user) {
-    return null;
-  }
   return (
     <>
       <Metadata 
