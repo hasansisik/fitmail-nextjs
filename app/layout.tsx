@@ -30,8 +30,16 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Uygulama başladığında kullanıcı bilgilerini yükle
-    dispatch(loadUser());
-  }, [dispatch]);
+    // Auth sayfalarında loadUser çağrısı yapmayalım (gerekli değil ve döngüye neden olabilir)
+    const isAuthPage = pathname === '/giris' || 
+                       pathname === '/kayit-ol' || 
+                       pathname === '/sifremi-unuttum' || 
+                       pathname === '/sifre-sifirla';
+    
+    if (!isAuthPage) {
+      dispatch(loadUser());
+    }
+  }, [dispatch, pathname]);
 
   useEffect(() => {
     // Global subdomain yönlendirme kontrolü
