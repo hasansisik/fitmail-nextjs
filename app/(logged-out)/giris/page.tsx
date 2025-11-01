@@ -16,7 +16,7 @@ export default function LoginPage() {
         <div 
           className="bg-muted relative hidden lg:block"
           style={{
-            backgroundImage: 'url(/bg.jpg)',
+            backgroundImage: 'url(https://res.cloudinary.com/da2qwsrbv/image/upload/v1762039720/Girisyapgorsel_jfnhox.png)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat'

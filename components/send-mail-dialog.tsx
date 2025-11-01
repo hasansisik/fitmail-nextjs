@@ -4,18 +4,8 @@ import React, { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { RichTextEditor } from "@/components/rich-text-editor"
 import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,12 +25,12 @@ import { useAppDispatch } from "@/redux/hook"
 import { sendMail, saveDraft, scheduleMail } from "@/redux/actions/mailActions"
 import { uploadFileToCloudinary } from "@/utils/cloudinary"
 import { toast } from "sonner"
-import { 
-  Loader2, 
-  Send, 
-  X, 
-  Paperclip, 
-  FileText, 
+import {
+  Loader2,
+  Send,
+  X,
+  Paperclip,
+  FileText,
   Trash2,
   Info,
   Clock,
@@ -105,18 +95,16 @@ const clearFormStateFromStorage = () => {
 export function SendMailDialog({ open, onOpenChange, replyMode = null, originalMail = null, draftMail = null, onMailSent }: SendMailDialogProps) {
   const dispatch = useAppDispatch()
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Internal dialog state - route değişikliklerinden etkilenmez
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
   
-  // useRef ile dialog açıklık durumunu koru - component yeniden render olsa bile korunur
-  const hasEverBeenOpenedRef = useRef(false)
-  const isInitializedRef = useRef(false)
-  const shouldIgnoreCloseRef = useRef(false) // Parent'tan gelen false'u görmezden gelmek için
+  // localStorage'dan yüklenmiş mi kontrolü (sadece bir kez yükle)
+  const hasLoadedFromStorageRef = useRef(false)
   
-  // Load saved form state from localStorage on mount (only once)
-  const [hasLoadedSavedState, setHasLoadedSavedState] = React.useState(false)
-  
-  // Effective open state - parent'tan gelen open prop'u ile kontrol edilir ama false geldiğinde görmezden gelinebilir
-  const [effectiveOpen, setEffectiveOpen] = useState(open)
-  
+  // Dialog açıklık durumunu ref ile takip et (closure sorununu önlemek için)
+  const isDialogOpenRef = useRef(false)
+
   const [isUploading, setIsUploading] = useState(false)
   const [showCC, setShowCC] = useState(false)
   const [showBCC, setShowBCC] = useState(false)
@@ -138,142 +126,189 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
   const [scheduledDate, setScheduledDate] = useState("")
   const [scheduledTime, setScheduledTime] = useState("")
 
-  // Load saved state from localStorage only once on mount
+  // localStorage'dan form verilerini yükle (dialog açıldığında, reply/draft yoksa ve henüz yüklenmediyse)
   React.useEffect(() => {
-    if (!hasLoadedSavedState && typeof window !== 'undefined') {
+    // Sadece yeni mail yazıyorsak (reply/draft yoksa) localStorage'dan yükle
+    const isNewMail = !replyMode && !draftMail
+    
+    if (isDialogOpen && isNewMail && !hasLoadedFromStorageRef.current && typeof window !== 'undefined') {
       const savedState = loadFormStateFromStorage()
-      if (savedState) {
-        // Restore form data (but not dialog state - let parent control that)
+      if (savedState && Object.keys(savedState).length > 0) {
+        console.log('Loading from localStorage:', savedState)
+        // ÖNEMLİ: Flag'i hemen true yap ki form temizleme işlemi çalışmasın
+        hasLoadedFromStorageRef.current = true
+        
+        // Sadece form verilerini geri yükle, dialog state'ini değil
         if (savedState.formData) {
           setFormData(savedState.formData)
         }
-        if (savedState.toRecipients) {
+        if (savedState.toRecipients && savedState.toRecipients.length > 0) {
           setToRecipients(savedState.toRecipients)
         }
-        if (savedState.ccRecipients) {
+        if (savedState.ccRecipients && savedState.ccRecipients.length > 0) {
           setCcRecipients(savedState.ccRecipients)
         }
-        if (savedState.bccRecipients) {
+        if (savedState.bccRecipients && savedState.bccRecipients.length > 0) {
           setBccRecipients(savedState.bccRecipients)
         }
         if (savedState.currentDraftId) {
           setCurrentDraftId(savedState.currentDraftId)
         }
-        // Restore hasEverBeenOpened ref (but don't open dialog automatically)
-        hasEverBeenOpenedRef.current = savedState.hasEverBeenOpened || false
+        
+        // Yükleme yapıldıktan sonra prevFormDataRef'i güncelle ki gereksiz kayıt olmasın
+        prevFormDataRef.current = JSON.stringify({
+          formData: savedState.formData || { to: "", cc: "", bcc: "", subject: "", content: "" },
+          toRecipients: savedState.toRecipients || [],
+          ccRecipients: savedState.ccRecipients || [],
+          bccRecipients: savedState.bccRecipients || [],
+          currentDraftId: savedState.currentDraftId || null
+        })
+      } else {
+        // Veri yoksa flag'i true yap ama formu temizleme işlemi yapılsın
+        hasLoadedFromStorageRef.current = true
       }
-      setHasLoadedSavedState(true)
-      isInitializedRef.current = true
     }
-  }, [hasLoadedSavedState])
+    
+    // Dialog kapandığında yüklenmiş flag'ini sıfırla (bir sonraki açılış için)
+    if (!isDialogOpen) {
+      hasLoadedFromStorageRef.current = false
+      prevFormDataRef.current = '' // Reset prev data
+    }
+  }, [isDialogOpen, replyMode, draftMail])
+  
+  // Dialog açıklık durumunu ref ile senkronize et
+  React.useEffect(() => {
+    isDialogOpenRef.current = isDialogOpen
+  }, [isDialogOpen])
 
-  // Save form state to localStorage whenever form data changes (only if dialog is open)
-  // Use debounce or throttle to prevent excessive writes
+  // Form verilerini localStorage'a kaydet (dialog açıkken ve debounce ile)
   const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
   const prevFormDataRef = React.useRef<string>('')
   
+  // localStorage'a kaydetme fonksiyonu
+  const saveToLocalStorage = React.useCallback(() => {
+    if (!isDialogOpenRef.current || replyMode || draftMail) {
+      return
+    }
+    
+    const currentFormDataStr = JSON.stringify({
+      formData,
+      toRecipients,
+      ccRecipients,
+      bccRecipients,
+      currentDraftId
+    })
+    
+    // Veri değişmemişse kaydetme
+    if (prevFormDataRef.current === currentFormDataStr) {
+      return
+    }
+    
+    console.log('Saving to localStorage:', { formData, toRecipients, ccRecipients, bccRecipients, currentDraftId })
+    saveFormStateToStorage({
+      formData,
+      toRecipients,
+      ccRecipients,
+      bccRecipients,
+      currentDraftId
+    })
+    prevFormDataRef.current = currentFormDataStr
+  }, [formData, toRecipients, ccRecipients, bccRecipients, currentDraftId, replyMode, draftMail])
+  
   React.useEffect(() => {
-    // Eğer state henüz yüklenmediyse veya dialog kapalıysa kaydetme
-    if (!hasLoadedSavedState || !effectiveOpen) {
+    // Dialog kapalıysa kaydetme
+    if (!isDialogOpenRef.current) {
       return
     }
     
     // Form verilerini serialize et
-    const currentFormData = JSON.stringify({ 
-      formData, 
-      toRecipients, 
-      ccRecipients, 
-      bccRecipients, 
-      currentDraftId 
+    const currentFormDataStr = JSON.stringify({
+      formData,
+      toRecipients,
+      ccRecipients,
+      bccRecipients,
+      currentDraftId
     })
     
-    // Form verileri değişti mi kontrol et
-    if (prevFormDataRef.current === currentFormData) {
-      return // Değişiklik yok, kaydetme
+    // Veri değişmemişse kaydetme
+    if (prevFormDataRef.current === currentFormDataStr) {
+      return
     }
     
-    if (typeof window !== 'undefined') {
-      // Clear previous timeout
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current)
-      }
-      
-      // Debounce save to prevent excessive localStorage writes
-      saveTimeoutRef.current = setTimeout(() => {
-        // Dialog hala açıksa kaydet
-        if (effectiveOpen) {
-          saveFormStateToStorage({
-            isDialogOpen: true,
-            formData,
-            toRecipients,
-            ccRecipients,
-            bccRecipients,
-            currentDraftId,
-            hasEverBeenOpened: hasEverBeenOpenedRef.current
-          })
-          prevFormDataRef.current = currentFormData
-        }
-      }, 500) // 500ms debounce
+    // Debounce ile kaydet (200ms - daha hızlı)
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
     }
     
-    // Cleanup timeout on unmount
+    saveTimeoutRef.current = setTimeout(() => {
+      saveToLocalStorage()
+    }, 200)
+
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current)
       }
     }
-  }, [formData, toRecipients, ccRecipients, bccRecipients, currentDraftId, hasLoadedSavedState, effectiveOpen])
+  }, [isDialogOpen, formData, toRecipients, ccRecipients, bccRecipients, currentDraftId, saveToLocalStorage])
+  
+  // Sayfa kapanmadan/route değişmeden önce localStorage'a kaydet
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return
+    
+    const handleBeforeUnload = () => {
+      if (isDialogOpenRef.current && !replyMode && !draftMail) {
+        saveToLocalStorage()
+      }
+    }
+    
+    // beforeunload event'i (sayfa kapanmadan önce)
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    
+    // Route değişmeden önce kaydet (Next.js için)
+    const handleRouteChange = () => {
+      if (isDialogOpenRef.current && !replyMode && !draftMail) {
+        saveToLocalStorage()
+      }
+    }
+    
+    // Popstate (geri/ileri tuşları)
+    window.addEventListener('popstate', handleRouteChange)
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('popstate', handleRouteChange)
+      // Component unmount olmadan önce de kaydet
+      if (isDialogOpenRef.current && !replyMode && !draftMail) {
+        saveToLocalStorage()
+      }
+    }
+  }, [saveToLocalStorage, replyMode, draftMail])
 
-  // Parent'tan gelen open prop'u değiştiğinde dialog'u aç
-  // ÖNEMLİ: Dialog açıldıktan sonra parent'tan gelen open=false değişikliklerini görmezden gel
+  // Parent'tan gelen open prop'u değiştiğinde dialog'u aç (sadece açılma tetikleyicisi)
+  // ÖNEMLİ: open false olsa bile dialog açık kalır - sadece kullanıcı action'ları dialog'u kapatabilir
   // Bu sayede mail yükleme (loading) sırasında dialog kapanmaz
   React.useEffect(() => {
-    // Eğer shouldIgnoreCloseRef aktifse ve open false geliyorsa görmezden gel
-    if (shouldIgnoreCloseRef.current && !open) {
-      return // Parent'tan gelen false'u görmezden gel
-    }
-    
-    // open true geldiğinde dialog'u aç
     if (open) {
-      hasEverBeenOpenedRef.current = true
-      shouldIgnoreCloseRef.current = true // Artık false'ları görmezden gelelim
-      setEffectiveOpen(true)
-    } else if (!shouldIgnoreCloseRef.current) {
-      // Eğer ignore aktif değilse (ilk kapatma), kapat
-      setEffectiveOpen(false)
+      // Parent'tan open=true geldiğinde dialog'u aç
+      setIsDialogOpen(true)
     }
+    // open=false geldiğinde hiçbir şey yapma - dialog açık kalır
+    // Dialog sadece kullanıcı action'ları (gönder, iptal, kaydet) ile kapanır
   }, [open])
-  
+
   // Dialog'u gerçekten kapat (sadece kullanıcı action'larından çağrılır)
-  const handleInternalClose = React.useCallback((shouldNotifyParent = true) => {
-    // Eğer zaten kapalıysa bir şey yapma
-    if (!effectiveOpen) {
-      return
-    }
-    
-    hasEverBeenOpenedRef.current = false // Bir sonraki açılış için sıfırla
-    shouldIgnoreCloseRef.current = false // Artık parent'tan gelen değişiklikleri dinle
-    setEffectiveOpen(false)
+  const handleInternalClose = (shouldNotifyParent = true) => {
+    setIsDialogOpen(false)
     clearFormStateFromStorage() // Clear saved state when closing
-    
-    // Parent'a bildir (sadece gerektiğinde)
-    if (shouldNotifyParent && typeof onOpenChange === 'function') {
-      // setTimeout ile bir sonraki tick'te çağır - sonsuz döngüyü önle
-      setTimeout(() => {
-        onOpenChange(false)
-      }, 0)
+    if (shouldNotifyParent) {
+      onOpenChange(false)
     }
-  }, [onOpenChange, effectiveOpen])
+  }
 
 
   // Reply mode veya draft mode'a göre form verilerini otomatik doldur
-  // ÖNEMLİ: Eğer dialog zaten açıksa ve form verileri varsa, onları koru
   React.useEffect(() => {
-    // Eğer dialog yeni açılıyorsa veya replyMode/draftMail değişmişse formu doldur
-    // Ama eğer form zaten doluysa (localStorage'tan geri yüklendiyse), koru
-    const hasExistingContent = toRecipients.length > 0 || formData.subject || formData.content
-    
-    if (draftMail && effectiveOpen && !hasExistingContent) {
+    if (draftMail && isDialogOpen) {
       // Taslağı yükle
       setCurrentDraftId(draftMail._id)
       setToRecipients(draftMail.to?.map((r: any) => r.email) || [])
@@ -288,8 +323,8 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       })
       setShowCC(draftMail.cc && draftMail.cc.length > 0)
       setShowBCC(draftMail.bcc && draftMail.bcc.length > 0)
-      
-    } else if (replyMode && originalMail && effectiveOpen && !hasExistingContent) {
+
+    } else if (replyMode && originalMail && isDialogOpen) {
       switch (replyMode) {
         case 'reply':
           // Sadece gönderene cevap ver
@@ -326,21 +361,24 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
           }))
           break
       }
-    } else if (!replyMode && !draftMail && effectiveOpen && open && !hasExistingContent) {
-      // Yeni mail için formu temizle (sadece ilk açılışta ve form boşsa)
-      setFormData({
-        to: "",
-        cc: "",
-        bcc: "",
-        subject: "",
-        content: ""
-      })
-      setToRecipients([])
-      setCcRecipients([])
-      setBccRecipients([])
-      setCurrentDraftId(null)
+    } else if (!replyMode && !draftMail && isDialogOpen && open) {
+      // Yeni mail için formu temizle (sadece ilk açılışta ve localStorage'dan yükleme yapılmadıysa)
+      // Eğer localStorage'dan veri yüklendiyse, formu temizleme
+      if (!hasLoadedFromStorageRef.current) {
+        setFormData({
+          to: "",
+          cc: "",
+          bcc: "",
+          subject: "",
+          content: ""
+        })
+        setToRecipients([])
+        setCcRecipients([])
+        setBccRecipients([])
+        setCurrentDraftId(null)
+      }
     }
-  }, [replyMode, originalMail, draftMail, effectiveOpen, open, toRecipients, formData.subject, formData.content])
+  }, [replyMode, originalMail, draftMail, isDialogOpen, open])
 
   // Cihazın dokunmatik olup olmadığını belirle (Tooltip dokunmatik cihazlarda çalışmaz)
   React.useEffect(() => {
@@ -408,7 +446,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
   const parseEmails = (input: string, field: 'to' | 'cc' | 'bcc') => {
     const emails = input.split(',').map(email => email.trim()).filter(Boolean)
     const validEmails = emails.filter(isValidEmail)
-    
+
     switch (field) {
       case 'to':
         setToRecipients(validEmails)
@@ -430,12 +468,12 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
   // Handle blur event to add emails when leaving input
   const handleEmailBlur = (field: 'to' | 'cc' | 'bcc') => {
     const inputValue = formData[field].trim()
-    
+
     if (inputValue) {
       // Parse emails from current input
       const emails = inputValue.split(',').map(email => email.trim()).filter(Boolean)
       const validEmails = emails.filter(isValidEmail)
-      
+
       // Add valid emails to recipient list
       switch (field) {
         case 'to':
@@ -448,7 +486,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
           setBccRecipients(prev => [...new Set([...prev, ...validEmails])])
           break
       }
-      
+
       // Clear the input field if emails were added
       if (validEmails.length > 0) {
         setFormData(prev => ({ ...prev, [field]: '' }))
@@ -461,12 +499,12 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault()
       const inputValue = formData[field].trim()
-      
+
       if (inputValue) {
         // Parse emails from current input
         const emails = inputValue.split(',').map(email => email.trim()).filter(Boolean)
         const validEmails = emails.filter(isValidEmail)
-        
+
         // Add valid emails to recipient list
         switch (field) {
           case 'to':
@@ -479,7 +517,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
             setBccRecipients(prev => [...new Set([...prev, ...validEmails])])
             break
         }
-        
+
         // Clear the input field
         setFormData(prev => ({ ...prev, [field]: '' }))
       }
@@ -506,13 +544,13 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     if (files) {
       setIsUploading(true)
       const fileArray = Array.from(files)
-      
+
       try {
         const uploadPromises = fileArray.map(async (file) => {
           try {
             // Cloudinary'ye yükle
             const cloudinaryUrl = await uploadFileToCloudinary(file)
-            
+
             return {
               id: Math.random().toString(36).substr(2, 9),
               name: file.name,
@@ -524,7 +562,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
           } catch (error) {
             console.error('File upload error:', error)
             toast.error(`${file.name} yüklenemedi: ${error}`)
-            
+
             // Hata durumunda sadece local file bilgisi
             return {
               id: Math.random().toString(36).substr(2, 9),
@@ -539,7 +577,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
 
         const newAttachments = await Promise.all(uploadPromises)
         setAttachments(prev => [...prev, ...newAttachments])
-        
+
         const successCount = newAttachments.filter(att => att.url).length
         if (successCount > 0) {
           toast.success(`Dosya yüklendi`)
@@ -581,17 +619,17 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (toRecipients.length === 0) {
       toast.error("Lütfen en az bir alıcı seçin!")
       return
     }
-    
+
     if (!formData.subject.trim()) {
       toast.error("Lütfen mail konusunu girin!")
       return
     }
-    
+
     if (!formData.content.trim()) {
       toast.error("Lütfen mail içeriğini girin!")
       return
@@ -599,7 +637,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
 
     // Close dialog immediately
     handleInternalClose()
-    
+
     // Reset form immediately so user can send another mail if needed
     const mailDataToSend = {
       to: toRecipients,
@@ -617,7 +655,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
         url: attachment.url || undefined
       }))
     }
-    
+
     setFormData({
       to: "",
       cc: "",
@@ -642,24 +680,24 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       const result = await dispatch(sendMail(mailDataToSend)).unwrap()
 
       console.log("Sent mail status:", result.mail?.status)
-      
+
       // Dismiss loading toast
       toast.dismiss(loadingToastId)
-      
+
       // Success
       toast.success("Mail başarıyla gönderildi!")
-      
+
       // Callback ile parent component'e mail gönderildiğini bildir
       if (onMailSent) {
         onMailSent()
       }
-      
+
     } catch (error: any) {
       console.error("Send mail failed:", error)
-      
+
       // Dismiss loading toast
       toast.dismiss(loadingToastId)
-      
+
       // Show error message
       const errorMessage = typeof error === 'string' ? error : error?.message || "Mail gönderilirken bir hata oluştu"
       toast.error(errorMessage)
@@ -672,12 +710,12 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       toast.error("Lütfen en az bir alıcı seçin!")
       return
     }
-    
+
     if (!formData.subject.trim()) {
       toast.error("Lütfen mail konusunu girin!")
       return
     }
-    
+
     if (!formData.content.trim()) {
       toast.error("Lütfen mail içeriğini girin!")
       return
@@ -700,7 +738,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     // Close dialog and popover immediately
     setShowSchedulePopover(false)
     handleInternalClose()
-    
+
     // Reset form immediately
     const mailDataToSchedule = {
       to: toRecipients,
@@ -719,7 +757,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
         url: attachment.url || undefined
       }))
     }
-    
+
     setFormData({
       to: "",
       cc: "",
@@ -742,18 +780,18 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     try {
 
       const result = await dispatch(scheduleMail(mailDataToSchedule)).unwrap()
-      
+
       toast.dismiss(loadingToastId)
       toast.success(result.message || "Mail başarıyla planlandı!")
-      
+
       if (onMailSent) {
         onMailSent()
       }
-      
+
     } catch (error: any) {
       console.error("Schedule mail failed:", error)
       toast.dismiss(loadingToastId)
-      
+
       const errorMessage = typeof error === 'string' ? error : error?.message || "Mail planlanırken bir hata oluştu"
       toast.error(errorMessage)
     }
@@ -761,12 +799,12 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
 
   // Form içeriğinin olup olmadığını kontrol et
   const hasFormContent = () => {
-    return toRecipients.length > 0 || 
-           ccRecipients.length > 0 || 
-           bccRecipients.length > 0 || 
-           formData.subject.trim() !== "" || 
-           formData.content.trim() !== "" ||
-           attachments.length > 0
+    return toRecipients.length > 0 ||
+      ccRecipients.length > 0 ||
+      bccRecipients.length > 0 ||
+      formData.subject.trim() !== "" ||
+      formData.content.trim() !== "" ||
+      attachments.length > 0
   }
 
   // Taslak kaydetme fonksiyonu
@@ -790,14 +828,14 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       }
 
       const result = await dispatch(saveDraft(draftData)).unwrap()
-      
+
       // Taslak ID'sini kaydet (güncelleme için)
       if (result.draft && result.draft._id) {
         setCurrentDraftId(result.draft._id)
       }
-      
+
       toast.success("Taslak kaydedildi!")
-      
+
       // Formu temizle ve dialogu kapat
       setFormData({
         to: "",
@@ -814,7 +852,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       setShowBCC(false)
       setCurrentDraftId(null)
       handleInternalClose()
-      
+
       // Mail listesini yenile
       if (onMailSent) {
         onMailSent()
@@ -886,422 +924,421 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
           }
         }
       `}</style>
-      <div 
-        className={`compose-window fixed bottom-0 right-0 lg:right-4 z-50 w-full lg:max-w-2xl shadow-2xl lg:rounded-t-lg bg-background border-t lg:border border-border overflow-hidden flex flex-col transition-opacity duration-200 ${
-          effectiveOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
-        style={{ 
-          height: effectiveOpen ? '100vh' : '0',
-          maxHeight: effectiveOpen ? '100vh' : '0',
-          display: effectiveOpen ? 'flex' : 'none'
+      <div
+        className={`compose-window fixed bottom-0 right-0 lg:right-4 z-50 w-full lg:max-w-2xl shadow-2xl lg:rounded-t-lg bg-background border-t lg:border border-border overflow-hidden flex flex-col transition-opacity duration-200 ${isDialogOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
+        style={{
+          height: isDialogOpen ? '100vh' : '0',
+          maxHeight: isDialogOpen ? '100vh' : '0',
+          display: isDialogOpen ? 'flex' : 'none'
         }}>
-          {/* Header */}
-          <div className="flex items-center justify-between p-3 lg:p-4 border-b bg-muted/50">
-            <div className="flex items-center gap-2">
-              <Send className="h-4 w-4 lg:h-5 lg:w-5" />
-              <h2 className="text-sm lg:text-base font-semibold">
-                {replyMode === 'reply' ? 'Cevapla' : 
-                 replyMode === 'replyAll' ? 'Tümünü Cevapla' : 
-                 replyMode === 'forward' ? 'İlet' : 'Yeni Mail'}
-              </h2>
+        {/* Header */}
+        <div className="flex items-center justify-between p-3 lg:p-4 border-b bg-muted/50">
+          <div className="flex items-center gap-2">
+            <Send className="h-4 w-4 lg:h-5 lg:w-5" />
+            <h2 className="text-sm lg:text-base font-semibold">
+              {replyMode === 'reply' ? 'Cevapla' :
+                replyMode === 'replyAll' ? 'Tümünü Cevapla' :
+                  replyMode === 'forward' ? 'İlet' : 'Yeni Mail'}
+            </h2>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleClose}
+            className="h-8 w-8 p-0"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-3 lg:p-4">
+
+          <form onSubmit={handleSubmit} className="space-y-3 lg:space-y-4">
+            <div className="grid gap-3 lg:gap-4">
+              {/* To Field */}
+              <div className="space-y-1.5 lg:space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="to" className="text-xs lg:text-sm">Alıcı *</Label>
+                  <InfoHelp label="Alıcı hakkında bilgi">
+                    Mailinizin gönderileceği kişinin e-posta adresi. Alıcı, e-postayı kim gönderdiğini görebilir ve diğer alıcıları da görebilir.
+                  </InfoHelp>
+                </div>
+                <Input
+                  id="to"
+                  placeholder="ornek@email.com (Enter/Tab ile ekle)"
+                  value={formData.to}
+                  onChange={(e) => handleEmailInputChange("to", e.target.value)}
+                  onKeyPress={(e) => handleEmailKeyPress(e, "to")}
+                  onBlur={() => handleEmailBlur("to")}
+                  required={toRecipients.length === 0}
+                  disabled={false}
+                  className={`text-sm ${toRecipients.length > 0 ? "border-green-500" : ""}`}
+                />
+                <p className="text-[10px] lg:text-xs text-muted-foreground">
+                  Mail adresini yazıp Enter'a basın, Tab ile geçin veya virgül ile ayırın
+                </p>
+                {toRecipients.length > 0 && (
+                  <p className="text-xs text-green-600 font-medium">
+                    ✓ {toRecipients.length} alıcı seçildi
+                  </p>
+                )}
+                {/* To Recipients Chips */}
+                {toRecipients.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 lg:gap-2 mt-2">
+                    {toRecipients.map((email) => (
+                      <div key={email} className="inline-flex items-center gap-1.5 lg:gap-2 bg-secondary text-secondary-foreground rounded-full px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm">
+                        <span className="truncate max-w-[150px] lg:max-w-none">{email}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-4 w-4 lg:h-5 lg:w-5 p-0 rounded-full hover:bg-muted-foreground/20"
+                          onClick={() => removeRecipient(email, 'to')}
+                          disabled={false}
+                        >
+                          <X className="h-2.5 w-2.5 lg:h-3 lg:w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* CC Field */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="cc">Kopya (CC)</Label>
+                    <InfoHelp label="CC nedir?">
+                      <strong>CC (Carbon Copy)</strong> - Kopya alıcılar. Bu kişiler mailin bir kopyasını alır ve tüm alıcılar birbirlerini görebilir. Bilgilendirme amaçlı kullanılır.
+                    </InfoHelp>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="cc-toggle"
+                      checked={showCC}
+                      onCheckedChange={setShowCC}
+                      disabled={false}
+                    />
+                    <Label htmlFor="cc-toggle" className="text-sm">
+                      {showCC ? 'Gizle' : 'Göster'}
+                    </Label>
+                  </div>
+                </div>
+                {showCC && (
+                  <>
+                    <Input
+                      id="cc"
+                      placeholder="kopya@email.com (Enter/Tab ile ekle)"
+                      value={formData.cc}
+                      onChange={(e) => handleEmailInputChange("cc", e.target.value)}
+                      onKeyPress={(e) => handleEmailKeyPress(e, "cc")}
+                      onBlur={() => handleEmailBlur("cc")}
+                      disabled={false}
+                    />
+                    {/* CC Recipients Chips */}
+                    {ccRecipients.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {ccRecipients.map((email) => (
+                          <div key={email} className="inline-flex items-center gap-2 bg-secondary text-secondary-foreground rounded-full px-3 py-1.5 text-sm">
+                            <span>{email}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-5 w-5 p-0 rounded-full hover:bg-muted-foreground/20"
+                              onClick={() => removeRecipient(email, 'cc')}
+                              disabled={false}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* BCC Field */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="bcc">Gizli Kopya (BCC)</Label>
+                    <InfoHelp label="BCC nedir?">
+                      <strong>BCC (Blind Carbon Copy)</strong> - Gizli kopya alıcılar. Bu kişilerin e-posta aldığı diğer alıcılar tarafından görünmez. Gizlilik gerektiğinde kullanılır.
+                    </InfoHelp>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="bcc-toggle"
+                      checked={showBCC}
+                      onCheckedChange={setShowBCC}
+                      disabled={false}
+                    />
+                    <Label htmlFor="bcc-toggle" className="text-sm">
+                      {showBCC ? 'Gizle' : 'Göster'}
+                    </Label>
+                  </div>
+                </div>
+                {showBCC && (
+                  <>
+                    <Input
+                      id="bcc"
+                      placeholder="gizli@email.com (Enter/Tab ile ekle)"
+                      value={formData.bcc}
+                      onChange={(e) => handleEmailInputChange("bcc", e.target.value)}
+                      onKeyPress={(e) => handleEmailKeyPress(e, "bcc")}
+                      onBlur={() => handleEmailBlur("bcc")}
+                      disabled={false}
+                    />
+                    {/* BCC Recipients Chips */}
+                    {bccRecipients.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {bccRecipients.map((email) => (
+                          <div key={email} className="inline-flex items-center gap-2 bg-secondary text-secondary-foreground rounded-full px-3 py-1.5 text-sm">
+                            <span>{email}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-5 w-5 p-0 rounded-full hover:bg-muted-foreground/20"
+                              onClick={() => removeRecipient(email, 'bcc')}
+                              disabled={false}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Subject Field */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="subject">Konu *</Label>
+                  <InfoHelp label="Konu hakkında bilgi">
+                    E-postanızın konusu. Alıcının gelen kutusunda ilk göreceği metin. Açık ve anlaşılır bir konu yazmanız önerilir.
+                  </InfoHelp>
+                </div>
+                <Input
+                  id="subject"
+                  placeholder="Mail konusu"
+                  value={formData.subject}
+                  onChange={(e) => handleInputChange("subject", e.target.value)}
+                  required
+                  disabled={false}
+                />
+              </div>
+
+              {/* Content Field */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="content">İçerik *</Label>
+                  <InfoHelp label="İçerik hakkında bilgi">
+                    E-postanızın ana metni. Zengin metin düzenleyici ile metin biçimlendirme, bağlantı ekleme ve daha fazlasını yapabilirsiniz.
+                  </InfoHelp>
+                </div>
+                <RichTextEditor
+                  content={formData.content}
+                  onChange={(content) => handleInputChange("content", content)}
+                  placeholder="Mail içeriğinizi yazın..."
+                />
+              </div>
+
+              {/* Attachments Field */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Label>Ekler</Label>
+                    <InfoHelp label="Ekler hakkında bilgi">
+                      E-postanıza dosya ekleyebilirsiniz. Belgeler, resimler, videolar ve diğer dosya türleri desteklenir. Dosyalar güvenli bir şekilde Cloudinary'ye yüklenir.
+                    </InfoHelp>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={openFileChooser}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Paperclip className="h-4 w-4 mr-2" />
+                    )}
+                    {isUploading ? 'Yükleniyor...' : 'Dosya Ekle'}
+                  </Button>
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
+                />
+
+                {attachments.length > 0 && (
+                  <div className="space-y-2">
+                    {attachments.map((attachment) => (
+                      <div
+                        key={attachment.id}
+                        className="flex items-center justify-between p-2 border rounded-lg bg-muted/50"
+                      >
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">{attachment.name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
+                              {attachment.url && (
+                                <span className="text-xs text-green-600 font-medium">✓ Yüklendi</span>
+                              )}
+                              {!attachment.url && (
+                                <span className="text-xs text-orange-600 font-medium">⚠ Yüklenemedi</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeAttachment(attachment.id)}
+                          disabled={false}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
+          </form>
+        </div>
+
+        {/* Fixed Footer */}
+        <div className="border-t p-3 lg:p-4 bg-background">
+          <div className="flex items-center justify-between gap-2">
             <Button
               type="button"
-              variant="ghost"
-              size="sm"
+              variant="outline"
               onClick={handleClose}
-              className="h-8 w-8 p-0"
+              disabled={false}
+              size="sm"
+              className="text-xs lg:text-sm"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
+              İptal
             </Button>
-          </div>
 
-          {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto p-3 lg:p-4">
-        
-        <form onSubmit={handleSubmit} className="space-y-3 lg:space-y-4">
-          <div className="grid gap-3 lg:gap-4">
-            {/* To Field */}
-            <div className="space-y-1.5 lg:space-y-2">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="to" className="text-xs lg:text-sm">Alıcı *</Label>
-                <InfoHelp label="Alıcı hakkında bilgi">
-                  Mailinizin gönderileceği kişinin e-posta adresi. Alıcı, e-postayı kim gönderdiğini görebilir ve diğer alıcıları da görebilir.
-                </InfoHelp>
-              </div>
-              <Input
-                id="to"
-                placeholder="ornek@email.com (Enter/Tab ile ekle)"
-                value={formData.to}
-                onChange={(e) => handleEmailInputChange("to", e.target.value)}
-                onKeyPress={(e) => handleEmailKeyPress(e, "to")}
-                onBlur={() => handleEmailBlur("to")}
-                required={toRecipients.length === 0}
-                disabled={false}
-                className={`text-sm ${toRecipients.length > 0 ? "border-green-500" : ""}`}
-              />
-              <p className="text-[10px] lg:text-xs text-muted-foreground">
-                Mail adresini yazıp Enter'a basın, Tab ile geçin veya virgül ile ayırın
-              </p>
-              {toRecipients.length > 0 && (
-                <p className="text-xs text-green-600 font-medium">
-                  ✓ {toRecipients.length} alıcı seçildi
-                </p>
-              )}
-              {/* To Recipients Chips */}
-              {toRecipients.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 lg:gap-2 mt-2">
-                  {toRecipients.map((email) => (
-                    <div key={email} className="inline-flex items-center gap-1.5 lg:gap-2 bg-secondary text-secondary-foreground rounded-full px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm">
-                      <span className="truncate max-w-[150px] lg:max-w-none">{email}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-4 w-4 lg:h-5 lg:w-5 p-0 rounded-full hover:bg-muted-foreground/20"
-                        onClick={() => removeRecipient(email, 'to')}
-                        disabled={false}
-                      >
-                        <X className="h-2.5 w-2.5 lg:h-3 lg:w-3" />
-                      </Button>
+            <div className="flex items-center gap-2">
+              {/* Planlı Gönderme Butonu */}
+              <Popover open={showSchedulePopover} onOpenChange={setShowSchedulePopover}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={toRecipients.length === 0 || !formData.subject || !formData.content}
+                    className="text-xs lg:text-sm"
+                  >
+                    <Clock className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
+                    <span className="hidden sm:inline">Planla</span>
+                    <ChevronDown className="h-3 w-3 lg:h-4 lg:w-4 ml-1" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80" align="end">
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium mb-2">Planlı Gönderim</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Mail'i belirli bir tarih ve saatte göndermek için planla
+                      </p>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
 
-            {/* CC Field */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="cc">Kopya (CC)</Label>
-                  <InfoHelp label="CC nedir?">
-                    <strong>CC (Carbon Copy)</strong> - Kopya alıcılar. Bu kişiler mailin bir kopyasını alır ve tüm alıcılar birbirlerini görebilir. Bilgilendirme amaçlı kullanılır.
-                  </InfoHelp>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="cc-toggle"
-                    checked={showCC}
-                    onCheckedChange={setShowCC}
-                    disabled={false}
-                  />
-                  <Label htmlFor="cc-toggle" className="text-sm">
-                    {showCC ? 'Gizle' : 'Göster'}
-                  </Label>
-                </div>
-              </div>
-              {showCC && (
-                <>
-                  <Input
-                    id="cc"
-                    placeholder="kopya@email.com (Enter/Tab ile ekle)"
-                    value={formData.cc}
-                    onChange={(e) => handleEmailInputChange("cc", e.target.value)}
-                    onKeyPress={(e) => handleEmailKeyPress(e, "cc")}
-                    onBlur={() => handleEmailBlur("cc")}
-                    disabled={false}
-                  />
-                  {/* CC Recipients Chips */}
-                  {ccRecipients.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {ccRecipients.map((email) => (
-                        <div key={email} className="inline-flex items-center gap-2 bg-secondary text-secondary-foreground rounded-full px-3 py-1.5 text-sm">
-                          <span>{email}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-5 w-5 p-0 rounded-full hover:bg-muted-foreground/20"
-                            onClick={() => removeRecipient(email, 'cc')}
-                            disabled={false}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* BCC Field */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="bcc">Gizli Kopya (BCC)</Label>
-                  <InfoHelp label="BCC nedir?">
-                    <strong>BCC (Blind Carbon Copy)</strong> - Gizli kopya alıcılar. Bu kişilerin e-posta aldığı diğer alıcılar tarafından görünmez. Gizlilik gerektiğinde kullanılır.
-                  </InfoHelp>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="bcc-toggle"
-                    checked={showBCC}
-                    onCheckedChange={setShowBCC}
-                    disabled={false}
-                  />
-                  <Label htmlFor="bcc-toggle" className="text-sm">
-                    {showBCC ? 'Gizle' : 'Göster'}
-                  </Label>
-                </div>
-              </div>
-              {showBCC && (
-                <>
-                  <Input
-                    id="bcc"
-                    placeholder="gizli@email.com (Enter/Tab ile ekle)"
-                    value={formData.bcc}
-                    onChange={(e) => handleEmailInputChange("bcc", e.target.value)}
-                    onKeyPress={(e) => handleEmailKeyPress(e, "bcc")}
-                    onBlur={() => handleEmailBlur("bcc")}
-                    disabled={false}
-                  />
-                  {/* BCC Recipients Chips */}
-                  {bccRecipients.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {bccRecipients.map((email) => (
-                        <div key={email} className="inline-flex items-center gap-2 bg-secondary text-secondary-foreground rounded-full px-3 py-1.5 text-sm">
-                          <span>{email}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-5 w-5 p-0 rounded-full hover:bg-muted-foreground/20"
-                            onClick={() => removeRecipient(email, 'bcc')}
-                            disabled={false}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* Subject Field */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="subject">Konu *</Label>
-                <InfoHelp label="Konu hakkında bilgi">
-                  E-postanızın konusu. Alıcının gelen kutusunda ilk göreceği metin. Açık ve anlaşılır bir konu yazmanız önerilir.
-                </InfoHelp>
-              </div>
-              <Input
-                id="subject"
-                placeholder="Mail konusu"
-                value={formData.subject}
-                onChange={(e) => handleInputChange("subject", e.target.value)}
-                required
-                disabled={false}
-              />
-            </div>
-
-            {/* Content Field */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="content">İçerik *</Label>
-                <InfoHelp label="İçerik hakkında bilgi">
-                  E-postanızın ana metni. Zengin metin düzenleyici ile metin biçimlendirme, bağlantı ekleme ve daha fazlasını yapabilirsiniz.
-                </InfoHelp>
-              </div>
-              <RichTextEditor
-                content={formData.content}
-                onChange={(content) => handleInputChange("content", content)}
-                placeholder="Mail içeriğinizi yazın..."
-              />
-            </div>
-
-                        {/* Attachments Field */}
-                        <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Label>Ekler</Label>
-                  <InfoHelp label="Ekler hakkında bilgi">
-                    E-postanıza dosya ekleyebilirsiniz. Belgeler, resimler, videolar ve diğer dosya türleri desteklenir. Dosyalar güvenli bir şekilde Cloudinary'ye yüklenir.
-                  </InfoHelp>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                onClick={openFileChooser}
-                  disabled={isUploading}
-                >
-                  {isUploading ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Paperclip className="h-4 w-4 mr-2" />
-                  )}
-                  {isUploading ? 'Yükleniyor...' : 'Dosya Ekle'}
-                </Button>
-              </div>
-              
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                onChange={handleFileSelect}
-                className="hidden"
-                accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
-              />
-
-              {attachments.length > 0 && (
-                <div className="space-y-2">
-                  {attachments.map((attachment) => (
-                    <div
-                      key={attachment.id}
-                      className="flex items-center justify-between p-2 border rounded-lg bg-muted/50"
-                    >
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium">{attachment.name}</p>
-                          <div className="flex items-center gap-2">
-                            <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
-                            {attachment.url && (
-                              <span className="text-xs text-green-600 font-medium">✓ Yüklendi</span>
-                            )}
-                            {!attachment.url && (
-                              <span className="text-xs text-orange-600 font-medium">⚠ Yüklenemedi</span>
-                            )}
-                          </div>
-                        </div>
+                    <div className="space-y-3">
+                      <div>
+                        <Label htmlFor="schedule-date" className="text-sm">Tarih</Label>
+                        <Input
+                          id="schedule-date"
+                          type="date"
+                          value={scheduledDate}
+                          onChange={(e) => setScheduledDate(e.target.value)}
+                          min={new Date().toISOString().split('T')[0]}
+                          className="mt-1"
+                        />
                       </div>
+
+                      <div>
+                        <Label htmlFor="schedule-time" className="text-sm">Saat</Label>
+                        <Input
+                          id="schedule-time"
+                          type="time"
+                          value={scheduledTime}
+                          onChange={(e) => setScheduledTime(e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
+
+                      {scheduledDate && scheduledTime && (
+                        <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded text-sm">
+                          <p className="text-blue-900 dark:text-blue-100">
+                            Mail <strong>{new Date(`${scheduledDate}T${scheduledTime}`).toLocaleString('tr-TR')}</strong> tarihinde gönderilecek
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
                       <Button
                         type="button"
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        onClick={() => removeAttachment(attachment.id)}
-                        disabled={false}
+                        onClick={() => setShowSchedulePopover(false)}
+                        className="flex-1"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        İptal
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleScheduledSend}
+                        disabled={!scheduledDate || !scheduledTime}
+                        className="flex-1"
+                      >
+                        <Clock className="h-4 w-4 mr-2" />
+                        Planla
                       </Button>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </form>
-          </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
 
-          {/* Fixed Footer */}
-          <div className="border-t p-3 lg:p-4 bg-background">
-            <div className="flex items-center justify-between gap-2">
+              {/* Hemen Gönder Butonu */}
               <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                disabled={false}
+                type="submit"
+                disabled={toRecipients.length === 0 || !formData.subject || !formData.content}
                 size="sm"
+                onClick={handleSubmit}
                 className="text-xs lg:text-sm"
               >
-                <X className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
-                İptal
+                <Send className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
+                Gönder
               </Button>
-              
-              <div className="flex items-center gap-2">
-                {/* Planlı Gönderme Butonu */}
-                <Popover open={showSchedulePopover} onOpenChange={setShowSchedulePopover}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={toRecipients.length === 0 || !formData.subject || !formData.content}
-                      className="text-xs lg:text-sm"
-                    >
-                      <Clock className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
-                      <span className="hidden sm:inline">Planla</span>
-                      <ChevronDown className="h-3 w-3 lg:h-4 lg:w-4 ml-1" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80" align="end">
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-medium mb-2">Planlı Gönderim</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Mail'i belirli bir tarih ve saatte göndermek için planla
-                        </p>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <div>
-                          <Label htmlFor="schedule-date" className="text-sm">Tarih</Label>
-                          <Input
-                            id="schedule-date"
-                            type="date"
-                            value={scheduledDate}
-                            onChange={(e) => setScheduledDate(e.target.value)}
-                            min={new Date().toISOString().split('T')[0]}
-                            className="mt-1"
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="schedule-time" className="text-sm">Saat</Label>
-                          <Input
-                            id="schedule-time"
-                            type="time"
-                            value={scheduledTime}
-                            onChange={(e) => setScheduledTime(e.target.value)}
-                            className="mt-1"
-                          />
-                        </div>
-                        
-                        {scheduledDate && scheduledTime && (
-                          <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded text-sm">
-                            <p className="text-blue-900 dark:text-blue-100">
-                              Mail <strong>{new Date(`${scheduledDate}T${scheduledTime}`).toLocaleString('tr-TR')}</strong> tarihinde gönderilecek
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowSchedulePopover(false)}
-                          className="flex-1"
-                        >
-                          İptal
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={handleScheduledSend}
-                          disabled={!scheduledDate || !scheduledTime}
-                          className="flex-1"
-                        >
-                          <Clock className="h-4 w-4 mr-2" />
-                          Planla
-                        </Button>
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-                
-                {/* Hemen Gönder Butonu */}
-                <Button
-                  type="submit"
-                  disabled={toRecipients.length === 0 || !formData.subject || !formData.content}
-                  size="sm"
-                  onClick={handleSubmit}
-                  className="text-xs lg:text-sm"
-                >
-                  <Send className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
-                  Gönder
-                </Button>
-              </div>
             </div>
           </div>
         </div>
+      </div>
 
       {/* Taslak Kaydetme Onay Dialogu */}
       <AlertDialog open={showSaveDraftDialog} onOpenChange={setShowSaveDraftDialog}>
@@ -1309,7 +1346,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
           <AlertDialogHeader>
             <AlertDialogTitle>Taslak olarak kaydetmek istiyor musunuz?</AlertDialogTitle>
             <AlertDialogDescription>
-              Yazdığınız mail henüz gönderilmedi. Bu maili taslak olarak kaydetmek ister misiniz? 
+              Yazdığınız mail henüz gönderilmedi. Bu maili taslak olarak kaydetmek ister misiniz?
               Kaydedilen taslağı daha sonra Taslaklar bölümünden bulabilir ve gönderebilirsiniz.
             </AlertDialogDescription>
           </AlertDialogHeader>

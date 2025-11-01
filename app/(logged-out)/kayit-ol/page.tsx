@@ -26,7 +26,7 @@ export default function RegisterPage() {
         <div 
           className="bg-muted relative hidden lg:block"
           style={{
-            backgroundImage: 'url(/bg.jpg)',
+            backgroundImage: 'url(https://res.cloudinary.com/da2qwsrbv/image/upload/v1762039721/Kayitolgorsel_q65djw.png)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat'
@@ -61,7 +61,7 @@ export default function RegisterPage() {
         <div 
           className="bg-muted relative hidden lg:block"
           style={{
-            backgroundImage: 'url(/bg.jpg)',
+            backgroundImage: 'url(https://res.cloudinary.com/da2qwsrbv/image/upload/v1762039721/Kayitolgorsel_q65djw.png)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat'
