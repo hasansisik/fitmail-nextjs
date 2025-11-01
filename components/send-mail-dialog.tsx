@@ -70,34 +70,155 @@ interface Attachment {
   url?: string | null
 }
 
+// localStorage key for saving form state
+const COMPOSE_DIALOG_STORAGE_KEY = 'composeDialogState'
+
+// Helper functions to save/load form state
+const saveFormStateToStorage = (state: any) => {
+  try {
+    localStorage.setItem(COMPOSE_DIALOG_STORAGE_KEY, JSON.stringify(state))
+  } catch (e) {
+    console.error('Failed to save form state:', e)
+  }
+}
+
+const loadFormStateFromStorage = () => {
+  try {
+    const stored = localStorage.getItem(COMPOSE_DIALOG_STORAGE_KEY)
+    if (stored) {
+      return JSON.parse(stored)
+    }
+  } catch (e) {
+    console.error('Failed to load form state:', e)
+  }
+  return null
+}
+
+const clearFormStateFromStorage = () => {
+  try {
+    localStorage.removeItem(COMPOSE_DIALOG_STORAGE_KEY)
+  } catch (e) {
+    console.error('Failed to clear form state:', e)
+  }
+}
+
 export function SendMailDialog({ open, onOpenChange, replyMode = null, originalMail = null, draftMail = null, onMailSent }: SendMailDialogProps) {
   const dispatch = useAppDispatch()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // useRef ile dialog açıklık durumunu koru - component yeniden render olsa bile korunur
+  const isDialogOpenRef = useRef(false)
+  const hasEverBeenOpenedRef = useRef(false)
+  const isInitializedRef = useRef(false)
+  
+  // Load saved form state from localStorage on mount
+  const savedState = React.useMemo(() => {
+    if (typeof window === 'undefined') return null
+    return loadFormStateFromStorage()
+  }, [])
+  
+  // Note: Attachments are not saved to localStorage because File objects cannot be serialized
+  
+  // Internal dialog state - route değişikliklerinden etkilenmez
+  const [isDialogOpen, setIsDialogOpen] = useState(() => {
+    // Check if dialog was open in saved state
+    return savedState?.isDialogOpen || false
+  })
+  
   const [isUploading, setIsUploading] = useState(false)
   const [showCC, setShowCC] = useState(false)
   const [showBCC, setShowBCC] = useState(false)
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [isTouchDevice, setIsTouchDevice] = useState(false)
-  const [formData, setFormData] = useState({
-    to: "",
-    cc: "",
-    bcc: "",
-    subject: "",
-    content: ""
+  const [formData, setFormData] = useState(() => {
+    // Restore form data from localStorage if available
+    return savedState?.formData || {
+      to: "",
+      cc: "",
+      bcc: "",
+      subject: "",
+      content: ""
+    }
   })
-  const [toRecipients, setToRecipients] = useState<string[]>([])
-  const [ccRecipients, setCcRecipients] = useState<string[]>([])
-  const [bccRecipients, setBccRecipients] = useState<string[]>([])
+  const [toRecipients, setToRecipients] = useState<string[]>(() => savedState?.toRecipients || [])
+  const [ccRecipients, setCcRecipients] = useState<string[]>(() => savedState?.ccRecipients || [])
+  const [bccRecipients, setBccRecipients] = useState<string[]>(() => savedState?.bccRecipients || [])
   const [showSaveDraftDialog, setShowSaveDraftDialog] = useState(false)
-  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null)
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(() => savedState?.currentDraftId || null)
   const [showSchedulePopover, setShowSchedulePopover] = useState(false)
   const [scheduledDate, setScheduledDate] = useState("")
   const [scheduledTime, setScheduledTime] = useState("")
 
+  // Initialize refs from saved state
+  React.useEffect(() => {
+    if (!isInitializedRef.current && savedState) {
+      isDialogOpenRef.current = savedState.isDialogOpen || false
+      hasEverBeenOpenedRef.current = savedState.hasEverBeenOpened || false
+      if (savedState.isDialogOpen) {
+        setIsDialogOpen(true)
+      }
+      isInitializedRef.current = true
+    }
+  }, [savedState])
+
+  // Save form state to localStorage whenever it changes (only if dialog is open)
+  React.useEffect(() => {
+    if (isDialogOpen && typeof window !== 'undefined') {
+      saveFormStateToStorage({
+        isDialogOpen,
+        formData,
+        toRecipients,
+        ccRecipients,
+        bccRecipients,
+        currentDraftId,
+        hasEverBeenOpened: hasEverBeenOpenedRef.current
+      })
+    }
+  }, [isDialogOpen, formData, toRecipients, ccRecipients, bccRecipients, currentDraftId])
+
+  // Parent'tan gelen open prop'u değiştiğinde dialog'u aç (sadece açılma tetikleyicisi)
+  // ÖNEMLİ: Dialog bir kez açıldıktan sonra, parent'tan gelen open=false değişikliklerini görmezden gel
+  // Bu sayede mail yükleme (loading) veya component yeniden render sırasında dialog kapanmaz
+  React.useEffect(() => {
+    if (open && !hasEverBeenOpenedRef.current) {
+      // İlk kez açılıyor
+      hasEverBeenOpenedRef.current = true
+      isDialogOpenRef.current = true
+      setIsDialogOpen(true)
+    } else if (open && !isDialogOpenRef.current) {
+      // Açık değilse ve parent açmak istiyorsa aç
+      isDialogOpenRef.current = true
+      setIsDialogOpen(true)
+    }
+    // open=false geldiğinde hiçbir şey yapma - dialog açık kalır
+    // Dialog sadece kullanıcı action'ları (gönder, iptal, kaydet) ile kapanır
+  }, [open])
+  
+  // isDialogOpen state'ini ref ile senkronize et
+  React.useEffect(() => {
+    isDialogOpenRef.current = isDialogOpen
+  }, [isDialogOpen])
+
+  // Dialog'u gerçekten kapat (sadece kullanıcı action'larından çağrılır)
+  const handleInternalClose = (shouldNotifyParent = true) => {
+    isDialogOpenRef.current = false
+    hasEverBeenOpenedRef.current = false // Bir sonraki açılış için sıfırla
+    setIsDialogOpen(false)
+    clearFormStateFromStorage() // Clear saved state when closing
+    if (shouldNotifyParent) {
+      onOpenChange(false)
+    }
+  }
+
 
   // Reply mode veya draft mode'a göre form verilerini otomatik doldur
+  // ÖNEMLİ: Eğer dialog zaten açıksa ve form verileri varsa, onları koru
   React.useEffect(() => {
-    if (draftMail && open) {
+    // Eğer dialog yeni açılıyorsa veya replyMode/draftMail değişmişse formu doldur
+    // Ama eğer form zaten doluysa (localStorage'tan geri yüklendiyse), koru
+    const hasExistingContent = toRecipients.length > 0 || formData.subject || formData.content
+    
+    if (draftMail && isDialogOpen && !hasExistingContent) {
       // Taslağı yükle
       setCurrentDraftId(draftMail._id)
       setToRecipients(draftMail.to?.map((r: any) => r.email) || [])
@@ -113,7 +234,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       setShowCC(draftMail.cc && draftMail.cc.length > 0)
       setShowBCC(draftMail.bcc && draftMail.bcc.length > 0)
       
-    } else if (replyMode && originalMail && open) {
+    } else if (replyMode && originalMail && isDialogOpen && !hasExistingContent) {
       switch (replyMode) {
         case 'reply':
           // Sadece gönderene cevap ver
@@ -150,8 +271,8 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
           }))
           break
       }
-    } else if (!replyMode && !draftMail && open) {
-      // Yeni mail için formu temizle
+    } else if (!replyMode && !draftMail && isDialogOpen && open && !hasExistingContent) {
+      // Yeni mail için formu temizle (sadece ilk açılışta ve form boşsa)
       setFormData({
         to: "",
         cc: "",
@@ -164,7 +285,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       setBccRecipients([])
       setCurrentDraftId(null)
     }
-  }, [replyMode, originalMail, draftMail, open])
+  }, [replyMode, originalMail, draftMail, isDialogOpen, open, toRecipients, formData.subject, formData.content])
 
   // Cihazın dokunmatik olup olmadığını belirle (Tooltip dokunmatik cihazlarda çalışmaz)
   React.useEffect(() => {
@@ -422,7 +543,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     }
 
     // Close dialog immediately
-    onOpenChange(false)
+    handleInternalClose()
     
     // Reset form immediately so user can send another mail if needed
     const mailDataToSend = {
@@ -523,7 +644,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
 
     // Close dialog and popover immediately
     setShowSchedulePopover(false)
-    onOpenChange(false)
+    handleInternalClose()
     
     // Reset form immediately
     const mailDataToSchedule = {
@@ -637,7 +758,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       setShowCC(false)
       setShowBCC(false)
       setCurrentDraftId(null)
-      onOpenChange(false)
+      handleInternalClose()
       
       // Mail listesini yenile
       if (onMailSent) {
@@ -669,7 +790,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       setShowCC(false)
       setShowBCC(false)
       setCurrentDraftId(null)
-      onOpenChange(false)
+      handleInternalClose()
     }
   }
 
@@ -690,7 +811,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     setShowCC(false)
     setShowBCC(false)
     setCurrentDraftId(null)
-    onOpenChange(false)
+    handleInternalClose()
   }
 
   // Taslak kaydet ve kapat
@@ -702,7 +823,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
   return (
     <>
       {/* Gmail-style compose window - Desktop: sağ altta, Mobile: tam ekran */}
-      {open && (
+      {isDialogOpen && (
         <>
           <style jsx>{`
             @media (min-width: 1024px) {

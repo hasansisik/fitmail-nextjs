@@ -1,8 +1,8 @@
 // Development server
-export const server: string = "https://api.gozdedijital.xyz/v1";
+export const server: string = "http://localhost:5003/v1";
 
 // Production server
-export const server2: string = "https://api.gozdedijital.xyz/v1";
+export const server2: string = "http://localhost:5003/v1";
 
 // Active server based on environment
 export const activeServer: string = process.env.NODE_ENV === 'production' ? server2 : server;
@@ -11,17 +11,17 @@ export const activeServer: string = process.env.NODE_ENV === 'production' ? serv
 export const domains = {
   // Development domains
   development: {
-    main: 'gozdedijital.xyz',
-    account: 'account.gozdedijital.xyz',
-    panel: 'panel.gozdedijital.xyz',
-    protocol: 'https'
+    main: 'localhost:3000',
+    account: 'account.localhost:3000',
+    panel: 'panel.localhost:3000',
+    protocol: 'http'
   },
   // Production domains
   production: {
-    main: 'gozdedijital.xyz',
-    account: 'account.gozdedijital.xyz',
-    panel: 'panel.gozdedijital.xyz',
-    protocol: 'https'
+    main: 'localhost:3000',
+    account: 'account.localhost:3000',
+    panel: 'panel.localhost:3000',
+    protocol: 'http'
   }
 };
 
