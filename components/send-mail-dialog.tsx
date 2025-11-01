@@ -107,108 +107,163 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   // useRef ile dialog açıklık durumunu koru - component yeniden render olsa bile korunur
-  const isDialogOpenRef = useRef(false)
   const hasEverBeenOpenedRef = useRef(false)
   const isInitializedRef = useRef(false)
+  const shouldIgnoreCloseRef = useRef(false) // Parent'tan gelen false'u görmezden gelmek için
   
-  // Load saved form state from localStorage on mount
-  const savedState = React.useMemo(() => {
-    if (typeof window === 'undefined') return null
-    return loadFormStateFromStorage()
-  }, [])
+  // Load saved form state from localStorage on mount (only once)
+  const [hasLoadedSavedState, setHasLoadedSavedState] = React.useState(false)
   
-  // Note: Attachments are not saved to localStorage because File objects cannot be serialized
-  
-  // Internal dialog state - route değişikliklerinden etkilenmez
-  const [isDialogOpen, setIsDialogOpen] = useState(() => {
-    // Check if dialog was open in saved state
-    return savedState?.isDialogOpen || false
-  })
+  // Effective open state - parent'tan gelen open prop'u ile kontrol edilir ama false geldiğinde görmezden gelinebilir
+  const [effectiveOpen, setEffectiveOpen] = useState(open)
   
   const [isUploading, setIsUploading] = useState(false)
   const [showCC, setShowCC] = useState(false)
   const [showBCC, setShowBCC] = useState(false)
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [isTouchDevice, setIsTouchDevice] = useState(false)
-  const [formData, setFormData] = useState(() => {
-    // Restore form data from localStorage if available
-    return savedState?.formData || {
-      to: "",
-      cc: "",
-      bcc: "",
-      subject: "",
-      content: ""
-    }
+  const [formData, setFormData] = useState({
+    to: "",
+    cc: "",
+    bcc: "",
+    subject: "",
+    content: ""
   })
-  const [toRecipients, setToRecipients] = useState<string[]>(() => savedState?.toRecipients || [])
-  const [ccRecipients, setCcRecipients] = useState<string[]>(() => savedState?.ccRecipients || [])
-  const [bccRecipients, setBccRecipients] = useState<string[]>(() => savedState?.bccRecipients || [])
+  const [toRecipients, setToRecipients] = useState<string[]>([])
+  const [ccRecipients, setCcRecipients] = useState<string[]>([])
+  const [bccRecipients, setBccRecipients] = useState<string[]>([])
   const [showSaveDraftDialog, setShowSaveDraftDialog] = useState(false)
-  const [currentDraftId, setCurrentDraftId] = useState<string | null>(() => savedState?.currentDraftId || null)
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null)
   const [showSchedulePopover, setShowSchedulePopover] = useState(false)
   const [scheduledDate, setScheduledDate] = useState("")
   const [scheduledTime, setScheduledTime] = useState("")
 
-  // Initialize refs from saved state
+  // Load saved state from localStorage only once on mount
   React.useEffect(() => {
-    if (!isInitializedRef.current && savedState) {
-      isDialogOpenRef.current = savedState.isDialogOpen || false
-      hasEverBeenOpenedRef.current = savedState.hasEverBeenOpened || false
-      if (savedState.isDialogOpen) {
-        setIsDialogOpen(true)
+    if (!hasLoadedSavedState && typeof window !== 'undefined') {
+      const savedState = loadFormStateFromStorage()
+      if (savedState) {
+        // Restore form data (but not dialog state - let parent control that)
+        if (savedState.formData) {
+          setFormData(savedState.formData)
+        }
+        if (savedState.toRecipients) {
+          setToRecipients(savedState.toRecipients)
+        }
+        if (savedState.ccRecipients) {
+          setCcRecipients(savedState.ccRecipients)
+        }
+        if (savedState.bccRecipients) {
+          setBccRecipients(savedState.bccRecipients)
+        }
+        if (savedState.currentDraftId) {
+          setCurrentDraftId(savedState.currentDraftId)
+        }
+        // Restore hasEverBeenOpened ref (but don't open dialog automatically)
+        hasEverBeenOpenedRef.current = savedState.hasEverBeenOpened || false
       }
+      setHasLoadedSavedState(true)
       isInitializedRef.current = true
     }
-  }, [savedState])
+  }, [hasLoadedSavedState])
 
-  // Save form state to localStorage whenever it changes (only if dialog is open)
+  // Save form state to localStorage whenever form data changes (only if dialog is open)
+  // Use debounce or throttle to prevent excessive writes
+  const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+  const prevFormDataRef = React.useRef<string>('')
+  
   React.useEffect(() => {
-    if (isDialogOpen && typeof window !== 'undefined') {
-      saveFormStateToStorage({
-        isDialogOpen,
-        formData,
-        toRecipients,
-        ccRecipients,
-        bccRecipients,
-        currentDraftId,
-        hasEverBeenOpened: hasEverBeenOpenedRef.current
-      })
+    // Eğer state henüz yüklenmediyse veya dialog kapalıysa kaydetme
+    if (!hasLoadedSavedState || !effectiveOpen) {
+      return
     }
-  }, [isDialogOpen, formData, toRecipients, ccRecipients, bccRecipients, currentDraftId])
+    
+    // Form verilerini serialize et
+    const currentFormData = JSON.stringify({ 
+      formData, 
+      toRecipients, 
+      ccRecipients, 
+      bccRecipients, 
+      currentDraftId 
+    })
+    
+    // Form verileri değişti mi kontrol et
+    if (prevFormDataRef.current === currentFormData) {
+      return // Değişiklik yok, kaydetme
+    }
+    
+    if (typeof window !== 'undefined') {
+      // Clear previous timeout
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+      }
+      
+      // Debounce save to prevent excessive localStorage writes
+      saveTimeoutRef.current = setTimeout(() => {
+        // Dialog hala açıksa kaydet
+        if (effectiveOpen) {
+          saveFormStateToStorage({
+            isDialogOpen: true,
+            formData,
+            toRecipients,
+            ccRecipients,
+            bccRecipients,
+            currentDraftId,
+            hasEverBeenOpened: hasEverBeenOpenedRef.current
+          })
+          prevFormDataRef.current = currentFormData
+        }
+      }, 500) // 500ms debounce
+    }
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+      }
+    }
+  }, [formData, toRecipients, ccRecipients, bccRecipients, currentDraftId, hasLoadedSavedState, effectiveOpen])
 
-  // Parent'tan gelen open prop'u değiştiğinde dialog'u aç (sadece açılma tetikleyicisi)
-  // ÖNEMLİ: Dialog bir kez açıldıktan sonra, parent'tan gelen open=false değişikliklerini görmezden gel
-  // Bu sayede mail yükleme (loading) veya component yeniden render sırasında dialog kapanmaz
+  // Parent'tan gelen open prop'u değiştiğinde dialog'u aç
+  // ÖNEMLİ: Dialog açıldıktan sonra parent'tan gelen open=false değişikliklerini görmezden gel
+  // Bu sayede mail yükleme (loading) sırasında dialog kapanmaz
   React.useEffect(() => {
-    if (open && !hasEverBeenOpenedRef.current) {
-      // İlk kez açılıyor
+    // Eğer shouldIgnoreCloseRef aktifse ve open false geliyorsa görmezden gel
+    if (shouldIgnoreCloseRef.current && !open) {
+      return // Parent'tan gelen false'u görmezden gel
+    }
+    
+    // open true geldiğinde dialog'u aç
+    if (open) {
       hasEverBeenOpenedRef.current = true
-      isDialogOpenRef.current = true
-      setIsDialogOpen(true)
-    } else if (open && !isDialogOpenRef.current) {
-      // Açık değilse ve parent açmak istiyorsa aç
-      isDialogOpenRef.current = true
-      setIsDialogOpen(true)
+      shouldIgnoreCloseRef.current = true // Artık false'ları görmezden gelelim
+      setEffectiveOpen(true)
+    } else if (!shouldIgnoreCloseRef.current) {
+      // Eğer ignore aktif değilse (ilk kapatma), kapat
+      setEffectiveOpen(false)
     }
-    // open=false geldiğinde hiçbir şey yapma - dialog açık kalır
-    // Dialog sadece kullanıcı action'ları (gönder, iptal, kaydet) ile kapanır
   }, [open])
   
-  // isDialogOpen state'ini ref ile senkronize et
-  React.useEffect(() => {
-    isDialogOpenRef.current = isDialogOpen
-  }, [isDialogOpen])
-
   // Dialog'u gerçekten kapat (sadece kullanıcı action'larından çağrılır)
-  const handleInternalClose = (shouldNotifyParent = true) => {
-    isDialogOpenRef.current = false
-    hasEverBeenOpenedRef.current = false // Bir sonraki açılış için sıfırla
-    setIsDialogOpen(false)
-    clearFormStateFromStorage() // Clear saved state when closing
-    if (shouldNotifyParent) {
-      onOpenChange(false)
+  const handleInternalClose = React.useCallback((shouldNotifyParent = true) => {
+    // Eğer zaten kapalıysa bir şey yapma
+    if (!effectiveOpen) {
+      return
     }
-  }
+    
+    hasEverBeenOpenedRef.current = false // Bir sonraki açılış için sıfırla
+    shouldIgnoreCloseRef.current = false // Artık parent'tan gelen değişiklikleri dinle
+    setEffectiveOpen(false)
+    clearFormStateFromStorage() // Clear saved state when closing
+    
+    // Parent'a bildir (sadece gerektiğinde)
+    if (shouldNotifyParent && typeof onOpenChange === 'function') {
+      // setTimeout ile bir sonraki tick'te çağır - sonsuz döngüyü önle
+      setTimeout(() => {
+        onOpenChange(false)
+      }, 0)
+    }
+  }, [onOpenChange, effectiveOpen])
 
 
   // Reply mode veya draft mode'a göre form verilerini otomatik doldur
@@ -218,7 +273,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     // Ama eğer form zaten doluysa (localStorage'tan geri yüklendiyse), koru
     const hasExistingContent = toRecipients.length > 0 || formData.subject || formData.content
     
-    if (draftMail && isDialogOpen && !hasExistingContent) {
+    if (draftMail && effectiveOpen && !hasExistingContent) {
       // Taslağı yükle
       setCurrentDraftId(draftMail._id)
       setToRecipients(draftMail.to?.map((r: any) => r.email) || [])
@@ -234,7 +289,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       setShowCC(draftMail.cc && draftMail.cc.length > 0)
       setShowBCC(draftMail.bcc && draftMail.bcc.length > 0)
       
-    } else if (replyMode && originalMail && isDialogOpen && !hasExistingContent) {
+    } else if (replyMode && originalMail && effectiveOpen && !hasExistingContent) {
       switch (replyMode) {
         case 'reply':
           // Sadece gönderene cevap ver
@@ -271,7 +326,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
           }))
           break
       }
-    } else if (!replyMode && !draftMail && isDialogOpen && open && !hasExistingContent) {
+    } else if (!replyMode && !draftMail && effectiveOpen && open && !hasExistingContent) {
       // Yeni mail için formu temizle (sadece ilk açılışta ve form boşsa)
       setFormData({
         to: "",
@@ -285,7 +340,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       setBccRecipients([])
       setCurrentDraftId(null)
     }
-  }, [replyMode, originalMail, draftMail, isDialogOpen, open, toRecipients, formData.subject, formData.content])
+  }, [replyMode, originalMail, draftMail, effectiveOpen, open, toRecipients, formData.subject, formData.content])
 
   // Cihazın dokunmatik olup olmadığını belirle (Tooltip dokunmatik cihazlarda çalışmaz)
   React.useEffect(() => {
@@ -823,21 +878,23 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
   return (
     <>
       {/* Gmail-style compose window - Desktop: sağ altta, Mobile: tam ekran */}
-      {isDialogOpen && (
-        <>
-          <style jsx>{`
-            @media (min-width: 1024px) {
-              .compose-window {
-                height: 600px !important;
-                max-height: calc(100vh - 100px) !important;
-              }
-            }
-          `}</style>
-          <div className="compose-window fixed bottom-0 right-0 lg:right-4 z-50 w-full lg:max-w-2xl shadow-2xl lg:rounded-t-lg bg-background border-t lg:border border-border overflow-hidden flex flex-col"
-               style={{ 
-                 height: '100vh',
-                 maxHeight: '100vh'
-               }}>
+      <style jsx>{`
+        @media (min-width: 1024px) {
+          .compose-window {
+            height: 600px !important;
+            max-height: calc(100vh - 100px) !important;
+          }
+        }
+      `}</style>
+      <div 
+        className={`compose-window fixed bottom-0 right-0 lg:right-4 z-50 w-full lg:max-w-2xl shadow-2xl lg:rounded-t-lg bg-background border-t lg:border border-border overflow-hidden flex flex-col transition-opacity duration-200 ${
+          effectiveOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        style={{ 
+          height: effectiveOpen ? '100vh' : '0',
+          maxHeight: effectiveOpen ? '100vh' : '0',
+          display: effectiveOpen ? 'flex' : 'none'
+        }}>
           {/* Header */}
           <div className="flex items-center justify-between p-3 lg:p-4 border-b bg-muted/50">
             <div className="flex items-center gap-2">
@@ -1244,9 +1301,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
               </div>
             </div>
           </div>
-          </div>
-        </>
-      )}
+        </div>
 
       {/* Taslak Kaydetme Onay Dialogu */}
       <AlertDialog open={showSaveDraftDialog} onOpenChange={setShowSaveDraftDialog}>

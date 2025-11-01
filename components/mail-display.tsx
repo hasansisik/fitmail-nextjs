@@ -750,9 +750,12 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
           
           {/* Scrollable content area */}
           <div className="flex-1 overflow-y-auto">
-            <div className="whitespace-pre-wrap p-2 sm:p-4 text-sm">
-              {stripHtml(mail.content || mail.htmlContent || 'İçerik yok')}
-            </div>
+            <div 
+              className="prose prose-sm max-w-none p-2 sm:p-4 text-sm [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-2 [&_li]:my-1 [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:my-2 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:my-2 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:my-2 [&_h4]:text-lg [&_h4]:font-bold [&_h4]:my-2 [&_h5]:text-base [&_h5]:font-bold [&_h5]:my-2 [&_h6]:text-sm [&_h6]:font-bold [&_h6]:my-2 [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_p]:my-2"
+              dangerouslySetInnerHTML={{ 
+                __html: mail.htmlContent || mail.content || '<p>İçerik yok</p>' 
+              }}
+            />
           
             {/* Karşılıklı Mesajlaşma */}
             {mail.conversation && mail.conversation.length > 0 && (
@@ -828,7 +831,8 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                             {/* Mesaj önizlemesi */}
                             <div className="px-3 pb-3">
                               <span className="text-xs text-muted-foreground line-clamp-1">
-                                {stripHtml(message.content).substring(0, 80)}...
+                                {stripHtml(message.content).substring(0, 80)}
+                                {stripHtml(message.content).length > 80 && '...'}
                               </span>
                             </div>
                           </div>
@@ -886,7 +890,10 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                                     <ChevronUp className="h-4 w-4" />
                                   </Button>
                                 </div>
-                                <p className="text-sm whitespace-pre-wrap">{stripHtml(message.content)}</p>
+                                <div 
+                                  className="text-sm prose prose-sm max-w-none [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-2 [&_li]:my-1 [&_h1]:text-xl [&_h1]:font-bold [&_h2]:text-lg [&_h2]:font-bold [&_h3]:text-base [&_h3]:font-bold [&_strong]:font-bold [&_em]:italic [&_u]:underline"
+                                  dangerouslySetInnerHTML={{ __html: message.content }}
+                                />
                               </div>
                             </div>
                           </div>

@@ -42,7 +42,28 @@ export function RichTextEditor({ content, onChange, placeholder = "Mail içeriğ
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Ensure heading extension is enabled with all levels
+        heading: {
+          levels: [1, 2, 3, 4, 5, 6],
+        },
+        // Ensure list extensions are enabled
+        bulletList: {
+          HTMLAttributes: {
+            class: 'list-disc pl-6',
+          },
+        },
+        orderedList: {
+          HTMLAttributes: {
+            class: 'list-decimal pl-6',
+          },
+        },
+        listItem: {
+          HTMLAttributes: {
+            class: 'my-1',
+          },
+        },
+      }),
       Underline,
       Placeholder.configure({
         placeholder,
@@ -61,7 +82,7 @@ export function RichTextEditor({ content, onChange, placeholder = "Mail içeriğ
     },
     editorProps: {
       attributes: {
-        class: "prose prose-sm max-w-none focus:outline-none min-h-[200px] px-4 py-3 [&_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_p.is-editor-empty:first-child::before]:text-muted-foreground [&_p.is-editor-empty:first-child::before]:float-left [&_p.is-editor-empty:first-child::before]:pointer-events-none",
+        class: "prose prose-sm max-w-none focus:outline-none min-h-[200px] px-4 py-3 [&_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_p.is-editor-empty:first-child::before]:text-muted-foreground [&_p.is-editor-empty:first-child::before]:float-left [&_p.is-editor-empty:first-child::before]:pointer-events-none [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-2 [&_li]:my-1 [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:my-2 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:my-2 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:my-2 [&_h4]:text-lg [&_h4]:font-bold [&_h4]:my-2 [&_h5]:text-base [&_h5]:font-bold [&_h5]:my-2 [&_h6]:text-sm [&_h6]:font-bold [&_h6]:my-2",
       },
     },
   })
