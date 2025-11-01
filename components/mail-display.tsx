@@ -28,6 +28,7 @@ import {
   MoreHorizontal,
   ChevronDown,
   ChevronUp,
+  Star,
 } from "lucide-react"
 
 import {
@@ -121,7 +122,7 @@ interface ApiMail {
 }
 import { useState, useEffect, useRef } from "react"
 import { useAppDispatch } from "@/redux/hook"
-import { addReplyToMail, getMailById, toggleMailReadStatus, moveMailToFolder, deleteMail } from "@/redux/actions/mailActions"
+import { addReplyToMail, getMailById, toggleMailReadStatus, moveMailToFolder, deleteMail, markMailAsStarred } from "@/redux/actions/mailActions"
 import { uploadFileToCloudinary } from "@/utils/cloudinary"
 import { AttachmentPreview } from "@/components/attachment-preview"
 import { RichTextEditor } from "@/components/rich-text-editor"
@@ -170,6 +171,18 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
     isStarred: false,
     isSnoozed: false
   })
+
+  // Mail durumunu mail objesinden güncelle
+  useEffect(() => {
+    if (mail) {
+      setMailStatus(prev => ({
+        ...prev,
+        isArchived: mail.folder === 'archive',
+        isTrashed: mail.folder === 'trash',
+        isStarred: mail.isStarred || false,
+      }))
+    }
+  }, [mail])
 
   // Reply olup olmadığını kontrol et
   const isReply = mail?.subject?.toLowerCase().startsWith('re:') || false
@@ -512,6 +525,31 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
       setShowTrashDialog(false)
     }
   }
+
+  // Yıldızlama işlemi
+  const handleStarred = async () => {
+    if (!mail) return
+    
+    try {
+      const result = await dispatch(markMailAsStarred(mail._id)).unwrap()
+      const newStarredStatus = result.isStarred
+      
+      setMailStatus(prev => ({ ...prev, isStarred: newStarredStatus }))
+      toast.success(newStarredStatus ? 'Mail yıldızlı olarak işaretlendi!' : 'Mail yıldızlı olmaktan çıkarıldı!')
+      
+      // Mail'i yeniden yükle
+      await dispatch(getMailById(mail._id)).unwrap()
+      
+      // Parent component'i bilgilendir
+      if (onMailSent) {
+        onMailSent()
+      }
+    } catch (error: any) {
+      console.error("Star failed:", error)
+      const errorMessage = typeof error === 'string' ? error : error?.message || "Yıldızlama sırasında bir hata oluştu"
+      toast.error(errorMessage)
+    }
+  }
   // Cevapla
   const handleReply = () => {
     setIsReplying(true)
@@ -620,6 +658,21 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
               </Button>
             </TooltipTrigger>
             <TooltipContent>{mailStatus.isTrashed ? "Çöp kutusundan çıkar" : "Çöp kutusuna taşı"}</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                disabled={!mail}
+                onClick={handleStarred}
+                className={mailStatus.isStarred ? "text-yellow-500" : ""}
+              >
+                <Star className={`h-4 w-4 ${mailStatus.isStarred ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                <span className="sr-only">Yıldızla</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{mailStatus.isStarred ? "Yıldız işaretini kaldır" : "Yıldızlı olarak işaretle"}</TooltipContent>
           </Tooltip>
         </div>
         <div className="ml-auto flex items-center gap-1 sm:gap-2">

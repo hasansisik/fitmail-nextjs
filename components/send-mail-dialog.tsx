@@ -544,6 +544,40 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     if (files) {
       setIsUploading(true)
       const fileArray = Array.from(files)
+      
+      // Dosya boyut limiti: 100MB = 100 * 1024 * 1024 bytes
+      const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
+      
+      // Mevcut attachment'ların toplam boyutu
+      const currentTotalSize = attachments.reduce((sum, att) => sum + att.size, 0)
+      
+      // Yeni dosyaların toplam boyutu
+      const newFilesTotalSize = fileArray.reduce((sum, file) => sum + file.size, 0)
+      
+      // Toplam boyut kontrolü (mevcut + yeni dosyalar)
+      const totalSize = currentTotalSize + newFilesTotalSize
+      
+      if (totalSize > MAX_FILE_SIZE) {
+        toast.error(`Toplam dosya boyutu 100MB'ı geçemez! (Şu anki: ${formatFileSize(totalSize)}, Maksimum: ${formatFileSize(MAX_FILE_SIZE)})`)
+        setIsUploading(false)
+        // Input'u temizle
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
+        return
+      }
+      
+      // Her dosyanın tek başına 100MB'dan büyük olup olmadığını kontrol et
+      const oversizedFiles = fileArray.filter(file => file.size > MAX_FILE_SIZE)
+      if (oversizedFiles.length > 0) {
+        const oversizedNames = oversizedFiles.map(f => f.name).join(', ')
+        toast.error(`Bazı dosyalar 100MB'dan büyük: ${oversizedNames}`)
+        setIsUploading(false)
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
+        return
+      }
 
       try {
         const uploadPromises = fileArray.map(async (file) => {
@@ -580,13 +614,17 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
 
         const successCount = newAttachments.filter(att => att.url).length
         if (successCount > 0) {
-          toast.success(`Dosya yüklendi`)
+          toast.success(`${successCount} dosya başarıyla eklendi`)
         }
       } catch (error) {
         console.error('Batch upload error:', error)
         toast.error('Dosyalar yüklenirken hata oluştu')
       } finally {
         setIsUploading(false)
+        // Input'u temizle
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
       }
     }
   }
@@ -1158,7 +1196,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                   <div className="flex items-center gap-2">
                     <Label>Ekler</Label>
                     <InfoHelp label="Ekler hakkında bilgi">
-                      E-postanıza dosya ekleyebilirsiniz. Belgeler, resimler, videolar ve diğer dosya türleri desteklenir. Dosyalar güvenli bir şekilde Cloudinary'ye yüklenir.
+                      E-postanıza her türlü dosya ekleyebilirsiniz (resimler, videolar, belgeler, vb.). Toplam dosya boyutu 100MB'ı geçemez. Dosyalar güvenli bir şekilde Cloudinary'ye yüklenir.
                     </InfoHelp>
                   </div>
                   <Button
@@ -1183,7 +1221,6 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                   multiple
                   onChange={handleFileSelect}
                   className="hidden"
-                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
                 />
 
                 {attachments.length > 0 && (
