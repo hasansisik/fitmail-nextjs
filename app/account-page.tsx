@@ -244,11 +244,63 @@ export default function AccountPage() {
     return age >= 0 ? age.toString() : '';
   };
 
+  // Telefon numarası formatlama: 05555555555 -> 0555 555 55 55
+  const formatPhoneNumberDisplay = (numbers: string): string => {
+    // Format: 0555 555 55 55 (11 karakter: 0 + 3 + 3 + 2 + 2)
+    if (numbers.length <= 4) {
+      return numbers;
+    } else if (numbers.length <= 7) {
+      return `${numbers.slice(0, 4)} ${numbers.slice(4)}`;
+    } else if (numbers.length <= 9) {
+      return `${numbers.slice(0, 4)} ${numbers.slice(4, 7)} ${numbers.slice(7)}`;
+    } else if (numbers.length <= 11) {
+      // 11 karaktere kadar formatla: 0555 555 55 55
+      return `${numbers.slice(0, 4)} ${numbers.slice(4, 7)} ${numbers.slice(7, 9)} ${numbers.slice(9, 11)}`;
+    } else {
+      // 11 karakterden fazlasını kes
+      return `${numbers.slice(0, 4)} ${numbers.slice(4, 7)} ${numbers.slice(7, 9)} ${numbers.slice(9, 11)}`;
+    }
+  };
+
+  const formatPhoneNumber = (value: string, previousValue?: string): string => {
+    // Sadece rakamları al, maksimum 11 karakter
+    let numbers = value.replace(/\D/g, '').slice(0, 11);
+    const prevNumbers = previousValue ? previousValue.replace(/\D/g, '') : '';
+    
+    // Eğer önceki değer 0 ile başlıyorsa ve yeni değer 0 ile başlamıyorsa, 0'ı koru
+    if (prevNumbers.length > 0 && prevNumbers[0] === '0' && numbers.length > 0 && numbers[0] !== '0') {
+      // 0 silinmeye çalışılıyor, 0'ı koru (maksimum 11 karakter)
+      if (('0' + numbers).length <= 11) {
+        return formatPhoneNumberDisplay('0' + numbers);
+      }
+    }
+    
+    // 0 ile başlamıyorsa ve boş değilse 0 ekle (maksimum 11 karakter)
+    if (numbers.length > 0 && numbers[0] !== '0') {
+      const withZero = '0' + numbers;
+      if (withZero.length <= 11) {
+        return formatPhoneNumberDisplay(withZero);
+      }
+    }
+    
+    // Format gösterimi (maksimum 11 karakter)
+    return formatPhoneNumberDisplay(numbers);
+  };
+
+  // Telefon numarasını temizle (formatlamayı kaldır)
+  const cleanPhoneNumber = (value: string): string => {
+    return value.replace(/\D/g, '');
+  };
+
   // Kullanıcı verilerini form'a yükle
   useEffect(() => {
     if (user) {
       const birthDateString = user.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : "";
       const calculatedAge = calculateAge(birthDateString);
+      
+      // Telefon numarasını formatlanmış şekilde yükle
+      const phoneNumber = user.profile?.phoneNumber || "";
+      const formattedPhone = phoneNumber ? formatPhoneNumber(phoneNumber) : "";
 
       setFormData({
         name: user.name || "",
@@ -260,7 +312,7 @@ export default function AccountPage() {
         gender: user.gender || "",
         weight: user.weight || "",
         height: user.height || "",
-        phoneNumber: user.profile?.phoneNumber || "",
+        phoneNumber: formattedPhone,
         bio: user.profile?.bio || "",
         skills: user.profile?.skills?.join(', ') || "",
         street: user.address?.street || "",
@@ -480,6 +532,30 @@ export default function AccountPage() {
         [field]: value,
         age: calculatedAge
       }));
+    } else if (field === 'phoneNumber') {
+      // Telefon numarası formatlanmış şekilde gösterilir
+      // Önceki değeri kontrol ederek 0'ın silinmesini engelle
+      // maxLength kontrolü yapmadan önce formatlamayı uygula
+      setFormData(prev => {
+        // Eğer kullanıcı formatlanmış string yazıyorsa (boşluklar içeriyorsa),
+        // önce rakamları çıkar, sonra formatla
+        const formatted = formatPhoneNumber(value, prev.phoneNumber);
+        
+        // Formatlanmış string'in uzunluğunu kontrol et (max 14 karakter: 11 rakam + 3 boşluk)
+        const digitsOnly = formatted.replace(/\D/g, '');
+        if (digitsOnly.length > 11) {
+          // 11 rakamdan fazlasını kes ve tekrar formatla
+          return {
+            ...prev,
+            [field]: formatPhoneNumberDisplay(digitsOnly.slice(0, 11))
+          };
+        }
+        
+        return {
+          ...prev,
+          [field]: formatted
+        };
+      });
     } else {
       setFormData(prev => ({
         ...prev,
@@ -511,7 +587,15 @@ export default function AccountPage() {
         const heightValue = parseInt(formData.height.toString());
         if (!isNaN(heightValue)) profileData.height = heightValue;
       }
-      if (formData.phoneNumber && formData.phoneNumber.trim()) profileData.phoneNumber = formData.phoneNumber.trim();
+      // Telefon numarasını temizle (formatlamayı kaldır) ve gönder
+      if (formData.phoneNumber && formData.phoneNumber.trim()) {
+        const cleanedPhone = cleanPhoneNumber(formData.phoneNumber.trim());
+        // Boş olsa bile gönder (kullanıcı silmişse boş string gönder)
+        profileData.phoneNumber = cleanedPhone;
+      } else {
+        // Boş ise boş string gönder
+        profileData.phoneNumber = '';
+      }
       if (formData.bio && formData.bio.trim()) profileData.bio = formData.bio.trim();
 
       // Skills array
@@ -553,6 +637,10 @@ export default function AccountPage() {
     if (user) {
       const birthDateString = user.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : "";
       const calculatedAge = calculateAge(birthDateString);
+      
+      // Telefon numarasını formatlanmış şekilde yükle
+      const phoneNumber = user.profile?.phoneNumber || "";
+      const formattedPhone = phoneNumber ? formatPhoneNumber(phoneNumber) : "";
 
       setFormData({
         name: user.name || "",
@@ -564,7 +652,7 @@ export default function AccountPage() {
         gender: user.gender || "",
         weight: user.weight || "",
         height: user.height || "",
-        phoneNumber: user.profile?.phoneNumber || "",
+        phoneNumber: formattedPhone,
         bio: user.profile?.bio || "",
         skills: user.profile?.skills?.join(', ') || "",
         street: user.address?.street || "",
@@ -1437,12 +1525,17 @@ export default function AccountPage() {
                             <Label htmlFor="phoneNumber">Telefon Numarası</Label>
                             <Input
                               id="phoneNumber"
+                              type="tel"
                               value={formData.phoneNumber}
-                              onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                              onChange={(e) => {
+                                // maxLength kontrolünü kaldır, formatlama fonksiyonu kontrol edecek
+                                handleInputChange('phoneNumber', e.target.value);
+                              }}
                               disabled={!isEditing}
-                              placeholder="+90 5XX XXX XX XX"
+                              placeholder="0555 555 55 55"
                               className="mt-1"
                             />
+                            <p className="text-xs text-gray-500 mt-1">Format: 0555 555 55 55</p>
                           </div>
                           <div>
                             <Label htmlFor="weight">Kilo (kg)</Label>
@@ -1650,6 +1743,39 @@ export default function AccountPage() {
                       </div>
                     </div>
 
+                    {/* Telefon Numarası Bölümü */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Telefon Numarası</h3>
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <Label htmlFor="securityPhoneNumber" className="text-sm font-medium text-gray-700 mb-2 block">
+                              Telefon Numarası
+                            </Label>
+                            <Input
+                              id="securityPhoneNumber"
+                              type="tel"
+                              value={formData.phoneNumber}
+                              onChange={(e) => {
+                                // maxLength kontrolünü kaldır, formatlama fonksiyonu kontrol edecek
+                                handleInputChange('phoneNumber', e.target.value);
+                              }}
+                              placeholder="0555 555 55 55"
+                              className="max-w-xs"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Format: 0555 555 55 55</p>
+                          </div>
+                          <Button
+                            onClick={handleSaveProfile}
+                            className="bg-[#490e6f] hover:bg-[#490e6f] self-end"
+                            size="sm"
+                          >
+                            Kaydet
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Güvenlik Durumu */}
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-4">Güvenlik Durumu</h3>
@@ -1670,6 +1796,17 @@ export default function AccountPage() {
                           </div>
                           {twoFactor.enabled && (
                             <span className="text-xs text-green-600 font-medium">✓ Aktif</span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 ${formData.phoneNumber && formData.phoneNumber.trim() ? 'bg-green-500' : 'bg-gray-400'} rounded-full`}></div>
+                            <span className="text-sm">Telefon numarası</span>
+                          </div>
+                          {formData.phoneNumber && formData.phoneNumber.trim() ? (
+                            <span className="text-xs text-green-600 font-medium">✓ Kayıtlı</span>
+                          ) : (
+                            <span className="text-xs text-gray-500 font-medium">Kayıtlı değil</span>
                           )}
                         </div>
                       </div>
