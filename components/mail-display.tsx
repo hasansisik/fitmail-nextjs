@@ -161,6 +161,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
   const [replySent, setReplySent] = useState(false) // Cevap gönderildi mi?
   const [previewAttachment, setPreviewAttachment] = useState<any>(null)
   const [showPreview, setShowPreview] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
   const [mailStatus, setMailStatus] = useState<{
     isArchived: boolean
     isTrashed: boolean
@@ -252,28 +253,112 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
     return <Paperclip className="h-4 w-4" />
   }
 
-  // Dosya indirme
-  const handleDownload = (attachment: any) => {
-    if (attachment.url) {
-      try {
-        const link = document.createElement('a')
-        link.href = attachment.url
-        link.download = attachment.filename || attachment.name || 'attachment'
-        link.target = '_blank'
-        link.rel = 'noopener noreferrer'
-        
-        // Link'i DOM'a ekle, tıkla ve kaldır
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        
-        toast.success('Dosya indiriliyor...')
-      } catch (error) {
-        console.error('Download error:', error)
-        toast.error('Dosya indirilemedi')
+  // URL'den dosya adını çıkar
+  const getFileNameFromUrl = (url: string): string => {
+    try {
+      const urlObj = new URL(url)
+      const pathname = urlObj.pathname
+      const fileName = pathname.split('/').pop() || ''
+      // Query string'den dosya adını da kontrol et
+      const urlParams = urlObj.searchParams.get('filename') || urlObj.searchParams.get('name')
+      if (urlParams) {
+        return decodeURIComponent(urlParams)
       }
-    } else {
+      // Path'den dosya adını decode et
+      return decodeURIComponent(fileName.split('?')[0])
+    } catch {
+      // URL parse edilemezse, basit string işlemi yap
+      const parts = url.split('/')
+      const lastPart = parts[parts.length - 1] || ''
+      return decodeURIComponent(lastPart.split('?')[0].split('#')[0])
+    }
+  }
+
+  // Dosya indirme - direkt indirme için fetch kullan
+  const handleDownload = async (attachment: any) => {
+    if (!attachment.url) {
       toast.error('Dosya indirilemedi - URL bulunamadı')
+      return
+    }
+
+    try {
+      const loadingToastId = toast.loading('Dosya indiriliyor...')
+      
+      // Fetch ile dosyayı blob olarak al
+      const response = await fetch(attachment.url)
+      if (!response.ok) {
+        throw new Error('Dosya indirilemedi')
+      }
+      
+      const blob = await response.blob()
+      
+      // Dosya adını belirle - öncelik sırasına göre
+      let fileName = attachment.filename || attachment.originalName || attachment.name
+      
+      // Eğer hala dosya adı yoksa, URL'den çıkar
+      if (!fileName || fileName === 'attachment' || fileName.trim() === '') {
+        fileName = getFileNameFromUrl(attachment.url)
+      }
+      
+      // Hala dosya adı yoksa, Content-Disposition header'ından almayı dene
+      if (!fileName || fileName === 'attachment' || fileName.trim() === '') {
+        const contentDisposition = response.headers.get('Content-Disposition')
+        if (contentDisposition) {
+          const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+          if (fileNameMatch && fileNameMatch[1]) {
+            fileName = fileNameMatch[1].replace(/['"]/g, '')
+            // UTF-8 encoded dosya adları için decode
+            if (fileName.startsWith("UTF-8''")) {
+              fileName = decodeURIComponent(fileName.replace("UTF-8''", ''))
+            } else if (fileName.includes('%')) {
+              fileName = decodeURIComponent(fileName)
+            }
+          }
+        }
+      }
+      
+      // Son çare olarak 'attachment' kullan
+      if (!fileName || fileName.trim() === '') {
+        // Blob tipinden uzantı çıkar
+        const blobType = blob.type
+        let extension = ''
+        if (blobType) {
+          const extMap: Record<string, string> = {
+            'image/jpeg': '.jpg',
+            'image/png': '.png',
+            'image/gif': '.gif',
+            'image/webp': '.webp',
+            'application/pdf': '.pdf',
+            'application/zip': '.zip',
+            'text/plain': '.txt'
+          }
+          extension = extMap[blobType] || ''
+        }
+        fileName = `attachment${extension}`
+      }
+      
+      // Blob URL oluştur
+      const blobUrl = window.URL.createObjectURL(blob)
+      
+      // Link oluştur ve indir
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.download = fileName
+      link.style.display = 'none'
+      
+      // Link'i DOM'a ekle, tıkla ve kaldır
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      // Blob URL'yi temizle
+      window.URL.revokeObjectURL(blobUrl)
+      
+      toast.dismiss(loadingToastId)
+      toast.success('Dosya indirildi!')
+    } catch (error) {
+      console.error('Download error:', error)
+      toast.error('Dosya indirilemedi')
     }
   }
 
@@ -293,6 +378,50 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
   const canPreview = (attachment: any) => {
     // Tüm dosyalar için önizleme modalını aç (güvenlik kontrolü modal içinde yapılacak)
     return true
+  }
+
+  // Drag and drop handlers
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragging(true)
+    }
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // Only set dragging to false if we're leaving the container itself
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragging(false)
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.dataTransfer.types.includes('Files')) {
+      e.dataTransfer.dropEffect = 'copy'
+    }
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    const files = e.dataTransfer.files
+    if (files && files.length > 0) {
+      // Create a mock event object to reuse handleFileSelect logic
+      const mockEvent = {
+        target: {
+          files: files
+        }
+      } as React.ChangeEvent<HTMLInputElement>
+      
+      await handleFileSelect(mockEvent)
+    }
   }
 
   // Dosya seçme ve Cloudinary'ye yükleme
@@ -650,7 +779,22 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div 
+      className={`flex h-full flex-col relative ${isDragging ? 'border-2 border-primary border-dashed' : ''}`}
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {isDragging && (
+        <div className="absolute inset-0 bg-primary/10 border-2 border-dashed border-primary rounded-lg flex items-center justify-center z-50 pointer-events-none">
+          <div className="bg-background p-6 rounded-lg shadow-lg border-2 border-primary">
+            <Paperclip className="h-12 w-12 mx-auto mb-4 text-primary" />
+            <p className="text-lg font-semibold text-center">Dosyaları buraya bırakın</p>
+            <p className="text-sm text-muted-foreground text-center mt-2">Cevaba eklemek istediğiniz dosyaları sürükleyip bırakın</p>
+          </div>
+        </div>
+      )}
       <div className="flex items-center p-2">
         <div className="flex items-center gap-1 sm:gap-2">
           {onToggleMaximize && (
@@ -1162,7 +1306,13 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
           </div>
           
           {/* Fixed footer - Gmail benzeri cevapla kısmı */}
-          <div className="border-t bg-background">
+          <div 
+            className={`border-t bg-background ${isDragging ? 'bg-primary/5' : ''}`}
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
             <div className="p-2 sm:p-4">
             {!isReplying ? (
               <div className="flex flex-wrap items-center gap-2">
