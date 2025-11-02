@@ -3,6 +3,7 @@ import { ComponentProps } from "react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { MailContextMenu } from "@/components/mail-context-menu"
+import { Clock } from "lucide-react"
 
 // HTML'i düz metne çevir
 function stripHtml(html: string): string {
@@ -82,6 +83,7 @@ interface ApiMail {
   mailgunId: string
   messageId: string
   references: string[]
+  scheduledSendAt?: string
   user: {
     _id: string
     name: string
@@ -132,15 +134,25 @@ export function MailItem({ mail, onAction, onClick }: MailItemProps) {
                   Yanıt
                 </Badge>
               )}
+              {mail.status === 'scheduled' && mail.scheduledSendAt && (
+                <Badge variant="outline" className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 border-blue-200">
+                  <Clock className="h-3 w-3 mr-1" />
+                  Planlanan
+                </Badge>
+              )}
             </div>
             <div
               className={cn(
                 "ml-auto text-xs text-muted-foreground"
               )}
             >
-              {(() => {
+{(() => {
                 try {
-                  const dateValue = mail.receivedAt || mail.createdAt || mail.updatedAt
+                  // Planlanan mailler için scheduledSendAt tarihini göster
+                  let dateValue = mail.status === 'scheduled' && mail.scheduledSendAt 
+                    ? mail.scheduledSendAt 
+                    : mail.receivedAt || mail.createdAt || mail.updatedAt
+                  
                   if (!dateValue) return 'Tarih yok'
                   
                   // Tarih string'ini parse et
@@ -153,7 +165,31 @@ export function MailItem({ mail, onAction, onClick }: MailItemProps) {
                   
                   if (isNaN(date.getTime())) return 'Geçersiz tarih'
                   
-                  // Detaylı zaman hesaplama
+                  // Planlanan mail için farklı gösterim
+                  if (mail.status === 'scheduled' && mail.scheduledSendAt) {
+                    const now = new Date()
+                    const diffInMs = date.getTime() - now.getTime()
+                    
+                    if (diffInMs < 0) {
+                      return 'Geçmiş'
+                    }
+                    
+                    const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
+                    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
+                    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
+                    
+                    if (diffInMinutes < 60) {
+                      return `${diffInMinutes} dk sonra`
+                    } else if (diffInHours < 24) {
+                      return `${diffInHours} saat sonra`
+                    } else if (diffInDays < 7) {
+                      return `${diffInDays} gün sonra`
+                    } else {
+                      return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                    }
+                  }
+                  
+                  // Normal mail için detaylı zaman hesaplama
                   const now = new Date()
                   const diffInMs = now.getTime() - date.getTime()
                   const diffInMinutes = Math.floor(diffInMs / (1000 * 60))

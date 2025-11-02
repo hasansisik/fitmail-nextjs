@@ -59,6 +59,7 @@ interface ApiMail {
   mailgunId: string
   messageId: string
   references: string[]
+  scheduledSendAt?: string
   user: {
     _id: string
     name: string
@@ -215,6 +216,7 @@ export function MailList({
       "Gelen Kutusu": "inbox",
       "Gönderilenler": "sent",
       "Taslaklar": "drafts",
+      "Planlanan": "scheduled",
       "Spam": "spam",
       "Çöp Kutusu": "trash",
       "Arşiv": "archive",

@@ -30,6 +30,7 @@ import {
   ChevronUp,
   Star,
 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 
 import {
   DropdownMenuContent,
@@ -113,6 +114,7 @@ interface ApiMail {
   mailgunId: string
   messageId: string
   references: string[]
+  scheduledSendAt?: string
   user: {
     _id: string
     name: string
@@ -773,24 +775,60 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                 </AvatarFallback>
               </Avatar>
               <div className="grid gap-1">
-                <div className="font-semibold">Alıcı: {mail.to?.map(recipient => recipient.name).join(', ') || 'Bilinmeyen Alıcı'}</div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="font-semibold">Alıcı: {mail.to?.map(recipient => recipient.name).join(', ') || 'Bilinmeyen Alıcı'}</div>
+                  {mail.status === 'scheduled' && mail.scheduledSendAt && (
+                    <Badge variant="outline" className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 border-blue-200">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Planlanan
+                    </Badge>
+                  )}
+                </div>
                 <div className="line-clamp-1 text-xs">{mail.subject}</div>
                 <div className="line-clamp-1 text-xs">
                   <span className="font-medium">Gönderen:</span> {mail.from?.name || 'Bilinmeyen'} &lt;{mail.from?.email || 'Bilinmeyen'}&gt;
                 </div>
               </div>
             </div>
-            {(mail.receivedAt || mail.createdAt) && (
+            {(mail.receivedAt || mail.createdAt || (mail.status === 'scheduled' && mail.scheduledSendAt)) && (
               <div className="ml-auto text-xs text-muted-foreground hidden sm:block">
                 {(() => {
                   try {
-                    const dateValue = mail.receivedAt || mail.createdAt
+                    // Planlanan mailler için scheduledSendAt tarihini göster
+                    let dateValue = mail.status === 'scheduled' && mail.scheduledSendAt 
+                      ? mail.scheduledSendAt 
+                      : mail.receivedAt || mail.createdAt
+                    
                     if (!dateValue) return 'Tarih yok'
                     
                     const date = new Date(dateValue)
                     if (isNaN(date.getTime())) return 'Geçersiz tarih'
                     
-                    // Detaylı zaman hesaplama
+                    // Planlanan mail için farklı gösterim
+                    if (mail.status === 'scheduled' && mail.scheduledSendAt) {
+                      const now = new Date()
+                      const diffInMs = date.getTime() - now.getTime()
+                      
+                      if (diffInMs < 0) {
+                        return 'Geçmiş'
+                      }
+                      
+                      const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
+                      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
+                      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
+                      
+                      if (diffInMinutes < 60) {
+                        return `${diffInMinutes} dk sonra`
+                      } else if (diffInHours < 24) {
+                        return `${diffInHours} saat sonra`
+                      } else if (diffInDays < 7) {
+                        return `${diffInDays} gün sonra`
+                      } else {
+                        return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                      }
+                    }
+                    
+                    // Normal mail için detaylı zaman hesaplama
                     const now = new Date()
                     const diffInMs = now.getTime() - date.getTime()
                     const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
@@ -823,6 +861,28 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
             )}
           </div>
           <Separator />
+          {/* Planlanan mail bilgisi */}
+          {mail.status === 'scheduled' && mail.scheduledSendAt && (
+            <>
+              <Separator />
+              <div className="p-4 bg-blue-50/50 dark:bg-blue-950/20 border-l-4 border-blue-500">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Planlanan Mail</span>
+                </div>
+                <div className="text-xs text-blue-600 dark:text-blue-400">
+                  Bu mail <strong>{new Date(mail.scheduledSendAt).toLocaleString('tr-TR', { 
+                    day: 'numeric', 
+                    month: 'long', 
+                    year: 'numeric', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  })}</strong> tarihinde gönderilecek.
+                </div>
+              </div>
+            </>
+          )}
+          
           {/* Reply için konuşma geçmişi */}
           {isReply && (
             <>

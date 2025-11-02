@@ -24,6 +24,16 @@ export default function MailCategoryPage({ params }: MailCategoryPageProps) {
   // Kategori state'i
   const [category, setCategory] = React.useState<string>("")
   const [categoryTitle, setCategoryTitle] = React.useState<string>("Yükleniyor...")
+  
+  // Debug: scheduled mailler için log
+  React.useEffect(() => {
+    if (category === 'scheduled') {
+      console.log('Scheduled mails from Redux:', mails)
+      console.log('Mails count:', mails.length)
+      console.log('Mails loading:', mailsLoading)
+      console.log('Mails error:', mailsError)
+    }
+  }, [category, mails, mailsLoading, mailsError])
 
   // Kategori başlıklarını tanımla
   const getCategoryTitle = (category: string) => {

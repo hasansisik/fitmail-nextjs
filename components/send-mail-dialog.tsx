@@ -99,10 +99,10 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
 
   // Internal dialog state - route değişikliklerinden etkilenmez
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  
+
   // localStorage'dan yüklenmiş mi kontrolü (sadece bir kez yükle)
   const hasLoadedFromStorageRef = useRef(false)
-  
+
   // Dialog açıklık durumunu ref ile takip et (closure sorununu önlemek için)
   const isDialogOpenRef = useRef(false)
 
@@ -132,14 +132,14 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
   React.useEffect(() => {
     // Sadece yeni mail yazıyorsak (reply/draft/scheduled yoksa) localStorage'dan yükle
     const isNewMail = !replyMode && !draftMail && !scheduledMail
-    
+
     if (isDialogOpen && isNewMail && !hasLoadedFromStorageRef.current && typeof window !== 'undefined') {
       const savedState = loadFormStateFromStorage()
       if (savedState && Object.keys(savedState).length > 0) {
         console.log('Loading from localStorage:', savedState)
         // ÖNEMLİ: Flag'i hemen true yap ki form temizleme işlemi çalışmasın
         hasLoadedFromStorageRef.current = true
-        
+
         // Sadece form verilerini geri yükle, dialog state'ini değil
         if (savedState.formData) {
           setFormData(savedState.formData)
@@ -156,7 +156,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
         if (savedState.currentDraftId) {
           setCurrentDraftId(savedState.currentDraftId)
         }
-        
+
         // Yükleme yapıldıktan sonra prevFormDataRef'i güncelle ki gereksiz kayıt olmasın
         prevFormDataRef.current = JSON.stringify({
           formData: savedState.formData || { to: "", cc: "", bcc: "", subject: "", content: "" },
@@ -170,14 +170,14 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
         hasLoadedFromStorageRef.current = true
       }
     }
-    
+
     // Dialog kapandığında yüklenmiş flag'ini sıfırla (bir sonraki açılış için)
     if (!isDialogOpen) {
       hasLoadedFromStorageRef.current = false
       prevFormDataRef.current = '' // Reset prev data
     }
   }, [isDialogOpen, replyMode, draftMail, scheduledMail])
-  
+
   // Dialog açıklık durumunu ref ile senkronize et
   React.useEffect(() => {
     isDialogOpenRef.current = isDialogOpen
@@ -186,13 +186,13 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
   // Form verilerini localStorage'a kaydet (dialog açıkken ve debounce ile)
   const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
   const prevFormDataRef = React.useRef<string>('')
-  
+
   // localStorage'a kaydetme fonksiyonu
   const saveToLocalStorage = React.useCallback(() => {
     if (!isDialogOpenRef.current || replyMode || draftMail || scheduledMail) {
       return
     }
-    
+
     const currentFormDataStr = JSON.stringify({
       formData,
       toRecipients,
@@ -200,12 +200,12 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       bccRecipients,
       currentDraftId
     })
-    
+
     // Veri değişmemişse kaydetme
     if (prevFormDataRef.current === currentFormDataStr) {
       return
     }
-    
+
     console.log('Saving to localStorage:', { formData, toRecipients, ccRecipients, bccRecipients, currentDraftId })
     saveFormStateToStorage({
       formData,
@@ -216,13 +216,13 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     })
     prevFormDataRef.current = currentFormDataStr
   }, [formData, toRecipients, ccRecipients, bccRecipients, currentDraftId, replyMode, draftMail, scheduledMail])
-  
+
   React.useEffect(() => {
     // Dialog kapalıysa kaydetme
     if (!isDialogOpenRef.current) {
       return
     }
-    
+
     // Form verilerini serialize et
     const currentFormDataStr = JSON.stringify({
       formData,
@@ -231,17 +231,17 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       bccRecipients,
       currentDraftId
     })
-    
+
     // Veri değişmemişse kaydetme
     if (prevFormDataRef.current === currentFormDataStr) {
       return
     }
-    
+
     // Debounce ile kaydet (200ms - daha hızlı)
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current)
     }
-    
+
     saveTimeoutRef.current = setTimeout(() => {
       saveToLocalStorage()
     }, 200)
@@ -252,30 +252,30 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       }
     }
   }, [isDialogOpen, formData, toRecipients, ccRecipients, bccRecipients, currentDraftId, saveToLocalStorage])
-  
+
   // Sayfa kapanmadan/route değişmeden önce localStorage'a kaydet
   React.useEffect(() => {
     if (typeof window === 'undefined') return
-    
+
     const handleBeforeUnload = () => {
       if (isDialogOpenRef.current && !replyMode && !draftMail && !scheduledMail) {
         saveToLocalStorage()
       }
     }
-    
+
     // beforeunload event'i (sayfa kapanmadan önce)
     window.addEventListener('beforeunload', handleBeforeUnload)
-    
+
     // Route değişmeden önce kaydet (Next.js için)
     const handleRouteChange = () => {
       if (isDialogOpenRef.current && !replyMode && !draftMail && !scheduledMail) {
         saveToLocalStorage()
       }
     }
-    
+
     // Popstate (geri/ileri tuşları)
     window.addEventListener('popstate', handleRouteChange)
-    
+
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload)
       window.removeEventListener('popstate', handleRouteChange)
@@ -325,7 +325,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       })
       setShowCC(scheduledMail.cc && scheduledMail.cc.length > 0)
       setShowBCC(scheduledMail.bcc && scheduledMail.bcc.length > 0)
-      
+
       // Planlanan tarih ve saat bilgisini doldur
       if (scheduledMail.scheduledSendAt) {
         const scheduledDateObj = new Date(scheduledMail.scheduledSendAt)
@@ -575,19 +575,19 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     if (files) {
       setIsUploading(true)
       const fileArray = Array.from(files)
-      
+
       // Dosya boyut limiti: 100MB = 100 * 1024 * 1024 bytes
       const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
-      
+
       // Mevcut attachment'ların toplam boyutu
       const currentTotalSize = attachments.reduce((sum, att) => sum + att.size, 0)
-      
+
       // Yeni dosyaların toplam boyutu
       const newFilesTotalSize = fileArray.reduce((sum, file) => sum + file.size, 0)
-      
+
       // Toplam boyut kontrolü (mevcut + yeni dosyalar)
       const totalSize = currentTotalSize + newFilesTotalSize
-      
+
       if (totalSize > MAX_FILE_SIZE) {
         toast.error(`Toplam dosya boyutu 100MB'ı geçemez! (Şu anki: ${formatFileSize(totalSize)}, Maksimum: ${formatFileSize(MAX_FILE_SIZE)})`)
         setIsUploading(false)
@@ -597,7 +597,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
         }
         return
       }
-      
+
       // Her dosyanın tek başına 100MB'dan büyük olup olmadığını kontrol et
       const oversizedFiles = fileArray.filter(file => file.size > MAX_FILE_SIZE)
       if (oversizedFiles.length > 0) {
@@ -1046,7 +1046,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       <style jsx>{`
         @media (min-width: 1024px) {
           .compose-window {
-            height: 600px !important;
+            height: 800px !important;
             max-height: calc(100vh - 100px) !important;
           }
         }
@@ -1374,7 +1374,6 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
                   <div className="flex items-center gap-2 w-full sm:w-auto">
                     <div className="flex-1 sm:flex-none">
-                      <Label htmlFor="edit-schedule-date" className="text-xs">Tarih</Label>
                       <Input
                         id="edit-schedule-date"
                         type="date"
@@ -1385,7 +1384,6 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                       />
                     </div>
                     <div className="flex-1 sm:flex-none">
-                      <Label htmlFor="edit-schedule-time" className="text-xs">Saat</Label>
                       <Input
                         id="edit-schedule-time"
                         type="time"
@@ -1401,7 +1399,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                     size="sm"
                     disabled={toRecipients.length === 0 || !formData.subject || !formData.content || !scheduledDate || !scheduledTime}
                     onClick={handleScheduledSend}
-                    className="text-xs lg:text-sm w-full sm:w-auto"
+                    className="text-md lg:text-sm w-full sm:w-auto"
                   >
                     <Clock className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
                     Güncelle

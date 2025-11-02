@@ -63,6 +63,7 @@ interface ApiMail {
   mailgunId: string
   messageId: string
   references: string[]
+  scheduledSendAt?: string
   user: {
     _id: string
     name: string
@@ -181,20 +182,58 @@ export function Mail({
     let filtered = mails
     
     // Seçili hesaba göre filtrele
-    // Gönderilenler ve taslaklar için from email'e göre filtrele
+    // Gönderilenler, taslaklar ve planlanan mailler için from email'e göre filtrele
     // Diğer klasörler için to email'e göre filtrele
     if (selectedAccountEmail) {
-      const folderCategories = ['sent', 'drafts']
+      const folderCategories = ['sent', 'drafts', 'scheduled']
       const currentFolder = pathname.split('/')[2] || 'inbox'
       
+      // Debug: scheduled için log
+      if (currentFolder === 'scheduled') {
+        console.log('Filtering scheduled mails:', {
+          totalMails: mails.length,
+          selectedAccountEmail,
+          mails: mails.map(m => ({
+            id: m._id,
+            fromEmail: m.from?.email,
+            subject: m.subject
+          }))
+        })
+      }
+      
       filtered = filtered.filter(mail => {
-        // Gönderilenler ve taslaklar klasöründe from email'e göre filtrele
+        // Gönderilenler, taslaklar ve planlanan mailler klasöründe from email'e göre filtrele
         if (folderCategories.includes(currentFolder)) {
-          return mail.from?.email === selectedAccountEmail
+          // Eğer from email yoksa, filtreleme yapma (backward compatibility)
+          if (!mail.from?.email) {
+            console.warn('Mail missing from.email:', mail._id)
+            return true
+          }
+          const matches = mail.from?.email === selectedAccountEmail
+          if (currentFolder === 'scheduled' && !matches) {
+            console.log('Scheduled mail filtered out:', {
+              mailId: mail._id,
+              mailFrom: mail.from?.email,
+              selectedAccount: selectedAccountEmail
+            })
+          }
+          return matches
         }
         // Diğer klasörlerde to email'e göre filtrele
         return mail.to?.some(recipient => recipient.email === selectedAccountEmail)
       })
+      
+      // Debug: scheduled için filtered log
+      if (currentFolder === 'scheduled') {
+        console.log('Filtered scheduled mails:', {
+          filteredCount: filtered.length,
+          filteredMails: filtered.map(m => ({
+            id: m._id,
+            fromEmail: m.from?.email,
+            subject: m.subject
+          }))
+        })
+      }
     }
 
     // Basic search query
