@@ -1113,9 +1113,8 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
         onDrop={handleDrop}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-3 lg:p-4 border-b bg-muted/50">
+        <div className="flex items-center justify-between py-1 px-2  border-b bg-muted/50">
           <div className="flex items-center gap-2">
-            <Send className="h-4 w-4 lg:h-5 lg:w-5" />
             <h2 className="text-sm lg:text-base font-semibold">
               {scheduledMail ? 'Planlanan Maili Düzenle' :
                 replyMode === 'reply' ? 'Cevapla' :

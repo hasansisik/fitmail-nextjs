@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useAppDispatch, useAppSelector } from "@/redux/hook"
-import { register, checkEmailAvailability } from "@/redux/actions/userActions"
+import { register, checkEmailAvailability, loadUser } from "@/redux/actions/userActions"
 import { toast } from "sonner"
 import { Step1PersonalInfo } from "./register/step1-personal-info"
 import { Step2BasicInfo } from "./register/step2-basic-info"
@@ -250,19 +250,19 @@ export function RegisterForm({
       // Dismiss loading toast
       toast.dismiss(loadingToastId)
       
-      // Check if token was stored properly
-      const token = localStorage.getItem("accessToken")
-      if (!token) {
-        console.error("Token not stored after registration")
-        toast.error("Kayıt başarılı ama oturum açılamadı. Lütfen giriş yapın.")
-        router.push("/giris")
-        return
+      // Registration successful - backend already set cookies
+      // Now load user data from cookie to update Redux state
+      try {
+        await dispatch(loadUser()).unwrap()
+        toast.success("Kayıt başarılı! Hoş geldiniz.")
+        // Redirect to mail page (user is already authenticated via cookie)
+        router.push("/mail")
+      } catch (loadError) {
+        // If loadUser fails, still try to redirect - cookie might be set
+        console.error("Failed to load user after registration:", loadError)
+        toast.success("Kayıt başarılı! Hoş geldiniz.")
+        router.push("/mail")
       }
-      
-      // Registration successful
-      toast.success("Kayıt başarılı! Hoş geldiniz.")
-      // Redirect to mail page (user is already authenticated)
-      router.push("/mail")
     } catch (error: any) {
       console.error("Registration failed:", error)
       

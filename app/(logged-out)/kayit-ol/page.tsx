@@ -12,7 +12,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const { user, isAuthenticated, loading } = useAppSelector((state) => state.user);
 
-  // Redirect authenticated users to /mail
+  // Redirect authenticated users to /mail (after registration, cookie is set and user should be loaded)
   useEffect(() => {
     if (!loading && isAuthenticated && user) {
       router.push("/mail");

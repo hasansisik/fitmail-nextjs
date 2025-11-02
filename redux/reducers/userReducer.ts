@@ -131,6 +131,11 @@ export const userReducer = createReducer(initialState, (builder) => {
       state.user = action.payload;
       state.message = null;
       state.error = null;
+      // Seçili hesabı güncelle ve localStorage'a kaydet (login'deki gibi)
+      state.selectedAccountEmail = action.payload.email;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('selectedAccountEmail', action.payload.email);
+      }
     })
     .addCase(register.rejected, (state, action) => {
       state.loading = false;
