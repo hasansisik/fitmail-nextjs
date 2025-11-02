@@ -127,6 +127,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
   const [showSchedulePopover, setShowSchedulePopover] = useState(false)
   const [scheduledDate, setScheduledDate] = useState("")
   const [scheduledTime, setScheduledTime] = useState("")
+  const [isDragging, setIsDragging] = useState(false)
 
   // localStorage'dan form verilerini yükle (dialog açıldığında, reply/draft/scheduled yoksa ve henüz yüklenmediyse)
   React.useEffect(() => {
@@ -567,6 +568,50 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       case 'bcc':
         setBccRecipients(prev => prev.filter(e => e !== email))
         break
+    }
+  }
+
+  // Drag and drop handlers
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragging(true)
+    }
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // Only set dragging to false if we're leaving the dialog container itself
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragging(false)
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.dataTransfer.types.includes('Files')) {
+      e.dataTransfer.dropEffect = 'copy'
+    }
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    const files = e.dataTransfer.files
+    if (files && files.length > 0) {
+      // Create a mock event object to reuse handleFileSelect logic
+      const mockEvent = {
+        target: {
+          files: files
+        }
+      } as React.ChangeEvent<HTMLInputElement>
+      
+      await handleFileSelect(mockEvent)
     }
   }
 
@@ -1053,12 +1098,17 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       `}</style>
       <div
         className={`compose-window fixed bottom-0 right-0 lg:right-4 z-50 w-full lg:max-w-2xl shadow-2xl lg:rounded-t-lg bg-background border-t lg:border border-border overflow-hidden flex flex-col transition-opacity duration-200 ${isDialogOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          }`}
+          } ${isDragging ? 'border-2 border-primary border-dashed bg-primary/5' : ''}`}
         style={{
           height: isDialogOpen ? '100vh' : '0',
           maxHeight: isDialogOpen ? '100vh' : '0',
           display: isDialogOpen ? 'flex' : 'none'
-        }}>
+        }}
+        onDragEnter={handleDragEnter}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-3 lg:p-4 border-b bg-muted/50">
           <div className="flex items-center gap-2">
@@ -1082,7 +1132,22 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-3 lg:p-4">
+        <div 
+          className={`flex-1 overflow-y-auto p-3 lg:p-4 ${isDragging ? 'bg-primary/5' : ''}`}
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {isDragging && (
+            <div className="fixed inset-0 bg-primary/10 border-2 border-dashed border-primary rounded-lg flex items-center justify-center z-50 pointer-events-none">
+              <div className="bg-background p-6 rounded-lg shadow-lg border-2 border-primary">
+                <Paperclip className="h-12 w-12 mx-auto mb-4 text-primary" />
+                <p className="text-lg font-semibold text-center">Dosyaları buraya bırakın</p>
+                <p className="text-sm text-muted-foreground text-center mt-2">Eklemek istediğiniz dosyaları sürükleyip bırakın</p>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-3 lg:space-y-4">
             <div className="grid gap-3 lg:gap-4">
