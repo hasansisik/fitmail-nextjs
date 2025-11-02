@@ -1,12 +1,61 @@
 "use client"
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AppLogo } from "@/components/app-logo";
 import { Button } from "@/components/ui/button";
 import { Zap, Target, Smartphone } from "lucide-react";
 import { Metadata } from "@/components/metadata";
+import { useAppDispatch, useAppSelector } from "@/redux/hook";
+import { loadUser } from "@/redux/actions/userActions";
+import { AppLogoWithLoading } from "@/components/app-logo";
 
 export default function HomePage() {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { isAuthenticated, loading } = useAppSelector((state) => state.user);
+
+  // Cookie kontrolü ve yönlendirme
+  useEffect(() => {
+    // Eğer zaten authenticated ise direkt yönlendir
+    if (isAuthenticated) {
+      router.push("/mail");
+      return;
+    }
+
+    // Eğer loading değilse ve authenticated değilse, kullanıcıyı yükle (cookie kontrolü için)
+    if (!loading && !isAuthenticated) {
+      dispatch(loadUser());
+    }
+  }, [dispatch, router, isAuthenticated, loading]);
+
+  // Kullanıcı yüklendikten sonra tekrar kontrol et
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      router.push("/mail");
+    }
+  }, [router, isAuthenticated, loading]);
+
+  // Loading durumunda göster
+  if (loading) {
+    return (
+      <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-8 p-6 md:p-10">
+        <div className="flex flex-col items-center gap-3">
+          <AppLogoWithLoading size="lg" />
+          <div className="h-1 w-24 bg-primary/20 rounded-full overflow-hidden">
+            <div className="h-full bg-primary animate-[loading_1.5s_ease-in-out_infinite]" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Authenticated ise yönlendirme yapılacak, bu noktaya gelmemeli ama yine de kontrol
+  if (isAuthenticated) {
+    return null;
+  }
+
   return (
     <>
       <Metadata 
