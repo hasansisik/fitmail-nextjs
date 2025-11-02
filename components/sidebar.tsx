@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import axios from "axios"
 import { server } from "@/config"
 import { usePathname, useRouter } from "next/navigation"
@@ -61,6 +61,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 // Dinamik navigation array'leri - mail stats kullanacak
 const getMainNav = (mailStats: any) => [
@@ -203,13 +204,83 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
   const dispatch = useAppDispatch()
   const { user, sessions } = useAppSelector((state) => state.user)
   const { mailStats, statsLoading, statsError } = useAppSelector((state) => state.mail)
+  const isMobile = useIsMobile()
   
-  const [internalIsCollapsed, setInternalIsCollapsed] = useState(false)
+  // localStorage key'leri - mobil ve desktop için ayrı
+  const getStorageKey = useCallback(() => {
+    return isMobile ? 'sidebarCollapsedMobile' : 'sidebarCollapsedDesktop'
+  }, [isMobile])
+  
+  // localStorage'dan başlangıç değerini yükle
+  const getInitialCollapsedState = useCallback((): boolean => {
+    if (typeof window === 'undefined') return false
+    try {
+      const storageKey = getStorageKey()
+      const stored = localStorage.getItem(storageKey)
+      return stored === 'true'
+    } catch {
+      return false
+    }
+  }, [getStorageKey])
+  
+  const [internalIsCollapsed, setInternalIsCollapsed] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false
+    }
+    try {
+      // İlk render'da window.innerWidth ile kontrol et
+      const initialIsMobile = window.innerWidth < 768
+      const storageKey = initialIsMobile ? 'sidebarCollapsedMobile' : 'sidebarCollapsedDesktop'
+      const stored = localStorage.getItem(storageKey)
+      return stored === 'true'
+    } catch {
+      return false
+    }
+  })
   const [isSendDialogOpen, setIsSendDialogOpen] = useState(false)
   const selectedAccountEmail = useAppSelector((state) => state.user.selectedAccountEmail)
   
+  // localStorage'a kaydetme fonksiyonu
+  const saveCollapsedState = useCallback((collapsed: boolean) => {
+    const storageKey = getStorageKey()
+    if (typeof window === 'undefined') return
+    try {
+      localStorage.setItem(storageKey, collapsed.toString())
+    } catch {
+      // localStorage'a kayıt başarısız, sessizce devam et
+    }
+  }, [getStorageKey, isMobile])
+  
+  // Internal state setter - localStorage'a da kaydet
+  const setInternalIsCollapsedWithStorage = useCallback((collapsed: boolean | ((prev: boolean) => boolean)) => {
+    setInternalIsCollapsed(prev => {
+      const newValue = typeof collapsed === 'function' ? collapsed(prev) : collapsed
+      saveCollapsedState(newValue)
+      return newValue
+    })
+  }, [saveCollapsedState])
+  
+  // External prop varsa onu kullan, yoksa internal state + localStorage
   const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : internalIsCollapsed
-  const setIsCollapsed = onCollapse || setInternalIsCollapsed
+  
+  // Setter - external prop varsa onCollapse'u kullan, yoksa internal setter'ı kullan
+  const setIsCollapsed = useCallback((collapsed: boolean | ((prev: boolean) => boolean)) => {
+    if (onCollapse) {
+      const newValue = typeof collapsed === 'function' ? collapsed(isCollapsed) : collapsed
+      onCollapse(newValue)
+      saveCollapsedState(newValue)
+    } else {
+      setInternalIsCollapsedWithStorage(collapsed)
+    }
+  }, [onCollapse, isCollapsed, saveCollapsedState, setInternalIsCollapsedWithStorage])
+  
+  // Mobil/desktop değiştiğinde localStorage'dan durumu yükle
+  useEffect(() => {
+    if (externalIsCollapsed === undefined) {
+      const storedState = getInitialCollapsedState()
+      setInternalIsCollapsed(storedState)
+    }
+  }, [isMobile, getInitialCollapsedState, externalIsCollapsed]) // isMobile değiştiğinde tekrar yükle
   
   // Sidebar yüklendiğinde mail stats'ı çek ve sessions'ı yükle
   useEffect(() => {
@@ -275,7 +346,6 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       window.location.reload()
       toast.success("Hesap değiştirildi")
     } catch (error: any) {
-      console.error("Account switch failed:", error)
       toast.error("Hesap değiştirilemedi")
     }
   }
@@ -291,7 +361,6 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
         toast.success("Hesap kaldırıldı")
       }
     } catch (error: any) {
-      console.error("Remove account failed:", error)
       toast.error("Hesap kaldırılamadı")
     }
   }
@@ -351,7 +420,6 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       toast.success("Başarıyla çıkış yapıldı!")
       router.push("/giris")
     } catch (error: any) {
-      console.error("Logout failed:", error)
       toast.error("Çıkış yapılırken bir hata oluştu")
     }
   }

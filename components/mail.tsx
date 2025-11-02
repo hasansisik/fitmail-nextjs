@@ -73,7 +73,7 @@ interface ApiMail {
 }
 import { useMail } from "@/app/mail/use-mail"
 import { useAppSelector, useAppDispatch } from "@/redux/hook"
-import { clearSelectedMail, getMailsByCategory, getMailsByLabelCategory, getMailStats, cleanupTrash, openComposeDialog, closeComposeDialog } from "@/redux/actions/mailActions"
+import { clearSelectedMail, getMailsByCategory, getMailsByLabelCategory, getMailStats, cleanupTrash, openComposeDialog, closeComposeDialog, getScheduledMails, getStarredMails } from "@/redux/actions/mailActions"
 import { usePathname } from "next/navigation"
 import { toast } from "sonner"
 import { useMobileSidebar } from "@/app/mail/layout"
@@ -321,6 +321,18 @@ export function Mail({
           page: 1,
           limit: 50
         })).unwrap()
+      } else if (categoryOrFolder === 'scheduled') {
+        // Planlanan mailler için özel action
+        await dispatch(getScheduledMails({
+          page: 1,
+          limit: 50
+        })).unwrap()
+      } else if (categoryOrFolder === 'starred') {
+        // Yıldızlı mailler için özel action
+        await dispatch(getStarredMails({
+          page: 1,
+          limit: 50
+        })).unwrap()
       } else {
         // Folder kategorileri (inbox, sent, drafts, spam, trash, archive)
         const folderCategories = ['inbox', 'sent', 'drafts', 'spam', 'trash', 'archive']
@@ -343,11 +355,9 @@ export function Mail({
       
       // Stats'ı da yenile
       await dispatch(getMailStats()).unwrap()
-      
-      toast.success("Mail listesi yenilendi!")
     } catch (error) {
       console.error("Refresh failed:", error)
-      toast.error("Mail listesi yenilenemedi")
+      // Sessizce devam et, toast gösterme
     } finally {
       setIsRefreshing(false)
     }
@@ -392,6 +402,22 @@ export function Mail({
   const handleCloseSendDialog = () => {
     dispatch(closeComposeDialog())
   }
+
+  // Pathname değiştiğinde mail listesini otomatik yenile
+  const pathnameRef = React.useRef(pathname)
+  React.useEffect(() => {
+    // Pathname gerçekten değiştiyse ve mail sayfasındaysak yenile
+    if (pathnameRef.current !== pathname && pathname.startsWith('/mail')) {
+      pathnameRef.current = pathname
+      const pathParts = pathname.split('/')
+      
+      // Mail detay sayfasındaysak yenileme yapma, sadece kategori sayfasındaysak yenile
+      if (pathParts.length <= 3) {
+        handleRefresh()
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
 
   return (
     <div className="h-full flex flex-col lg:flex-row">
@@ -635,7 +661,10 @@ export function Mail({
                 mail={selectedMail}
                 isMaximized={true}
                 onToggleMaximize={handleBackToList}
-                onMailSent={handleRefresh}
+                onMailSent={() => {
+                  // Mail listesini yenile ve stats'ı güncelle
+                  handleRefresh()
+                }}
               />
             </div>
           </div>

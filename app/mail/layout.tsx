@@ -35,19 +35,91 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false)
-  const [mobileState, setMobileState] = useState<MobileSidebarState>('collapsed')
+  // localStorage'dan desktop sidebar durumunu yükle
+  const getInitialDesktopCollapsedState = (): boolean => {
+    if (typeof window === 'undefined') {
+      return false
+    }
+    try {
+      const stored = localStorage.getItem('sidebarCollapsedDesktop')
+      return stored === 'true'
+    } catch {
+      return false
+    }
+  }
+
+  // localStorage'dan mobile sidebar durumunu yükle
+  const getInitialMobileState = (): MobileSidebarState => {
+    if (typeof window === 'undefined') {
+      return 'collapsed'
+    }
+    try {
+      const stored = localStorage.getItem('sidebarMobileState')
+      if (stored === 'hidden' || stored === 'collapsed' || stored === 'expanded') {
+        return stored as MobileSidebarState
+      }
+      return 'collapsed'
+    } catch {
+      return 'collapsed'
+    }
+  }
+
+  const [isCollapsed, setIsCollapsed] = useState(() => getInitialDesktopCollapsedState())
+  const [mobileState, setMobileState] = useState<MobileSidebarState>(() => getInitialMobileState())
   const [isClient, setIsClient] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
   const { user, isAuthenticated, loading } = useAppSelector((state) => state.user)
 
+  // Desktop sidebar durumunu localStorage'a kaydet
+  const handleDesktopCollapse = (collapsed: boolean) => {
+    setIsCollapsed(collapsed)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('sidebarCollapsedDesktop', collapsed.toString())
+      } catch {
+        // localStorage'a kayıt başarısız, sessizce devam et
+      }
+    }
+  }
+
+  // Panel resize callback'i - size parametresi ile collapsed durumunu belirle
+  const handlePanelResize = (size: number | undefined) => {
+    if (size === undefined || size === null) return
+    
+    // collapsedSize 4 olduğuna göre, size 4'e eşit veya daha küçükse collapsed
+    // Küçük bir tolerans ekleyelim (4.5) çünkü resize sırasında tam 4'e gelmeyebilir
+    const shouldBeCollapsed = size <= 4.5
+    
+    // Sadece durum değiştiyse güncelle (sonsuz döngüyü önlemek için)
+    if (isCollapsed !== shouldBeCollapsed) {
+      handleDesktopCollapse(shouldBeCollapsed)
+    }
+  }
+
+  // Mobile sidebar durumunu localStorage'a kaydet
+  const handleMobileStateChange = (state: MobileSidebarState) => {
+    setMobileState(state)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('sidebarMobileState', state)
+      } catch {
+        // localStorage'a kayıt başarısız, sessizce devam et
+      }
+    }
+  }
+
   // Toggle function: hidden -> collapsed -> expanded -> hidden
   const toggleMobileSidebar = () => {
     setMobileState(prev => {
-      if (prev === 'hidden') return 'collapsed'
-      if (prev === 'collapsed') return 'expanded'
-      return 'hidden'
+      let nextState: MobileSidebarState
+      if (prev === 'hidden') nextState = 'collapsed'
+      else if (prev === 'collapsed') nextState = 'expanded'
+      else nextState = 'hidden'
+      
+      // localStorage'a kaydet
+      handleMobileStateChange(nextState)
+      return nextState
     })
   }
 
@@ -91,6 +163,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     setIsClient(true)
   }, [])
 
+  // Sayfa yüklendiğinde localStorage'dan durumu yükle (client-side only)
+  useEffect(() => {
+    if (isClient) {
+      const storedDesktop = getInitialDesktopCollapsedState()
+      const storedMobile = getInitialMobileState()
+      if (storedDesktop !== isCollapsed) {
+        setIsCollapsed(storedDesktop)
+      }
+      if (storedMobile !== mobileState) {
+        setMobileState(storedMobile)
+      }
+    }
+  }, [isClient]) // Sadece client yüklendiğinde bir kez çalışsın
+
   // Redirect unauthenticated users to login (only once, avoid loops)
   useEffect(() => {
     if (isClient && !loading && !isAuthenticated && pathname !== '/giris') {
@@ -124,7 +210,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         description="Fitmail ile e-postalarınızı yönetin, organize edin ve iletişiminizi güçlendirin. Modern arayüzü ve güçlü özellikleriyle e-posta deneyiminizi yeniden tanımlayın."
         keywords="email, e-posta, mail, güvenli email, hızlı email, akıllı email, fitmail"
       />
-      <MobileSidebarContext.Provider value={{ mobileState, setMobileState, toggleMobileSidebar }}>
+      <MobileSidebarContext.Provider value={{ mobileState, setMobileState: handleMobileStateChange, toggleMobileSidebar }}>
         <TooltipProvider delayDuration={0}>
           <div className="h-screen flex flex-row">
             {/* Mobile Sidebar - Left side on mobile */}
@@ -136,7 +222,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               {mobileState !== 'hidden' && (
                 <Sidebar 
                   isCollapsed={mobileState === 'collapsed'} 
-                  onCollapse={(collapsed) => setMobileState(collapsed ? 'collapsed' : 'expanded')} 
+                  onCollapse={(collapsed) => handleMobileStateChange(collapsed ? 'collapsed' : 'expanded')} 
                 />
               )}
             </div>
@@ -148,17 +234,22 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 className="h-screen items-stretch"
               >
                 <ResizablePanel
-                  defaultSize={15}
+                  key={`panel-${isCollapsed ? 'collapsed' : 'expanded'}`}
+                  defaultSize={isCollapsed ? 4 : 15}
                   collapsedSize={4}
                   collapsible={true}
                   minSize={10}
                   maxSize={25}
-                  onCollapse={() => setIsCollapsed(true)}
-                  onResize={() => setIsCollapsed(false)}
+                  onCollapse={() => handleDesktopCollapse(true)}
+                  onResize={handlePanelResize}
                   className="border-r"
                 >
                   <div className="h-screen overflow-hidden">
-                    <Sidebar isCollapsed={isCollapsed} onCollapse={setIsCollapsed} />
+                    <Sidebar 
+                      key={`sidebar-${isCollapsed}`}
+                      isCollapsed={isCollapsed} 
+                      onCollapse={handleDesktopCollapse} 
+                    />
                   </div>
                 </ResizablePanel>
                 <ResizableHandle withHandle />

@@ -196,9 +196,9 @@ export function MailList({
       setSelectedMails(new Set())
       onSelectModeChange?.(false)
       
-      // Mail listesini ve stats'ı yenile
+      // Mail listesini ve stats'ı yenile - callback ile parent'a bildir
       if (onRefresh) {
-        onRefresh()
+        await onRefresh()
       }
       
     } catch (error: any) {

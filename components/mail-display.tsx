@@ -632,13 +632,13 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
       setMailStatus(prev => ({ ...prev, isArchived: newFolder === 'archive' }))
       setShowArchiveDialog(false)
       
-      // Parent component'i bilgilendir
+      // Mail'i yeniden yükle
+      await dispatch(getMailById(mail._id)).unwrap()
+      
+      // Parent component'i bilgilendir - bu mail listesini de yenileyecek
       if (onMailSent) {
         onMailSent()
       }
-      
-      // Mail'i yeniden yükle
-      await dispatch(getMailById(mail._id)).unwrap()
     } catch (error: any) {
       console.error("Archive failed:", error)
       const errorMessage = typeof error === 'string' ? error : error?.message || "Arşivleme sırasında bir hata oluştu"
@@ -663,14 +663,14 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
         toast.success('Mail kalıcı olarak silindi!')
         setShowTrashDialog(false)
         
-        // Parent component'i bilgilendir
-        if (onMailSent) {
-          onMailSent()
-        }
-        
         // Mail silindiği için geri dön
         if (onToggleMaximize) {
           onToggleMaximize()
+        }
+        
+        // Parent component'i bilgilendir - bu mail listesini de yenileyecek
+        if (onMailSent) {
+          onMailSent()
         }
       } else {
         // Çöp kutusuna taşı
@@ -679,13 +679,13 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
         setMailStatus(prev => ({ ...prev, isTrashed: true }))
         setShowTrashDialog(false)
         
-        // Parent component'i bilgilendir
+        // Mail'i yeniden yükle
+        await dispatch(getMailById(mail._id)).unwrap()
+        
+        // Parent component'i bilgilendir - bu mail listesini de yenileyecek
         if (onMailSent) {
           onMailSent()
         }
-        
-        // Mail'i yeniden yükle
-        await dispatch(getMailById(mail._id)).unwrap()
       }
     } catch (error: any) {
       console.error("Trash failed:", error)
@@ -709,7 +709,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
       // Mail'i yeniden yükle
       await dispatch(getMailById(mail._id)).unwrap()
       
-      // Parent component'i bilgilendir
+      // Parent component'i bilgilendir - bu mail listesini de yenileyecek
       if (onMailSent) {
         onMailSent()
       }

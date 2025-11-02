@@ -802,6 +802,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       toast.success("Mail başarıyla gönderildi!")
 
       // Callback ile parent component'e mail gönderildiğini bildir
+      // Bu mail listesini yenileyecek
       if (onMailSent) {
         onMailSent()
       }
@@ -899,6 +900,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
         toast.dismiss(loadingToastId)
         toast.success(result.message || "Planlanan mail başarıyla güncellendi!")
 
+        // Callback ile parent component'e bildir - mail listesini yenileyecek
         if (onMailSent) {
           onMailSent()
         }
@@ -955,6 +957,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
         toast.dismiss(loadingToastId)
         toast.success(result.message || "Mail başarıyla planlandı!")
 
+        // Callback ile parent component'e bildir - mail listesini yenileyecek
         if (onMailSent) {
           onMailSent()
         }
@@ -1025,7 +1028,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       setCurrentDraftId(null)
       handleInternalClose()
 
-      // Mail listesini yenile
+      // Callback ile parent component'e bildir - mail listesini yenileyecek
       if (onMailSent) {
         onMailSent()
       }
