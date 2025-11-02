@@ -75,6 +75,7 @@ interface MailListProps {
   isSelectMode?: boolean
   onSelectModeChange?: (isSelectMode: boolean) => void
   onDraftClick?: (draft: ApiMail) => void
+  onScheduledMailClick?: (scheduledMail: ApiMail) => void
   onRefresh?: () => void
 }
 
@@ -86,6 +87,7 @@ export function MailList({
   isSelectMode = false,
   onSelectModeChange,
   onDraftClick,
+  onScheduledMailClick,
   onRefresh
 }: MailListProps) {
   const router = useRouter()
@@ -404,7 +406,12 @@ export function MailList({
                       // Eğer taslak ise ve onDraftClick varsa, modalı aç
                       if (categoryTitle === "Taslaklar" && onDraftClick) {
                         onDraftClick(item)
-                      } else {
+                      } 
+                      // Eğer planlanan mail ise ve onScheduledMailClick varsa, modalı aç
+                      else if (categoryTitle === "Planlanan" && onScheduledMailClick) {
+                        onScheduledMailClick(item)
+                      } 
+                      else {
                         // Kategori bilgisini al ve URL'ye yönlendir
                         const category = getCategorySlug(categoryTitle)
                         router.push(`/mail/${category}/${item._id}`)

@@ -25,6 +25,7 @@ import {
   scheduleMail,
   getScheduledMails,
   cancelScheduledMail,
+  updateScheduledMail,
 } from "../actions/mailActions";
 
 interface MailState {
@@ -43,6 +44,7 @@ interface MailState {
     replyMode: 'reply' | 'replyAll' | 'forward' | null;
     originalMail: any | null;
     draftMail: any | null;
+    scheduledMail: any | null;
   };
 }
 
@@ -62,6 +64,7 @@ const initialState: MailState = {
     replyMode: null,
     originalMail: null,
     draftMail: null,
+    scheduledMail: null,
   },
 };
 
@@ -431,6 +434,7 @@ export const mailReducer = createReducer(initialState, (builder) => {
         replyMode: action.payload.replyMode || null,
         originalMail: action.payload.originalMail || null,
         draftMail: action.payload.draftMail || null,
+        scheduledMail: action.payload.scheduledMail || null,
       };
     })
     // Close Compose Dialog
@@ -440,6 +444,7 @@ export const mailReducer = createReducer(initialState, (builder) => {
         replyMode: null,
         originalMail: null,
         draftMail: null,
+        scheduledMail: null,
       };
     })
     // Schedule Mail
@@ -500,6 +505,28 @@ export const mailReducer = createReducer(initialState, (builder) => {
       }
     })
     .addCase(cancelScheduledMail.rejected, (state, action) => {
+      state.mailsLoading = false;
+      state.mailsError = action.payload as string;
+    })
+    // Update Scheduled Mail
+    .addCase(updateScheduledMail.pending, (state) => {
+      state.mailsLoading = true;
+      state.mailsError = null;
+    })
+    .addCase(updateScheduledMail.fulfilled, (state, action) => {
+      state.mailsLoading = false;
+      state.message = action.payload.message;
+      state.mailsError = null;
+      
+      // Planlı maillerdeyse, listeyi güncelle
+      if (state.currentFolder === 'scheduled' && action.payload.mail) {
+        const mailIndex = state.mails.findIndex(mail => mail._id === action.payload.mail._id);
+        if (mailIndex !== -1) {
+          state.mails[mailIndex] = action.payload.mail;
+        }
+      }
+    })
+    .addCase(updateScheduledMail.rejected, (state, action) => {
       state.mailsLoading = false;
       state.mailsError = action.payload as string;
     });

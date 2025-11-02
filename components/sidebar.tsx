@@ -6,7 +6,7 @@ import { server } from "@/config"
 import { usePathname, useRouter } from "next/navigation"
 import { useAppDispatch } from "@/redux/hook"
 import { logout, switchUser, getAllSessions, removeSession } from "@/redux/actions/userActions"
-import { getMailsByCategory, getMailsByLabelCategory, getMailStats, clearSelectedMail, getStarredMails } from "@/redux/actions/mailActions"
+import { getMailsByCategory, getMailsByLabelCategory, getMailStats, clearSelectedMail, getStarredMails, getScheduledMails } from "@/redux/actions/mailActions"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { toast } from "sonner"
@@ -49,6 +49,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Star,
+  Clock,
 } from "lucide-react"
 import { useAppSelector } from "@/redux/hook"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -86,6 +87,14 @@ const getMainNav = (mailStats: any) => [
     variant: "ghost" as const,
     href: "/mail/sent",
     category: "sent"
+  },
+  {
+    title: "Planlanan",
+    label: (mailStats?.scheduled || 0) > 0 ? (mailStats?.scheduled || 0).toString() : "",
+    icon: Clock,
+    variant: "ghost" as const,
+    href: "/mail/scheduled",
+    category: "scheduled"
   },
   {
     title: "Spam",
@@ -306,6 +315,13 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
     else if (['social', 'updates', 'forums', 'shopping', 'promotions'].includes(category)) {
       dispatch(getMailsByLabelCategory({
         category: category,
+        page: 1,
+        limit: 50
+      }))
+    } 
+    // Planlanan mailler için özel action kullan
+    else if (category === 'scheduled') {
+      dispatch(getScheduledMails({
         page: 1,
         limit: 50
       }))

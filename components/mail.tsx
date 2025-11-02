@@ -339,6 +339,11 @@ export function Mail({
     dispatch(openComposeDialog({ draftMail: draft }))
   }
 
+  // Planlanan mail tıklama fonksiyonu
+  const handleScheduledMailClick = (scheduledMail: any) => {
+    dispatch(openComposeDialog({ scheduledMail: scheduledMail }))
+  }
+
   // Yeni mail dialogu aç
   const handleOpenNewMail = () => {
     dispatch(openComposeDialog({}))
@@ -524,6 +529,7 @@ export function Mail({
                 isSelectMode={isSelectMode}
                 onSelectModeChange={setIsSelectMode}
                 onDraftClick={categoryTitle === "Taslaklar" ? handleDraftClick : undefined}
+                onScheduledMailClick={categoryTitle === "Planlanan" ? handleScheduledMailClick : undefined}
                 onRefresh={handleRefresh}
               />
             </TabsContent>
@@ -536,6 +542,7 @@ export function Mail({
                 isSelectMode={isSelectMode}
                 onSelectModeChange={setIsSelectMode}
                 onDraftClick={categoryTitle === "Taslaklar" ? handleDraftClick : undefined}
+                onScheduledMailClick={categoryTitle === "Planlanan" ? handleScheduledMailClick : undefined}
                 onRefresh={handleRefresh}
               />
             </TabsContent>
@@ -603,6 +610,7 @@ export function Mail({
         replyMode={composeDialog.replyMode}
         originalMail={composeDialog.originalMail}
         draftMail={composeDialog.draftMail}
+        scheduledMail={composeDialog.scheduledMail}
         onMailSent={handleRefresh}
       />
 

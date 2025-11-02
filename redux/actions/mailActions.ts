@@ -595,6 +595,7 @@ export const openComposeDialog = createAsyncThunk(
     replyMode?: 'reply' | 'replyAll' | 'forward' | null;
     originalMail?: any;
     draftMail?: any;
+    scheduledMail?: any;
   }) => {
     return payload;
   }
@@ -718,6 +719,84 @@ export const cancelScheduledMail = createAsyncThunk(
       };
 
       const { data } = await axios.post(`${server}/mail/${mailId}/cancel-schedule`, {}, config);
+      return data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+// Update Scheduled Mail Action
+export const updateScheduledMail = createAsyncThunk(
+  "mail/updateScheduledMail",
+  async (mailData: {
+    mailId: string;
+    scheduledSendAt?: string;
+    to?: string[];
+    cc?: string[];
+    bcc?: string[];
+    subject?: string;
+    content?: string;
+    htmlContent?: string;
+    attachments?: Array<{
+      filename: string;
+      data: File;
+      contentType: string;
+      size: number;
+      url?: string;
+    }>;
+  }, thunkAPI) => {
+    try {
+      // Cookie tabanlı auth kullanılıyor
+
+      // Prepare FormData for file uploads
+      const formData = new FormData();
+      
+      if (mailData.scheduledSendAt) {
+        formData.append('scheduledSendAt', mailData.scheduledSendAt);
+      }
+      if (mailData.to) {
+        formData.append('to', JSON.stringify(mailData.to));
+      }
+      if (mailData.subject !== undefined) {
+        formData.append('subject', mailData.subject);
+      }
+      if (mailData.content !== undefined) {
+        formData.append('content', mailData.content);
+      }
+      if (mailData.htmlContent !== undefined) {
+        formData.append('htmlContent', mailData.htmlContent || mailData.content || '');
+      }
+      
+      if (mailData.cc) {
+        formData.append('cc', JSON.stringify(mailData.cc));
+      }
+      if (mailData.bcc) {
+        formData.append('bcc', JSON.stringify(mailData.bcc));
+      }
+      
+      // Add attachments
+      if (mailData.attachments && mailData.attachments.length > 0) {
+        const attachmentNames = mailData.attachments.map(att => att.filename);
+        const attachmentTypes = mailData.attachments.map(att => att.contentType);
+        const attachmentUrls = mailData.attachments.map(att => att.url || '');
+        
+        mailData.attachments.forEach((attachment) => {
+          formData.append(`attachments`, attachment.data);
+        });
+        
+        formData.append('attachmentNames', JSON.stringify(attachmentNames));
+        formData.append('attachmentTypes', JSON.stringify(attachmentTypes));
+        formData.append('attachmentUrls', JSON.stringify(attachmentUrls));
+      }
+
+      const config = {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      };
+
+      const { data } = await axios.patch(`${server}/mail/${mailData.mailId}/update-schedule`, formData, config);
       return data;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);

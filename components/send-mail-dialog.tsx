@@ -22,7 +22,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useAppDispatch } from "@/redux/hook"
-import { sendMail, saveDraft, scheduleMail } from "@/redux/actions/mailActions"
+import { sendMail, saveDraft, scheduleMail, updateScheduledMail } from "@/redux/actions/mailActions"
 import { uploadFileToCloudinary } from "@/utils/cloudinary"
 import { toast } from "sonner"
 import {
@@ -48,6 +48,7 @@ interface SendMailDialogProps {
   replyMode?: 'reply' | 'replyAll' | 'forward' | null
   originalMail?: any
   draftMail?: any
+  scheduledMail?: any
   onMailSent?: () => void
 }
 
@@ -92,7 +93,7 @@ const clearFormStateFromStorage = () => {
   }
 }
 
-export function SendMailDialog({ open, onOpenChange, replyMode = null, originalMail = null, draftMail = null, onMailSent }: SendMailDialogProps) {
+export function SendMailDialog({ open, onOpenChange, replyMode = null, originalMail = null, draftMail = null, scheduledMail = null, onMailSent }: SendMailDialogProps) {
   const dispatch = useAppDispatch()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -122,14 +123,15 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
   const [bccRecipients, setBccRecipients] = useState<string[]>([])
   const [showSaveDraftDialog, setShowSaveDraftDialog] = useState(false)
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null)
+  const [currentScheduledMailId, setCurrentScheduledMailId] = useState<string | null>(null)
   const [showSchedulePopover, setShowSchedulePopover] = useState(false)
   const [scheduledDate, setScheduledDate] = useState("")
   const [scheduledTime, setScheduledTime] = useState("")
 
-  // localStorage'dan form verilerini yükle (dialog açıldığında, reply/draft yoksa ve henüz yüklenmediyse)
+  // localStorage'dan form verilerini yükle (dialog açıldığında, reply/draft/scheduled yoksa ve henüz yüklenmediyse)
   React.useEffect(() => {
-    // Sadece yeni mail yazıyorsak (reply/draft yoksa) localStorage'dan yükle
-    const isNewMail = !replyMode && !draftMail
+    // Sadece yeni mail yazıyorsak (reply/draft/scheduled yoksa) localStorage'dan yükle
+    const isNewMail = !replyMode && !draftMail && !scheduledMail
     
     if (isDialogOpen && isNewMail && !hasLoadedFromStorageRef.current && typeof window !== 'undefined') {
       const savedState = loadFormStateFromStorage()
@@ -174,7 +176,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       hasLoadedFromStorageRef.current = false
       prevFormDataRef.current = '' // Reset prev data
     }
-  }, [isDialogOpen, replyMode, draftMail])
+  }, [isDialogOpen, replyMode, draftMail, scheduledMail])
   
   // Dialog açıklık durumunu ref ile senkronize et
   React.useEffect(() => {
@@ -187,7 +189,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
   
   // localStorage'a kaydetme fonksiyonu
   const saveToLocalStorage = React.useCallback(() => {
-    if (!isDialogOpenRef.current || replyMode || draftMail) {
+    if (!isDialogOpenRef.current || replyMode || draftMail || scheduledMail) {
       return
     }
     
@@ -213,7 +215,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       currentDraftId
     })
     prevFormDataRef.current = currentFormDataStr
-  }, [formData, toRecipients, ccRecipients, bccRecipients, currentDraftId, replyMode, draftMail])
+  }, [formData, toRecipients, ccRecipients, bccRecipients, currentDraftId, replyMode, draftMail, scheduledMail])
   
   React.useEffect(() => {
     // Dialog kapalıysa kaydetme
@@ -256,7 +258,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     if (typeof window === 'undefined') return
     
     const handleBeforeUnload = () => {
-      if (isDialogOpenRef.current && !replyMode && !draftMail) {
+      if (isDialogOpenRef.current && !replyMode && !draftMail && !scheduledMail) {
         saveToLocalStorage()
       }
     }
@@ -266,7 +268,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     
     // Route değişmeden önce kaydet (Next.js için)
     const handleRouteChange = () => {
-      if (isDialogOpenRef.current && !replyMode && !draftMail) {
+      if (isDialogOpenRef.current && !replyMode && !draftMail && !scheduledMail) {
         saveToLocalStorage()
       }
     }
@@ -278,11 +280,11 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       window.removeEventListener('beforeunload', handleBeforeUnload)
       window.removeEventListener('popstate', handleRouteChange)
       // Component unmount olmadan önce de kaydet
-      if (isDialogOpenRef.current && !replyMode && !draftMail) {
+      if (isDialogOpenRef.current && !replyMode && !draftMail && !scheduledMail) {
         saveToLocalStorage()
       }
     }
-  }, [saveToLocalStorage, replyMode, draftMail])
+  }, [saveToLocalStorage, replyMode, draftMail, scheduledMail])
 
   // Parent'tan gelen open prop'u değiştiğinde dialog'u aç (sadece açılma tetikleyicisi)
   // ÖNEMLİ: open false olsa bile dialog açık kalır - sadece kullanıcı action'ları dialog'u kapatabilir
@@ -306,9 +308,35 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
   }
 
 
-  // Reply mode veya draft mode'a göre form verilerini otomatik doldur
+  // Reply mode veya draft mode veya scheduled mode'a göre form verilerini otomatik doldur
   React.useEffect(() => {
-    if (draftMail && isDialogOpen) {
+    if (scheduledMail && isDialogOpen) {
+      // Planlanan maili yükle
+      setCurrentScheduledMailId(scheduledMail._id)
+      setToRecipients(scheduledMail.to?.map((r: any) => r.email) || [])
+      setCcRecipients(scheduledMail.cc?.map((r: any) => r.email) || [])
+      setBccRecipients(scheduledMail.bcc?.map((r: any) => r.email) || [])
+      setFormData({
+        to: "",
+        cc: "",
+        bcc: "",
+        subject: scheduledMail.subject || '',
+        content: scheduledMail.htmlContent || scheduledMail.content || ''
+      })
+      setShowCC(scheduledMail.cc && scheduledMail.cc.length > 0)
+      setShowBCC(scheduledMail.bcc && scheduledMail.bcc.length > 0)
+      
+      // Planlanan tarih ve saat bilgisini doldur
+      if (scheduledMail.scheduledSendAt) {
+        const scheduledDateObj = new Date(scheduledMail.scheduledSendAt)
+        const dateStr = scheduledDateObj.toISOString().split('T')[0]
+        const timeStr = scheduledDateObj.toTimeString().split(' ')[0].substring(0, 5)
+        setScheduledDate(dateStr)
+        setScheduledTime(timeStr)
+        setShowSchedulePopover(false) // Popover'ı kapalı tut
+      }
+
+    } else if (draftMail && isDialogOpen) {
       // Taslağı yükle
       setCurrentDraftId(draftMail._id)
       setToRecipients(draftMail.to?.map((r: any) => r.email) || [])
@@ -361,7 +389,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
           }))
           break
       }
-    } else if (!replyMode && !draftMail && isDialogOpen && open) {
+    } else if (!replyMode && !draftMail && !scheduledMail && isDialogOpen && open) {
       // Yeni mail için formu temizle (sadece ilk açılışta ve localStorage'dan yükleme yapılmadıysa)
       // Eğer localStorage'dan veri yüklendiyse, formu temizleme
       if (!hasLoadedFromStorageRef.current) {
@@ -376,9 +404,12 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
         setCcRecipients([])
         setBccRecipients([])
         setCurrentDraftId(null)
+        setCurrentScheduledMailId(null)
+        setScheduledDate("")
+        setScheduledTime("")
       }
     }
-  }, [replyMode, originalMail, draftMail, isDialogOpen, open])
+  }, [replyMode, originalMail, draftMail, scheduledMail, isDialogOpen, open])
 
   // Cihazın dokunmatik olup olmadığını belirle (Tooltip dokunmatik cihazlarda çalışmaz)
   React.useEffect(() => {
@@ -742,7 +773,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     }
   }
 
-  // Planlı gönderme
+  // Planlı gönderme veya planlanan maili güncelleme
   const handleScheduledSend = async () => {
     if (toRecipients.length === 0) {
       toast.error("Lütfen en az bir alıcı seçin!")
@@ -777,61 +808,119 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     setShowSchedulePopover(false)
     handleInternalClose()
 
-    // Reset form immediately
-    const mailDataToSchedule = {
-      to: toRecipients,
-      cc: ccRecipients.length > 0 ? ccRecipients : undefined,
-      bcc: bccRecipients.length > 0 ? bccRecipients : undefined,
-      subject: formData.subject,
-      content: formData.content,
-      htmlContent: formData.content,
-      draftId: currentDraftId || undefined,
-      scheduledSendAt: scheduledDateTime.toISOString(),
-      attachments: attachments.map(attachment => ({
-        filename: attachment.name,
-        data: attachment.file,
-        contentType: attachment.type,
-        size: attachment.size,
-        url: attachment.url || undefined
-      }))
-    }
-
-    setFormData({
-      to: "",
-      cc: "",
-      bcc: "",
-      subject: "",
-      content: ""
-    })
-    setToRecipients([])
-    setCcRecipients([])
-    setBccRecipients([])
-    setAttachments([])
-    setShowCC(false)
-    setShowBCC(false)
-    setScheduledDate("")
-    setScheduledTime("")
-
-    // Show toast and schedule mail in background
-    const loadingToastId = toast.loading("Mail planlanıyor...")
-
-    try {
-
-      const result = await dispatch(scheduleMail(mailDataToSchedule)).unwrap()
-
-      toast.dismiss(loadingToastId)
-      toast.success(result.message || "Mail başarıyla planlandı!")
-
-      if (onMailSent) {
-        onMailSent()
+    // Eğer planlanan mail düzenleniyorsa (currentScheduledMailId varsa), güncelle
+    if (currentScheduledMailId) {
+      const mailDataToUpdate = {
+        mailId: currentScheduledMailId,
+        to: toRecipients,
+        cc: ccRecipients.length > 0 ? ccRecipients : undefined,
+        bcc: bccRecipients.length > 0 ? bccRecipients : undefined,
+        subject: formData.subject,
+        content: formData.content,
+        htmlContent: formData.content,
+        scheduledSendAt: scheduledDateTime.toISOString(),
+        attachments: attachments.map(attachment => ({
+          filename: attachment.name,
+          data: attachment.file,
+          contentType: attachment.type,
+          size: attachment.size,
+          url: attachment.url || undefined
+        }))
       }
 
-    } catch (error: any) {
-      console.error("Schedule mail failed:", error)
-      toast.dismiss(loadingToastId)
+      setFormData({
+        to: "",
+        cc: "",
+        bcc: "",
+        subject: "",
+        content: ""
+      })
+      setToRecipients([])
+      setCcRecipients([])
+      setBccRecipients([])
+      setAttachments([])
+      setShowCC(false)
+      setShowBCC(false)
+      setCurrentScheduledMailId(null)
+      setScheduledDate("")
+      setScheduledTime("")
 
-      const errorMessage = typeof error === 'string' ? error : error?.message || "Mail planlanırken bir hata oluştu"
-      toast.error(errorMessage)
+      // Show toast and update scheduled mail in background
+      const loadingToastId = toast.loading("Planlanan mail güncelleniyor...")
+
+      try {
+        const result = await dispatch(updateScheduledMail(mailDataToUpdate)).unwrap()
+
+        toast.dismiss(loadingToastId)
+        toast.success(result.message || "Planlanan mail başarıyla güncellendi!")
+
+        if (onMailSent) {
+          onMailSent()
+        }
+
+      } catch (error: any) {
+        console.error("Update scheduled mail failed:", error)
+        toast.dismiss(loadingToastId)
+
+        const errorMessage = typeof error === 'string' ? error : error?.message || "Planlanan mail güncellenirken bir hata oluştu"
+        toast.error(errorMessage)
+      }
+    } else {
+      // Yeni planlanan mail oluştur
+      const mailDataToSchedule = {
+        to: toRecipients,
+        cc: ccRecipients.length > 0 ? ccRecipients : undefined,
+        bcc: bccRecipients.length > 0 ? bccRecipients : undefined,
+        subject: formData.subject,
+        content: formData.content,
+        htmlContent: formData.content,
+        draftId: currentDraftId || undefined,
+        scheduledSendAt: scheduledDateTime.toISOString(),
+        attachments: attachments.map(attachment => ({
+          filename: attachment.name,
+          data: attachment.file,
+          contentType: attachment.type,
+          size: attachment.size,
+          url: attachment.url || undefined
+        }))
+      }
+
+      setFormData({
+        to: "",
+        cc: "",
+        bcc: "",
+        subject: "",
+        content: ""
+      })
+      setToRecipients([])
+      setCcRecipients([])
+      setBccRecipients([])
+      setAttachments([])
+      setShowCC(false)
+      setShowBCC(false)
+      setScheduledDate("")
+      setScheduledTime("")
+
+      // Show toast and schedule mail in background
+      const loadingToastId = toast.loading("Mail planlanıyor...")
+
+      try {
+        const result = await dispatch(scheduleMail(mailDataToSchedule)).unwrap()
+
+        toast.dismiss(loadingToastId)
+        toast.success(result.message || "Mail başarıyla planlandı!")
+
+        if (onMailSent) {
+          onMailSent()
+        }
+
+      } catch (error: any) {
+        console.error("Schedule mail failed:", error)
+        toast.dismiss(loadingToastId)
+
+        const errorMessage = typeof error === 'string' ? error : error?.message || "Mail planlanırken bir hata oluştu"
+        toast.error(errorMessage)
+      }
     }
   }
 
@@ -975,9 +1064,10 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
           <div className="flex items-center gap-2">
             <Send className="h-4 w-4 lg:h-5 lg:w-5" />
             <h2 className="text-sm lg:text-base font-semibold">
-              {replyMode === 'reply' ? 'Cevapla' :
-                replyMode === 'replyAll' ? 'Tümünü Cevapla' :
-                  replyMode === 'forward' ? 'İlet' : 'Yeni Mail'}
+              {scheduledMail ? 'Planlanan Maili Düzenle' :
+                replyMode === 'reply' ? 'Cevapla' :
+                  replyMode === 'replyAll' ? 'Tümünü Cevapla' :
+                    replyMode === 'forward' ? 'İlet' : 'Yeni Mail'}
             </h2>
           </div>
           <Button
@@ -1278,100 +1368,142 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
               İptal
             </Button>
 
-            <div className="flex items-center gap-2">
-              {/* Planlı Gönderme Butonu */}
-              <Popover open={showSchedulePopover} onOpenChange={setShowSchedulePopover}>
-                <PopoverTrigger asChild>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+              {/* Planlanan mail düzenleme modunda tarih/saat alanlarını göster */}
+              {scheduledMail ? (
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <div className="flex-1 sm:flex-none">
+                      <Label htmlFor="edit-schedule-date" className="text-xs">Tarih</Label>
+                      <Input
+                        id="edit-schedule-date"
+                        type="date"
+                        value={scheduledDate}
+                        onChange={(e) => setScheduledDate(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                        className="mt-1 text-xs"
+                      />
+                    </div>
+                    <div className="flex-1 sm:flex-none">
+                      <Label htmlFor="edit-schedule-time" className="text-xs">Saat</Label>
+                      <Input
+                        id="edit-schedule-time"
+                        type="time"
+                        value={scheduledTime}
+                        onChange={(e) => setScheduledTime(e.target.value)}
+                        className="mt-1 text-xs"
+                      />
+                    </div>
+                  </div>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    disabled={toRecipients.length === 0 || !formData.subject || !formData.content}
-                    className="text-xs lg:text-sm"
+                    disabled={toRecipients.length === 0 || !formData.subject || !formData.content || !scheduledDate || !scheduledTime}
+                    onClick={handleScheduledSend}
+                    className="text-xs lg:text-sm w-full sm:w-auto"
                   >
                     <Clock className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
-                    <span className="hidden sm:inline">Planla</span>
-                    <ChevronDown className="h-3 w-3 lg:h-4 lg:w-4 ml-1" />
+                    Güncelle
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80" align="end">
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-medium mb-2">Planlı Gönderim</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Mail'i belirli bir tarih ve saatte göndermek için planla
-                      </p>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="schedule-date" className="text-sm">Tarih</Label>
-                        <Input
-                          id="schedule-date"
-                          type="date"
-                          value={scheduledDate}
-                          onChange={(e) => setScheduledDate(e.target.value)}
-                          min={new Date().toISOString().split('T')[0]}
-                          className="mt-1"
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="schedule-time" className="text-sm">Saat</Label>
-                        <Input
-                          id="schedule-time"
-                          type="time"
-                          value={scheduledTime}
-                          onChange={(e) => setScheduledTime(e.target.value)}
-                          className="mt-1"
-                        />
-                      </div>
-
-                      {scheduledDate && scheduledTime && (
-                        <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded text-sm">
-                          <p className="text-blue-900 dark:text-blue-100">
-                            Mail <strong>{new Date(`${scheduledDate}T${scheduledTime}`).toLocaleString('tr-TR')}</strong> tarihinde gönderilecek
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex gap-2">
+                </div>
+              ) : (
+                <>
+                  {/* Planlı Gönderme Butonu */}
+                  <Popover open={showSchedulePopover} onOpenChange={setShowSchedulePopover}>
+                    <PopoverTrigger asChild>
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => setShowSchedulePopover(false)}
-                        className="flex-1"
+                        disabled={toRecipients.length === 0 || !formData.subject || !formData.content}
+                        className="text-xs lg:text-sm"
                       >
-                        İptal
+                        <Clock className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
+                        <span className="hidden sm:inline">Planla</span>
+                        <ChevronDown className="h-3 w-3 lg:h-4 lg:w-4 ml-1" />
                       </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={handleScheduledSend}
-                        disabled={!scheduledDate || !scheduledTime}
-                        className="flex-1"
-                      >
-                        <Clock className="h-4 w-4 mr-2" />
-                        Planla
-                      </Button>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80" align="end">
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="font-medium mb-2">Planlı Gönderim</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Mail'i belirli bir tarih ve saatte göndermek için planla
+                          </p>
+                        </div>
 
-              {/* Hemen Gönder Butonu */}
-              <Button
-                type="submit"
-                disabled={toRecipients.length === 0 || !formData.subject || !formData.content}
-                size="sm"
-                onClick={handleSubmit}
-                className="text-xs lg:text-sm"
-              >
-                <Send className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
-                Gönder
-              </Button>
+                        <div className="space-y-3">
+                          <div>
+                            <Label htmlFor="schedule-date" className="text-sm">Tarih</Label>
+                            <Input
+                              id="schedule-date"
+                              type="date"
+                              value={scheduledDate}
+                              onChange={(e) => setScheduledDate(e.target.value)}
+                              min={new Date().toISOString().split('T')[0]}
+                              className="mt-1"
+                            />
+                          </div>
+
+                          <div>
+                            <Label htmlFor="schedule-time" className="text-sm">Saat</Label>
+                            <Input
+                              id="schedule-time"
+                              type="time"
+                              value={scheduledTime}
+                              onChange={(e) => setScheduledTime(e.target.value)}
+                              className="mt-1"
+                            />
+                          </div>
+
+                          {scheduledDate && scheduledTime && (
+                            <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded text-sm">
+                              <p className="text-blue-900 dark:text-blue-100">
+                                Mail <strong>{new Date(`${scheduledDate}T${scheduledTime}`).toLocaleString('tr-TR')}</strong> tarihinde gönderilecek
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowSchedulePopover(false)}
+                            className="flex-1"
+                          >
+                            İptal
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={handleScheduledSend}
+                            disabled={!scheduledDate || !scheduledTime}
+                            className="flex-1"
+                          >
+                            <Clock className="h-4 w-4 mr-2" />
+                            Planla
+                          </Button>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Hemen Gönder Butonu */}
+                  <Button
+                    type="submit"
+                    disabled={toRecipients.length === 0 || !formData.subject || !formData.content}
+                    size="sm"
+                    onClick={handleSubmit}
+                    className="text-xs lg:text-sm"
+                  >
+                    <Send className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
+                    Gönder
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

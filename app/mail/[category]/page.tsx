@@ -3,7 +3,7 @@
 import Image from "next/image"
 import React, { useEffect } from "react"
 import { useAppDispatch, useAppSelector } from "@/redux/hook"
-import { getMailsByCategory, getMailsByLabelCategory, getMailStats } from "@/redux/actions/mailActions"
+import { getMailsByCategory, getMailsByLabelCategory, getMailStats, getScheduledMails } from "@/redux/actions/mailActions"
 import { Mail } from "@/components/mail"
 
 interface MailCategoryPageProps {
@@ -30,6 +30,7 @@ export default function MailCategoryPage({ params }: MailCategoryPageProps) {
     const titles: Record<string, string> = {
       inbox: "Gelen Kutusu",
       sent: "Gönderilenler",
+      scheduled: "Planlanan",
       drafts: "Taslaklar", 
       spam: "Spam",
       trash: "Çöp Kutusu",
@@ -59,7 +60,15 @@ export default function MailCategoryPage({ params }: MailCategoryPageProps) {
             page: 1,
             limit: 50
           }))
-        } else {
+        } 
+        // Planlanan mailler için özel action kullan
+        else if (categoryParam === 'scheduled') {
+          dispatch(getScheduledMails({
+            page: 1,
+            limit: 50
+          }))
+        } 
+        else {
           // Klasör sayfaları için normal category kullan
           dispatch(getMailsByCategory({
             folder: categoryParam,
