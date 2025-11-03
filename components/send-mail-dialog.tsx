@@ -1422,43 +1422,41 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
 
         {/* Fixed Footer */}
         <div className="border-t p-3 lg:p-4 bg-background">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            {/* İptal Butonu - Sol */}
             <Button
               type="button"
               variant="outline"
               onClick={handleClose}
               disabled={false}
               size="sm"
-              className="text-xs lg:text-sm"
+              className="text-xs lg:text-sm flex-shrink-0"
             >
               <X className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
               İptal
             </Button>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+            {/* Sağ Taraf - Planla ve Gönder Butonları */}
+            <div className="flex items-center gap-2 ml-auto">
               {/* Planlanan mail düzenleme modunda tarih/saat alanlarını göster */}
               {scheduledMail ? (
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <div className="flex-1 sm:flex-none">
-                      <Input
-                        id="edit-schedule-date"
-                        type="date"
-                        value={scheduledDate}
-                        onChange={(e) => setScheduledDate(e.target.value)}
-                        min={new Date().toISOString().split('T')[0]}
-                        className="mt-1 text-xs"
-                      />
-                    </div>
-                    <div className="flex-1 sm:flex-none">
-                      <Input
-                        id="edit-schedule-time"
-                        type="time"
-                        value={scheduledTime}
-                        onChange={(e) => setScheduledTime(e.target.value)}
-                        className="mt-1 text-xs"
-                      />
-                    </div>
+                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="edit-schedule-date"
+                      type="date"
+                      value={scheduledDate}
+                      onChange={(e) => setScheduledDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="text-xs w-auto min-w-[120px]"
+                    />
+                    <Input
+                      id="edit-schedule-time"
+                      type="time"
+                      value={scheduledTime}
+                      onChange={(e) => setScheduledTime(e.target.value)}
+                      className="text-xs w-auto min-w-[100px]"
+                    />
                   </div>
                   <Button
                     type="button"
@@ -1466,7 +1464,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                     size="sm"
                     disabled={toRecipients.length === 0 || !formData.subject || !formData.content || !scheduledDate || !scheduledTime}
                     onClick={handleScheduledSend}
-                    className="text-md lg:text-sm w-full sm:w-auto"
+                    className="text-xs lg:text-sm"
                   >
                     <Clock className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
                     Güncelle
@@ -1556,7 +1554,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                     </PopoverContent>
                   </Popover>
 
-                  {/* Hemen Gönder Butonu */}
+                  {/* Hemen Gönder Butonu - En Sağda */}
                   <Button
                     type="submit"
                     disabled={toRecipients.length === 0 || !formData.subject || !formData.content}

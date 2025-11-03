@@ -93,30 +93,35 @@ export default function MailDetailPage() {
       />
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex items-center gap-4 p-4 border-b">
-          {/* Mobile Menu Toggle Button */}
-          {mobileSidebar && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={mobileSidebar.toggleMobileSidebar}
-              className="lg:hidden h-8 w-8 p-0"
-              title={
-                mobileSidebar.mobileState === 'hidden' ? 'Menüyü göster (ikonlar)' :
-                mobileSidebar.mobileState === 'collapsed' ? 'Menüyü genişlet (yazılar)' :
-                'Menüyü gizle'
-              }
-            >
-              <Menu className="h-4 w-4" />
+        <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-4 p-3 lg:p-4 border-b">
+          {/* Mobil: Butonlar üst satırda, Desktop: Butonlar ve mail bilgileri yan yana */}
+          <div className="flex items-center gap-2 lg:gap-4 flex-shrink-0">
+            {/* Mobile Menu Toggle Button */}
+            {mobileSidebar && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={mobileSidebar.toggleMobileSidebar}
+                className="lg:hidden h-8 w-8 p-0"
+                title={
+                  mobileSidebar.mobileState === 'hidden' ? 'Menüyü göster (ikonlar)' :
+                  mobileSidebar.mobileState === 'collapsed' ? 'Menüyü genişlet (yazılar)' :
+                  'Menüyü gizle'
+                }
+              >
+                <Menu className="h-4 w-4" />
+              </Button>
+            )}
+            {/* Geri Butonu */}
+            <Button onClick={handleBack} variant="outline" size="sm" className="flex-shrink-0">
+              <ArrowLeft className="h-4 w-4 mr-1 lg:mr-2" />
+              <span className="hidden sm:inline">Geri</span>
             </Button>
-          )}
-          <Button onClick={handleBack} variant="outline" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Geri
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-lg font-semibold truncate">{selectedMail.subject}</h1>
-            <p className="text-sm text-muted-foreground">
+          </div>
+          {/* Mail Bilgileri */}
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base lg:text-lg font-semibold truncate">{selectedMail.subject}</h1>
+            <p className="text-xs lg:text-sm text-muted-foreground truncate">
               Alıcı: {selectedMail.to?.map((recipient: { name: string; email: string }) => `${recipient.name} <${recipient.email}>`).join(', ')}
             </p>
           </div>

@@ -1034,12 +1034,12 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
           {isReply && (
             <>
               <Separator />
-              <div className="p-4 bg-muted/30">
-                <div className="flex items-center gap-2 mb-3">
+              <div className="p-2 lg:p-4 bg-muted/30">
+                <div className="flex items-center gap-2 mb-0 lg:mb-2">
                   <span className="text-sm font-medium text-purple-800 dark:text-blue-400">↳ Yanıt</span>
                   <span className="text-xs text-muted-foreground">Orijinal konu: {originalSubject}</span>
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="hidden lg:block text-xs text-muted-foreground">
                   Bu mail, "{originalSubject}" konusundaki konuşmanın devamıdır.
                 </div>
               </div>
