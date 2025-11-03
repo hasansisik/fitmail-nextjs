@@ -206,24 +206,23 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
   const { mailStats, statsLoading, statsError } = useAppSelector((state) => state.mail)
   const isMobile = useIsMobile()
   
-  // localStorage key'leri - mobil ve desktop için ayrı
-  const getStorageKey = useCallback(() => {
-    return isMobile ? 'sidebarCollapsedMobile' : 'sidebarCollapsedDesktop'
+  // localStorage'a kaydetme fonksiyonu
+  const saveCollapsedState = useCallback((collapsed: boolean) => {
+    if (typeof window === 'undefined') return
+    try {
+      const storageKey = isMobile ? 'sidebarCollapsedMobile' : 'sidebarCollapsedDesktop'
+      localStorage.setItem(storageKey, collapsed.toString())
+    } catch {
+      // localStorage'a kayıt başarısız, sessizce devam et
+    }
   }, [isMobile])
   
-  // localStorage'dan başlangıç değerini yükle
-  const getInitialCollapsedState = useCallback((): boolean => {
-    if (typeof window === 'undefined') return false
-    try {
-      const storageKey = getStorageKey()
-      const stored = localStorage.getItem(storageKey)
-      return stored === 'true'
-    } catch {
-      return false
-    }
-  }, [getStorageKey])
-  
+  // Internal state - sadece external prop yoksa kullanılır
   const [internalIsCollapsed, setInternalIsCollapsed] = useState(() => {
+    // External prop varsa internal state kullanmayacağız
+    if (externalIsCollapsed !== undefined) {
+      return externalIsCollapsed
+    }
     if (typeof window === 'undefined') {
       return false
     }
@@ -240,47 +239,35 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
   const [isSendDialogOpen, setIsSendDialogOpen] = useState(false)
   const selectedAccountEmail = useAppSelector((state) => state.user.selectedAccountEmail)
   
-  // localStorage'a kaydetme fonksiyonu
-  const saveCollapsedState = useCallback((collapsed: boolean) => {
-    const storageKey = getStorageKey()
-    if (typeof window === 'undefined') return
-    try {
-      localStorage.setItem(storageKey, collapsed.toString())
-    } catch {
-      // localStorage'a kayıt başarısız, sessizce devam et
-    }
-  }, [getStorageKey, isMobile])
-  
-  // Internal state setter - localStorage'a da kaydet
-  const setInternalIsCollapsedWithStorage = useCallback((collapsed: boolean | ((prev: boolean) => boolean)) => {
-    setInternalIsCollapsed(prev => {
-      const newValue = typeof collapsed === 'function' ? collapsed(prev) : collapsed
-      saveCollapsedState(newValue)
-      return newValue
-    })
-  }, [saveCollapsedState])
-  
-  // External prop varsa onu kullan, yoksa internal state + localStorage
+  // External prop varsa onu kullan, yoksa internal state
   const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : internalIsCollapsed
   
   // Setter - external prop varsa onCollapse'u kullan, yoksa internal setter'ı kullan
   const setIsCollapsed = useCallback((collapsed: boolean | ((prev: boolean) => boolean)) => {
     if (onCollapse) {
+      // External prop kullanılıyorsa, parent component'e bildir ve localStorage'a kaydet
       const newValue = typeof collapsed === 'function' ? collapsed(isCollapsed) : collapsed
       onCollapse(newValue)
       saveCollapsedState(newValue)
     } else {
-      setInternalIsCollapsedWithStorage(collapsed)
+      // Internal state kullanılıyorsa, state'i güncelle ve localStorage'a kaydet
+      setInternalIsCollapsed(prev => {
+        const newValue = typeof collapsed === 'function' ? collapsed(prev) : collapsed
+        saveCollapsedState(newValue)
+        return newValue
+      })
     }
-  }, [onCollapse, isCollapsed, saveCollapsedState, setInternalIsCollapsedWithStorage])
+  }, [onCollapse, isCollapsed, saveCollapsedState])
   
-  // Mobil/desktop değiştiğinde localStorage'dan durumu yükle
+  // External prop değiştiğinde internal state'i senkronize et (sadece external prop yoksa)
   useEffect(() => {
-    if (externalIsCollapsed === undefined) {
-      const storedState = getInitialCollapsedState()
-      setInternalIsCollapsed(storedState)
+    if (externalIsCollapsed !== undefined) {
+      // External prop kullanılıyorsa internal state'i güncelleme
+      return
     }
-  }, [isMobile, getInitialCollapsedState, externalIsCollapsed]) // isMobile değiştiğinde tekrar yükle
+    // Sadece external prop yoksa ve isMobile değiştiyse localStorage'dan yükle
+    // Desktop'ta bu genellikle çalışmaz çünkü external prop var
+  }, [externalIsCollapsed])
   
   // Sidebar yüklendiğinde mail stats'ı çek ve sessions'ı yükle
   useEffect(() => {
@@ -791,7 +778,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       </div>
       
       {/* Settings and Logout - Fixed at Bottom */}
-      <div className="flex flex-col gap-4 py-2 border-t">
+      <div className="flex flex-col gap-4 py-1 border-t">
         <nav className={cn(
           "grid gap-1",
           isCollapsed ? "px-1" : "px-2"

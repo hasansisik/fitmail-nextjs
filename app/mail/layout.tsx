@@ -84,7 +84,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   // Panel resize callback'i - size parametresi ile collapsed durumunu belirle
-  const handlePanelResize = (size: number | undefined) => {
+  // useCallback ile optimize ediyoruz ki gereksiz render'ları önleyelim
+  const handlePanelResize = React.useCallback((size: number | undefined) => {
     if (size === undefined || size === null) return
     
     // collapsedSize 4 olduğuna göre, size 4'e eşit veya daha küçükse collapsed
@@ -92,10 +93,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const shouldBeCollapsed = size <= 4.5
     
     // Sadece durum değiştiyse güncelle (sonsuz döngüyü önlemek için)
-    if (isCollapsed !== shouldBeCollapsed) {
-      handleDesktopCollapse(shouldBeCollapsed)
-    }
-  }
+    setIsCollapsed(prevCollapsed => {
+      if (prevCollapsed !== shouldBeCollapsed) {
+        // localStorage'a kaydet
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('sidebarCollapsedDesktop', shouldBeCollapsed.toString())
+          } catch {
+            // localStorage'a kayıt başarısız, sessizce devam et
+          }
+        }
+        return shouldBeCollapsed
+      }
+      return prevCollapsed
+    })
+  }, [])
 
   // Mobile sidebar durumunu localStorage'a kaydet
   const handleMobileStateChange = (state: MobileSidebarState) => {
@@ -234,19 +246,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 className="h-screen items-stretch"
               >
                 <ResizablePanel
-                  key={`panel-${isCollapsed ? 'collapsed' : 'expanded'}`}
                   defaultSize={isCollapsed ? 4 : 15}
                   collapsedSize={4}
                   collapsible={true}
-                  minSize={10}
+                  minSize={isCollapsed ? 4 : 10}
                   maxSize={25}
                   onCollapse={() => handleDesktopCollapse(true)}
+                  onExpand={() => handleDesktopCollapse(false)}
                   onResize={handlePanelResize}
                   className="border-r"
                 >
                   <div className="h-screen overflow-hidden">
                     <Sidebar 
-                      key={`sidebar-${isCollapsed}`}
                       isCollapsed={isCollapsed} 
                       onCollapse={handleDesktopCollapse} 
                     />
