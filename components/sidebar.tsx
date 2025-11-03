@@ -753,7 +753,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       )}
       
       {/* Main Navigation and Category Navigation Combined */}
-      <div className="flex flex-1 flex-col gap-4 py-2 overflow-hidden">
+      <div className="flex flex-1 flex-col gap-3 py-1 overflow-hidden">
         {/* Main Navigation */}
         <nav className={cn(
           "grid gap-1 pointer-events-auto",
@@ -778,7 +778,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       </div>
       
       {/* Settings and Logout - Fixed at Bottom */}
-      <div className="flex flex-col gap-4 py-1 border-t">
+      <div className="flex flex-col gap-3 pb-1 border-t">
         <nav className={cn(
           "grid gap-1",
           isCollapsed ? "px-1" : "px-2"
