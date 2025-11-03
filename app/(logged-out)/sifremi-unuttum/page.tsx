@@ -16,7 +16,7 @@ export default function ForgotPasswordPage() {
         <div 
           className="bg-muted relative hidden lg:block"
           style={{
-            backgroundImage: 'url(/bg.jpg)',
+            backgroundImage: 'url(https://res.cloudinary.com/da2qwsrbv/image/upload/v1762184037/fit-mail-unut_ooqrj7.png)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat'

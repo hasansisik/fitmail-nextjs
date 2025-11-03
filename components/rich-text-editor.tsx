@@ -127,9 +127,9 @@ export function RichTextEditor({ content, onChange, placeholder = "Mail içeriğ
   )
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-background">
+    <div className="border rounded-lg overflow-hidden bg-background w-full max-w-full">
       {/* Toolbar */}
-      <div className="border-b p-2 flex flex-wrap gap-1 bg-muted/30">
+      <div className="border-b p-2 flex flex-wrap gap-1 bg-muted/30 overflow-x-auto max-w-full">
         {/* Formatting */}
         <ToolbarButton
           onClick={(e) => {
@@ -290,8 +290,8 @@ export function RichTextEditor({ content, onChange, placeholder = "Mail içeriğ
         </ToolbarButton>
 
         {/* Font Size / Headings */}
-        <div className="flex items-center gap-1 ml-2">
-          <Type className="h-4 w-4" />
+        <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+          <Type className="h-4 w-4 flex-shrink-0" />
           <select
             value={
               editor.isActive("heading", { level: 1 }) ? "1" :
@@ -310,7 +310,7 @@ export function RichTextEditor({ content, onChange, placeholder = "Mail içeriğ
               }
               setEditorState(Date.now())
             }}
-            className="h-8 px-2 text-sm "
+            className="h-8 px-1 sm:px-2 text-xs sm:text-sm max-w-[100px] sm:max-w-none"
           >
             <option value="">Normal</option>
             <option value="1">Başlık 1</option>

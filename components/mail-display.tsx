@@ -780,7 +780,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
 
   return (
     <div 
-      className={`flex h-full flex-col relative ${isDragging ? 'border-2 border-primary border-dashed' : ''}`}
+      className={`flex h-full flex-col relative overflow-x-hidden ${isDragging ? 'border-2 border-primary border-dashed' : ''}`}
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -795,8 +795,8 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
           </div>
         </div>
       )}
-      <div className="flex items-center p-2">
-        <div className="flex items-center gap-1 sm:gap-2">
+      <div className="flex items-center p-1 sm:p-2 overflow-x-hidden">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {onToggleMaximize && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -805,6 +805,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                   size="icon" 
                   onClick={onToggleMaximize}
                   title="Geri"
+                  className="h-8 w-8"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span className="sr-only">Geri</span>
@@ -820,7 +821,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                 size="icon" 
                 disabled={!mail}
                 onClick={handleArchive}
-                className={mailStatus.isArchived ? "bg-blue-100 text-purple-800" : ""}
+                className={`h-8 w-8 ${mailStatus.isArchived ? "bg-blue-100 text-purple-800" : ""}`}
               >
                 <Archive className="h-4 w-4" />
                 <span className="sr-only">Arşivle</span>
@@ -835,7 +836,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                 size="icon" 
                 disabled={!mail}
                 onClick={handleTrash}
-                className={mailStatus.isTrashed ? "bg-red-100 text-red-600" : ""}
+                className={`h-8 w-8 ${mailStatus.isTrashed ? "bg-red-100 text-red-600" : ""}`}
               >
                 <Trash2 className="h-4 w-4" />
                 <span className="sr-only">Sil</span>
@@ -850,7 +851,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                 size="icon" 
                 disabled={!mail}
                 onClick={handleStarred}
-                className={mailStatus.isStarred ? "text-yellow-500" : ""}
+                className={`h-8 w-8 ${mailStatus.isStarred ? "text-yellow-500" : ""}`}
               >
                 <Star className={`h-4 w-4 ${mailStatus.isStarred ? 'fill-yellow-400 text-yellow-400' : ''}`} />
                 <span className="sr-only">Yıldızla</span>
@@ -859,7 +860,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
             <TooltipContent>{mailStatus.isStarred ? "Yıldız işaretini kaldır" : "Yıldızlı olarak işaretle"}</TooltipContent>
           </Tooltip>
         </div>
-        <div className="ml-auto flex items-center gap-1 sm:gap-2">
+        <div className="ml-auto flex items-center gap-1 sm:gap-2 flex-shrink-0">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
@@ -867,6 +868,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                 size="icon" 
                 disabled={!mail}
                 onClick={handleReply}
+                className="h-8 w-8"
               >
                 <Reply className="h-4 w-4" />
                 <span className="sr-only">Yanıtla</span>
@@ -881,6 +883,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                 size="icon" 
                 disabled={!mail}
                 onClick={handleReplyAll}
+                className="h-8 w-8"
               >
                 <ReplyAll className="h-4 w-4" />
                 <span className="sr-only">Hepsine yanıtla</span>
@@ -889,10 +892,10 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
             <TooltipContent>Hepsine yanıtla</TooltipContent>
           </Tooltip>
         </div>
-        <Separator orientation="vertical" className="mx-1 sm:mx-2 h-6" />
+        <Separator orientation="vertical" className="mx-1 sm:mx-2 h-6 hidden sm:block" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" disabled={!mail}>
+            <Button variant="ghost" size="icon" disabled={!mail} className="h-8 w-8">
               <MoreVertical className="h-4 w-4" />
               <span className="sr-only">Daha fazla</span>
             </Button>
@@ -906,10 +909,10 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
       </div>
       <Separator />
       {mail ? (
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <div className="flex items-start p-2 sm:p-4">
-            <div className="flex items-start gap-2 sm:gap-4 text-sm">
-              <Avatar>
+        <div className="flex flex-1 flex-col overflow-hidden min-h-0">
+          <div className="flex items-start p-2 sm:p-4 overflow-x-hidden">
+            <div className="flex items-start gap-2 sm:gap-4 text-sm min-w-0 flex-1">
+              <Avatar className="flex-shrink-0">
                 <AvatarImage alt={mail.to?.[0]?.name || 'Alıcı'} />
                 <AvatarFallback>
                   {(mail.to?.[0]?.name || 'A')
@@ -918,18 +921,18 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                     .join("")}
                 </AvatarFallback>
               </Avatar>
-              <div className="grid gap-1">
+              <div className="grid gap-1 min-w-0 flex-1 overflow-hidden">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <div className="font-semibold">Alıcı: {mail.to?.map(recipient => recipient.name).join(', ') || 'Bilinmeyen Alıcı'}</div>
+                  <div className="font-semibold truncate text-xs sm:text-sm">Alıcı: {mail.to?.map(recipient => recipient.name).join(', ') || 'Bilinmeyen Alıcı'}</div>
                   {mail.status === 'scheduled' && mail.scheduledSendAt && (
-                    <Badge variant="outline" className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 border-blue-200">
+                    <Badge variant="outline" className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 border-blue-200 flex-shrink-0">
                       <Clock className="h-3 w-3 mr-1" />
                       Planlanan
                     </Badge>
                   )}
                 </div>
-                <div className="line-clamp-1 text-xs">{mail.subject}</div>
-                <div className="line-clamp-1 text-xs">
+                <div className="line-clamp-1 text-xs truncate">{mail.subject}</div>
+                <div className="line-clamp-1 text-xs truncate">
                   <span className="font-medium">Gönderen:</span> {mail.from?.name || 'Bilinmeyen'} &lt;{mail.from?.email || 'Bilinmeyen'}&gt;
                 </div>
               </div>
@@ -1044,9 +1047,9 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
           )}
           
           {/* Scrollable content area */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
             <div 
-              className="prose prose-sm max-w-none p-2 sm:p-4 text-sm [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-2 [&_li]:my-1 [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:my-2 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:my-2 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:my-2 [&_h4]:text-lg [&_h4]:font-bold [&_h4]:my-2 [&_h5]:text-base [&_h5]:font-bold [&_h5]:my-2 [&_h6]:text-sm [&_h6]:font-bold [&_h6]:my-2 [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_p]:my-2"
+              className="prose prose-sm max-w-none p-2 sm:p-4 text-sm overflow-x-hidden [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-2 [&_li]:my-1 [&_h1]:text-2xl sm:text-3xl [&_h1]:font-bold [&_h1]:my-2 [&_h2]:text-xl sm:text-2xl [&_h2]:font-bold [&_h2]:my-2 [&_h3]:text-lg sm:text-xl [&_h3]:font-bold [&_h3]:my-2 [&_h4]:text-base sm:text-lg [&_h4]:font-bold [&_h4]:my-2 [&_h5]:text-sm sm:text-base [&_h5]:font-bold [&_h5]:my-2 [&_h6]:text-xs sm:text-sm [&_h6]:font-bold [&_h6]:my-2 [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_p]:my-2 [&_img]:max-w-full [&_img]:h-auto"
               dangerouslySetInnerHTML={{ 
                 __html: mail.htmlContent || mail.content || '<p>İçerik yok</p>' 
               }}
@@ -1307,57 +1310,60 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
           
           {/* Fixed footer - Gmail benzeri cevapla kısmı */}
           <div 
-            className={`border-t bg-background ${isDragging ? 'bg-primary/5' : ''}`}
+            className={`border-t bg-background overflow-x-hidden ${isDragging ? 'bg-primary/5' : ''}`}
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
           >
-            <div className="p-2 sm:p-4">
+            <div className="p-2 sm:p-4 max-w-full">
             {!isReplying ? (
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 w-full">
                 <Button
                   onClick={handleReply}
                   variant="outline"
                   size="sm"
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 flex-1 sm:flex-initial min-w-0"
                 >
-                  <Reply className="h-4 w-4" />
+                  <Reply className="h-4 w-4 flex-shrink-0" />
                   <span className="hidden sm:inline">Cevapla</span>
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 flex-1 sm:flex-initial min-w-0"
                   onClick={handleReplyAll}
                 >
-                  <ReplyAll className="h-4 w-4" />
+                  <ReplyAll className="h-4 w-4 flex-shrink-0" />
                   <span className="hidden sm:inline">Cevapla Tümü</span>
                 </Button>
                
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Yanıtla</span>
+              <div className="space-y-3 sm:space-y-4 w-full">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium truncate">Yanıtla</span>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsReplying(false)}
+                    className="h-8 w-8 p-0 flex-shrink-0"
                   >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
                 
-                <RichTextEditor
-                  content={replyText}
-                  onChange={(content) => setReplyText(content)}
-                  placeholder={`${mail.from?.name || 'Gönderen'}'a yanıt yazın...`}
-                />
+                <div className="w-full overflow-x-hidden">
+                  <RichTextEditor
+                    content={replyText}
+                    onChange={(content) => setReplyText(content)}
+                    placeholder={`${mail.from?.name || 'Gönderen'}'a yanıt yazın...`}
+                  />
+                </div>
                 
                 {/* Yeni eklenen dosyalar */}
                 {attachments.length > 0 && (
-                  <div className="space-y-2">
+                  <div className="space-y-2 w-full overflow-x-hidden">
                     <span className="text-sm font-medium">Yeni Ekler:</span>
                     <div className="grid gap-2">
                       {attachments.map((attachment) => {
@@ -1366,7 +1372,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                         return (
                           <div
                             key={attachment.id}
-                            className="flex items-center gap-3 p-2 border rounded-lg bg-muted/50"
+                            className="flex items-center gap-2 sm:gap-3 p-2 border rounded-lg bg-muted/50 min-w-0"
                           >
                             {/* Resim önizlemesi veya ikon */}
                             {isImage && attachment.url ? (
@@ -1374,7 +1380,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                                 <img
                                   src={attachment.url}
                                   alt={attachment.name}
-                                  className="w-12 h-12 object-cover rounded border"
+                                  className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded border"
                                   loading="lazy"
                                   onError={(e) => {
                                     const target = e.target as HTMLImageElement
@@ -1385,7 +1391,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                                     }
                                   }}
                                 />
-                                <div className="hidden items-center justify-center w-12 h-12">
+                                <div className="hidden items-center justify-center w-10 h-10 sm:w-12 sm:h-12">
                                   {getAttachmentIcon(attachment.type)}
                                 </div>
                               </div>
@@ -1395,9 +1401,9 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                               </div>
                             )}
                             
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{attachment.name}</p>
-                              <div className="flex items-center gap-2">
+                            <div className="flex-1 min-w-0 overflow-hidden">
+                              <p className="text-xs sm:text-sm font-medium truncate">{attachment.name}</p>
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
                                 {attachment.url && (
                                   <span className="text-xs text-green-600 font-medium">✓ Yüklendi</span>
@@ -1411,6 +1417,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                               variant="ghost"
                               size="sm"
                               onClick={() => removeAttachment(attachment.id)}
+                              className="h-8 w-8 p-0 flex-shrink-0"
                             >
                               <TrashIcon className="h-4 w-4" />
                             </Button>
@@ -1421,8 +1428,8 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                   </div>
                 )}
                 
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-3 w-full">
+                  <div className="flex items-center gap-2 w-full">
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -1436,37 +1443,38 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                       size="sm"
                       onClick={openFileChooser}
                       disabled={isUploading}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 flex-1 sm:flex-initial"
                     >
                       {isUploading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
                       ) : (
-                        <Paperclip className="h-4 w-4" />
+                        <Paperclip className="h-4 w-4 flex-shrink-0" />
                       )}
                       <span className="hidden sm:inline">{isUploading ? 'Yükleniyor...' : 'Dosya Ekle'}</span>
+                      <span className="sm:hidden">{isUploading ? '...' : 'Ekle'}</span>
                     </Button>
                   </div>
                   
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 w-full">
                     <Label
                       htmlFor="mute"
-                      className="flex items-center gap-2 text-xs font-normal"
+                      className="flex items-center gap-2 text-xs font-normal cursor-pointer"
                     >
                       <Switch id="mute" aria-label="Konuyu sustur" />
-                      Bu konuyu sustur
+                      <span className="whitespace-nowrap">Bu konuyu sustur</span>
                     </Label>
                     <Button
                       onClick={handleSendReply}
                       size="sm"
                       disabled={!replyText.trim() || isUploading}
-                      className="flex items-center gap-2"
+                      className="flex items-center justify-center gap-2 w-full sm:w-auto"
                     >
                       {isUploading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
                       ) : (
-                        <Send className="h-4 w-4" />
+                        <Send className="h-4 w-4 flex-shrink-0" />
                       )}
-                      {isUploading ? 'Yükleniyor...' : 'Gönder'}
+                      <span>{isUploading ? 'Yükleniyor...' : 'Gönder'}</span>
                     </Button>
                   </div>
                 </div>
