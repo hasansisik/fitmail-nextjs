@@ -85,15 +85,28 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Panel resize callback'i - size parametresi ile collapsed durumunu belirle
   // useCallback ile optimize ediyoruz ki gereksiz render'ları önleyelim
+  // Hysteresis (gecikme) mekanizması ekleniyor: toggle sorununu önlemek için
+  // collapsed'tan expanded'a geçmek için daha yüksek threshold, expanded'tan collapsed'a geçmek için daha düşük threshold
   const handlePanelResize = React.useCallback((size: number | undefined) => {
     if (size === undefined || size === null) return
     
-    // collapsedSize 4 olduğuna göre, size 4'e eşit veya daha küçükse collapsed
-    // Küçük bir tolerans ekleyelim (4.5) çünkü resize sırasında tam 4'e gelmeyebilir
-    const shouldBeCollapsed = size <= 4.5
+    // Hysteresis thresholds: dead zone oluşturarak toggle sorununu önle
+    const COLLAPSE_THRESHOLD = 5.5  // Expanded'tan collapsed'a geçmek için
+    const EXPAND_THRESHOLD = 8.0    // Collapsed'tan expanded'a geçmek için
     
-    // Sadece durum değiştiyse güncelle (sonsuz döngüyü önlemek için)
     setIsCollapsed(prevCollapsed => {
+      let shouldBeCollapsed = prevCollapsed
+      
+      // Mevcut duruma göre farklı threshold'lar kullan
+      if (prevCollapsed) {
+        // Şu an collapsed ise, expanded'a geçmek için daha büyük bir değer gereksin
+        shouldBeCollapsed = size < EXPAND_THRESHOLD
+      } else {
+        // Şu an expanded ise, collapsed'a geçmek için daha küçük bir değer gereksin
+        shouldBeCollapsed = size <= COLLAPSE_THRESHOLD
+      }
+      
+      // Sadece durum gerçekten değiştiyse güncelle
       if (prevCollapsed !== shouldBeCollapsed) {
         // localStorage'a kaydet
         if (typeof window !== 'undefined') {
