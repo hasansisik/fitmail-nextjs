@@ -426,14 +426,14 @@ export function Mail({
         <div className="w-full flex-1">
           <Tabs defaultValue="all">
             <div className="flex flex-col sm:flex-row items-start sm:items-center px-4 py-2 gap-2">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 min-w-0 flex-shrink-0">
                 {/* Mobile Menu Toggle Button */}
                 {mobileSidebar && (
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={mobileSidebar.toggleMobileSidebar}
-                    className="lg:hidden h-8 w-8 p-0"
+                    className="lg:hidden h-8 w-8 p-0 flex-shrink-0"
                     title={
                       mobileSidebar.mobileState === 'hidden' ? 'Menüyü göster (ikonlar)' :
                       mobileSidebar.mobileState === 'collapsed' ? 'Menüyü genişlet (yazılar)' :
@@ -449,70 +449,72 @@ export function Mail({
                     )}
                   </Button>
                 )}
-                <h1 className="text-lg sm:text-xl font-bold">{categoryTitle}</h1>
+                <h1 className="text-lg sm:text-xl font-bold truncate">{categoryTitle}</h1>
               </div>
-              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleRefresh}
-                      disabled={isRefreshing || mailsLoading}
-                      className="h-8"
-                    >
-                      <RefreshCw className={`h-4 w-4 sm:mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                      <span className="hidden sm:inline">Yenile</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Mail listesini yenile ve yeni mailleri getir</p>
-                  </TooltipContent>
-                </Tooltip>
-                {/* Çöp kutusu temizleme butonu - sadece trash sayfasında göster */}
-                
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setIsSelectMode(!isSelectMode)}
-                      className="h-8"
-                    >
-                      <CheckSquare className="h-4 w-4 sm:mr-2" />
-                      <span className="hidden sm:inline">{isSelectMode ? 'Seçimi İptal' : 'Seç'}</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Birden fazla mail seçmek için seçim modunu aç</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="sm"
-                      onClick={handleOpenNewMail}
-                      className="h-8"
-                    >
-                      <Plus className="h-4 w-4 sm:mr-2" />
-                      <span className="hidden sm:inline">Yeni Mail</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Yeni bir e-posta oluştur ve gönder</p>
-                  </TooltipContent>
-                </Tooltip>
-                <TabsList className="w-full sm:w-auto">
+              <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto min-w-0 overflow-x-auto sm:overflow-visible">
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleRefresh}
+                        disabled={isRefreshing || mailsLoading}
+                        className="h-8 flex-shrink-0"
+                      >
+                        <RefreshCw className={`h-4 w-4 sm:mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        <span className="hidden sm:inline">Yenile</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Mail listesini yenile ve yeni mailleri getir</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  {/* Çöp kutusu temizleme butonu - sadece trash sayfasında göster */}
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsSelectMode(!isSelectMode)}
+                        className="h-8 flex-shrink-0"
+                      >
+                        <CheckSquare className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">{isSelectMode ? 'Seçimi İptal' : 'Seç'}</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Birden fazla mail seçmek için seçim modunu aç</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        onClick={handleOpenNewMail}
+                        className="h-8 flex-shrink-0"
+                      >
+                        <Plus className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Yeni Mail</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Yeni bir e-posta oluştur ve gönder</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <TabsList className="flex-shrink-0 sm:w-auto">
                   <TabsTrigger
                     value="all"
-                    className="text-zinc-600 dark:text-zinc-200 flex-1 sm:flex-none"
+                    className="text-zinc-600 dark:text-zinc-200 whitespace-nowrap"
                   >
                     <span className="hidden sm:inline">Tüm E-postalar</span>
                     <span className="sm:hidden">Tümü</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="unread"
-                    className="text-zinc-600 dark:text-zinc-200 flex-1 sm:flex-none"
+                    className="text-zinc-600 dark:text-zinc-200 whitespace-nowrap"
                   >
                     Okunmamış
                   </TabsTrigger>
