@@ -71,43 +71,69 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
   const { user, isAuthenticated, loading } = useAppSelector((state) => state.user)
 
-  // Desktop sidebar durumunu localStorage'a kaydet
-  const handleDesktopCollapse = (collapsed: boolean) => {
-    setIsCollapsed(collapsed)
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('sidebarCollapsedDesktop', collapsed.toString())
-      } catch {
-        // localStorage'a kayıt başarısız, sessizce devam et
-      }
-    }
-  }
+  // Debounce ve resize tracking için ref'ler - önce tanımlanmalı
+  const resizeTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+  const isResizingRef = React.useRef(false)
+  const lastResizeSizeRef = React.useRef<number | null>(null)
+  const collapseExpandTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
 
-  // Throttle fonksiyonu - resize sırasında takılmayı önlemek için
-  const throttleRef = React.useRef<{
-    lastCall: number
-    timeoutId: NodeJS.Timeout | null
-  }>({ lastCall: 0, timeoutId: null })
+  // Desktop sidebar durumunu localStorage'a kaydet
+  // Resize sırasında tetiklenmemesi için debounce eklendi
+  const handleDesktopCollapse = React.useCallback((collapsed: boolean) => {
+    // Resize aktifse, collapse/expand callback'lerini yok say
+    if (isResizingRef.current) {
+      return
+    }
+    
+    // Önceki timeout'u temizle
+    if (collapseExpandTimeoutRef.current) {
+      clearTimeout(collapseExpandTimeoutRef.current)
+    }
+    
+    // Debounce ile state güncelle
+    collapseExpandTimeoutRef.current = setTimeout(() => {
+      setIsCollapsed(collapsed)
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('sidebarCollapsedDesktop', collapsed.toString())
+        } catch {
+          // localStorage'a kayıt başarısız, sessizce devam et
+        }
+      }
+      collapseExpandTimeoutRef.current = null
+    }, 100) // 100ms debounce
+  }, [])
 
   // Panel resize callback'i - size parametresi ile collapsed durumunu belirle
   // useCallback ile optimize ediyoruz ki gereksiz render'ları önleyelim
   // Hysteresis (gecikme) mekanizması ekleniyor: toggle sorununu önlemek için
   // collapsed'tan expanded'a geçmek için daha yüksek threshold, expanded'tan collapsed'a geçmek için daha düşük threshold
-  // Throttle ile optimize edildi - resize sırasında takılmayı önler
+  // Debounce ile optimize edildi - resize sırasında state değişikliğini engeller, sadece resize bitince günceller
   const handlePanelResize = React.useCallback((size: number | undefined) => {
     if (size === undefined || size === null) return
     
-    const THROTTLE_DELAY = 100 // 100ms throttle
+    // Resize aktif olduğunu işaretle
+    isResizingRef.current = true
+    lastResizeSizeRef.current = size
     
-    // Throttle logic: sadece belirli aralıklarla çalıştır
-    if (throttleRef.current.timeoutId) {
-      clearTimeout(throttleRef.current.timeoutId)
+    // Önceki timeout'u temizle
+    if (resizeTimeoutRef.current) {
+      clearTimeout(resizeTimeoutRef.current)
     }
     
-    throttleRef.current.timeoutId = setTimeout(() => {
-      // Hysteresis thresholds: dead zone oluşturarak toggle sorununu önle
-      const COLLAPSE_THRESHOLD = 5.5  // Expanded'tan collapsed'a geçmek için
-      const EXPAND_THRESHOLD = 8.0    // Collapsed'tan expanded'a geçmek için
+    // Resize bittikten sonra state'i güncelle (debounce)
+    const DEBOUNCE_DELAY = 300 // 300ms debounce - resize bitince güncelle
+    
+    resizeTimeoutRef.current = setTimeout(() => {
+      // Resize bitti, state'i güncelle
+      isResizingRef.current = false
+      const finalSize = lastResizeSizeRef.current
+      
+      if (finalSize === null || finalSize === undefined) return
+      
+      // Hysteresis thresholds: daha büyük dead zone ile toggle sorununu önle
+      const COLLAPSE_THRESHOLD = 6.0  // Expanded'tan collapsed'a geçmek için (daha büyük dead zone)
+      const EXPAND_THRESHOLD = 7.5    // Collapsed'tan expanded'a geçmek için (daha büyük dead zone)
       
       setIsCollapsed(prevCollapsed => {
         let shouldBeCollapsed = prevCollapsed
@@ -115,10 +141,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         // Mevcut duruma göre farklı threshold'lar kullan
         if (prevCollapsed) {
           // Şu an collapsed ise, expanded'a geçmek için daha büyük bir değer gereksin
-          shouldBeCollapsed = size < EXPAND_THRESHOLD
+          shouldBeCollapsed = finalSize < EXPAND_THRESHOLD
         } else {
           // Şu an expanded ise, collapsed'a geçmek için daha küçük bir değer gereksin
-          shouldBeCollapsed = size <= COLLAPSE_THRESHOLD
+          shouldBeCollapsed = finalSize <= COLLAPSE_THRESHOLD
         }
         
         // Sadece durum gerçekten değiştiyse güncelle
@@ -136,16 +162,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         return prevCollapsed
       })
       
-      throttleRef.current.lastCall = Date.now()
-      throttleRef.current.timeoutId = null
-    }, THROTTLE_DELAY)
+      resizeTimeoutRef.current = null
+    }, DEBOUNCE_DELAY)
   }, [])
   
-  // Cleanup throttle timeout on unmount
+  // Cleanup debounce timeout on unmount
   React.useEffect(() => {
     return () => {
-      if (throttleRef.current.timeoutId) {
-        clearTimeout(throttleRef.current.timeoutId)
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current)
+      }
+      if (collapseExpandTimeoutRef.current) {
+        clearTimeout(collapseExpandTimeoutRef.current)
       }
     }
   }, [])

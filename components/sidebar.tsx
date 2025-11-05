@@ -243,21 +243,31 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
   const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : internalIsCollapsed
   
   // Setter - external prop varsa onCollapse'u kullan, yoksa internal setter'ı kullan
+  // Optimize edildi: isCollapsed dependency'den çıkarıldı, sadece externalIsCollapsed değiştiğinde yeniden oluşturulur
   const setIsCollapsed = useCallback((collapsed: boolean | ((prev: boolean) => boolean)) => {
     if (onCollapse) {
       // External prop kullanılıyorsa, parent component'e bildir ve localStorage'a kaydet
-      const newValue = typeof collapsed === 'function' ? collapsed(isCollapsed) : collapsed
-      onCollapse(newValue)
-      saveCollapsedState(newValue)
+      // isCollapsed yerine externalIsCollapsed kullan veya functional update kullan
+      const currentValue = externalIsCollapsed !== undefined ? externalIsCollapsed : internalIsCollapsed
+      const newValue = typeof collapsed === 'function' ? collapsed(currentValue) : collapsed
+      
+      // Sadece değer gerçekten değiştiyse güncelle
+      if (newValue !== currentValue) {
+        onCollapse(newValue)
+        saveCollapsedState(newValue)
+      }
     } else {
       // Internal state kullanılıyorsa, state'i güncelle ve localStorage'a kaydet
       setInternalIsCollapsed(prev => {
         const newValue = typeof collapsed === 'function' ? collapsed(prev) : collapsed
-        saveCollapsedState(newValue)
+        // Sadece değer gerçekten değiştiyse güncelle
+        if (newValue !== prev) {
+          saveCollapsedState(newValue)
+        }
         return newValue
       })
     }
-  }, [onCollapse, isCollapsed, saveCollapsedState])
+  }, [onCollapse, externalIsCollapsed, internalIsCollapsed, saveCollapsedState])
   
   // External prop değiştiğinde internal state'i senkronize et (sadece external prop yoksa)
   useEffect(() => {

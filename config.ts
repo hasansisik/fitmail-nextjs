@@ -1,8 +1,8 @@
 // Development server
-export const server: string = "https://api.gozdedijital.xyz/v1";
+export const server: string = "https://api.fitmail.com/v1";
 
 // Production server
-export const server2: string = "https://api.gozdedijital.xyz/v1";
+export const server2: string = "https://api.fitmail.com/v1";
 
 // Active server based on environment
 export const activeServer: string = process.env.NODE_ENV === 'production' ? server2 : server;
@@ -11,16 +11,16 @@ export const activeServer: string = process.env.NODE_ENV === 'production' ? serv
 export const domains = {
   // Development domains
   development: {
-    main: 'gozdedijital.xyz',
-    account: 'account.gozdedijital.xyz',
-    panel: 'panel.gozdedijital.xyz',
+    main: 'fitmail.com',
+    account: 'account.fitmail.com',
+    panel: 'panel.fitmail.com',
     protocol: 'https'
   },
   // Production domains
   production: {
-    main: 'gozdedijital.xyz',
-    account: 'account.gozdedijital.xyz',
-    panel: 'panel.gozdedijital.xyz',
+    main: 'fitmail.com',
+    account: 'account.fitmail.com',
+    panel: 'panel.fitmail.com',
     protocol: 'https'
   }
 };

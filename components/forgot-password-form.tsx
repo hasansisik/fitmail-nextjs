@@ -33,8 +33,8 @@ export function ForgotPasswordForm({
     // Remove @ symbol if user tries to type it
     const cleanEmail = email.replace('@', '').trim()
     
-    // Add @gozdedijital.xyz domain
-    const fullEmail = `${cleanEmail}@gozdedijital.xyz`
+    // Add @fitmail.com domain
+    const fullEmail = `${cleanEmail}@fitmail.com`
     
     const loadingToastId = toast.loading("Kurtarıcı e-posta kontrol ediliyor...")
     
@@ -69,7 +69,7 @@ export function ForgotPasswordForm({
     }
     
     const cleanEmail = email.replace('@', '').trim()
-    const fullEmail = `${cleanEmail}@gozdedijital.xyz`
+    const fullEmail = `${cleanEmail}@fitmail.com`
     
     const loadingToastId = toast.loading("Doğrulanıyor...")
     
@@ -137,7 +137,7 @@ export function ForgotPasswordForm({
                 className="rounded-r-none h-10"
               />
               <span className="bg-muted border border-l-0 border-input px-3 h-10 flex items-center text-sm text-muted-foreground rounded-r-md">
-                @gozdedijital.xyz
+                @fitmail.com
               </span>
             </div>
             <p className="text-xs text-muted-foreground">

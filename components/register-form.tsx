@@ -51,7 +51,7 @@ export function RegisterForm({
         clearTimeout(timeoutId);
         timeoutId = setTimeout(() => {
           if (email && email.length >= 3) {
-            dispatch(checkEmailAvailability({ email: `${email}@gozdedijital.xyz` }));
+            dispatch(checkEmailAvailability({ email: `${email}@fitmail.com` }));
           }
         }, 500);
       };
@@ -232,7 +232,7 @@ export function RegisterForm({
     const registrationData = {
       name: formData.firstName,
       surname: formData.lastName,
-      email: `${formData.email}@gozdedijital.xyz`,
+      email: `${formData.email}@fitmail.com`,
       recoveryEmail: formData.recoveryEmail,
       password: formData.password,
       birthDate: birthDate.toISOString(),

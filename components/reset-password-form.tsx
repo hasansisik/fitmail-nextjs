@@ -52,9 +52,9 @@ export function ResetPasswordForm({
       return
     }
     
-    // Remove @ symbol if user tries to type it and add @gozdedijital.xyz domain
+    // Remove @ symbol if user tries to type it and add @fitmail.com domain
     const cleanEmail = email.replace('@', '').trim()
-    const fullEmail = `${cleanEmail}@gozdedijital.xyz`
+    const fullEmail = `${cleanEmail}@fitmail.com`
     
     // Validate password token is 6 digits
     if (passwordToken.length !== 6 || !/^\d{6}$/.test(passwordToken)) {
@@ -160,7 +160,7 @@ export function ResetPasswordForm({
               className="rounded-r-none h-10 bg-muted"
             />
             <span className="bg-muted border border-l-0 border-input px-3 h-10 flex items-center text-sm text-muted-foreground rounded-r-md">
-              @gozdedijital.xyz
+              @fitmail.com
             </span>
           </div>
           <p className="text-xs text-muted-foreground">

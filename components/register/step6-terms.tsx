@@ -25,7 +25,7 @@ export function Step6Terms({
       {/* Email info */}
       <div className="text-center">
         <div className="text-sm text-gray-500 dark:text-gray-500">
-          {formData.email}@gozdedijital.xyz
+          {formData.email}@fitmail.com
         </div>
       </div>
 

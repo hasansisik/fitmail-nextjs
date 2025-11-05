@@ -37,7 +37,7 @@ export function Step3Email({ formData, onInputChange, onNext, onBack, emailCheck
   // Premium kod kontrolü
   useEffect(() => {
     if (emailCheck?.isPremium && formData.premiumCode && formData.premiumCode.length === 5) {
-      const fullEmail = `${formData.email}@gozdedijital.xyz`;
+      const fullEmail = `${formData.email}@fitmail.com`;
       dispatch(checkPremiumCode({ 
         email: fullEmail, 
         code: formData.premiumCode 
@@ -86,7 +86,7 @@ export function Step3Email({ formData, onInputChange, onNext, onBack, emailCheck
             )}
           </div>
           <span className="bg-muted border border-l-0 border-input px-3 h-10 flex items-center text-sm text-muted-foreground rounded-r-md">
-            @gozdedijital.xyz
+            @fitmail.com
           </span>
         </div>
         <p className="text-xs text-muted-foreground">

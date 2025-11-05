@@ -116,7 +116,7 @@ export default function AdminPage() {
     
     setIsCreatingDomain(true);
     const premiumData: CreatePremiumPayload = {
-      name: `${newDomain.name}@gozdedijital.xyz`,
+      name: `${newDomain.name}@fitmail.com`,
       price: parseFloat(newDomain.price),
       duration: 30 // Default 30 days
     };
@@ -546,7 +546,7 @@ export default function AdminPage() {
                   <DialogHeader>
                     <DialogTitle>Yeni Premium Domain Ekle</DialogTitle>
                     <DialogDescription>
-                      Yeni bir premium domain oluşturun. Kullanıcı adı yazın, @gozdedijital.xyz otomatik eklenecek.
+                      Yeni bir premium domain oluşturun. Kullanıcı adı yazın, @fitmail.com otomatik eklenecek.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-6">
@@ -572,7 +572,7 @@ export default function AdminPage() {
                           />
                         </div>
                         <span className="bg-muted border border-l-0 border-input px-3 h-10 flex items-center text-sm text-muted-foreground rounded-r-md">
-                          @gozdedijital.xyz
+                          @fitmail.com
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground">
@@ -615,7 +615,7 @@ export default function AdminPage() {
                 <Card key={plan._id} className="border-gray-200">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between text-black">
-                      <span className="text-sm">{plan.name.includes('@gozdedijital.xyz') ? plan.name : `${plan.name}@gozdedijital.xyz`}</span>
+                      <span className="text-sm">{plan.name.includes('@fitmail.com') ? plan.name : `${plan.name}@fitmail.com`}</span>
                       <Crown className="w-4 h-4 text-gray-600" />
                     </CardTitle>
                   </CardHeader>
