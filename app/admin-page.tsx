@@ -37,6 +37,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { activeDomains } from "@/config";
+import { Metadata } from "@/components/metadata";
 import { usePathname } from 'next/navigation';
 import LoginPage from "./(logged-out)/giris/page";
 import RegisterPage from "./(logged-out)/kayit-ol/page";
@@ -231,9 +232,15 @@ export default function AdminPage() {
   );
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="border-b border-gray-200">
+    <>
+      <Metadata 
+        title="Fitmail Panel"
+        description="Fitmail admin paneli: kullanıcı yönetimi, premium domain yönetimi"
+        keywords="fitmail, admin panel, yönetim, kullanıcı yönetimi"
+      />
+      <div className="min-h-screen bg-white">
+        {/* Header */}
+        <header className="border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
@@ -669,6 +676,7 @@ export default function AdminPage() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }

@@ -83,43 +83,71 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }
 
+  // Throttle fonksiyonu - resize sırasında takılmayı önlemek için
+  const throttleRef = React.useRef<{
+    lastCall: number
+    timeoutId: NodeJS.Timeout | null
+  }>({ lastCall: 0, timeoutId: null })
+
   // Panel resize callback'i - size parametresi ile collapsed durumunu belirle
   // useCallback ile optimize ediyoruz ki gereksiz render'ları önleyelim
   // Hysteresis (gecikme) mekanizması ekleniyor: toggle sorununu önlemek için
   // collapsed'tan expanded'a geçmek için daha yüksek threshold, expanded'tan collapsed'a geçmek için daha düşük threshold
+  // Throttle ile optimize edildi - resize sırasında takılmayı önler
   const handlePanelResize = React.useCallback((size: number | undefined) => {
     if (size === undefined || size === null) return
     
-    // Hysteresis thresholds: dead zone oluşturarak toggle sorununu önle
-    const COLLAPSE_THRESHOLD = 5.5  // Expanded'tan collapsed'a geçmek için
-    const EXPAND_THRESHOLD = 8.0    // Collapsed'tan expanded'a geçmek için
+    const THROTTLE_DELAY = 100 // 100ms throttle
     
-    setIsCollapsed(prevCollapsed => {
-      let shouldBeCollapsed = prevCollapsed
+    // Throttle logic: sadece belirli aralıklarla çalıştır
+    if (throttleRef.current.timeoutId) {
+      clearTimeout(throttleRef.current.timeoutId)
+    }
+    
+    throttleRef.current.timeoutId = setTimeout(() => {
+      // Hysteresis thresholds: dead zone oluşturarak toggle sorununu önle
+      const COLLAPSE_THRESHOLD = 5.5  // Expanded'tan collapsed'a geçmek için
+      const EXPAND_THRESHOLD = 8.0    // Collapsed'tan expanded'a geçmek için
       
-      // Mevcut duruma göre farklı threshold'lar kullan
-      if (prevCollapsed) {
-        // Şu an collapsed ise, expanded'a geçmek için daha büyük bir değer gereksin
-        shouldBeCollapsed = size < EXPAND_THRESHOLD
-      } else {
-        // Şu an expanded ise, collapsed'a geçmek için daha küçük bir değer gereksin
-        shouldBeCollapsed = size <= COLLAPSE_THRESHOLD
-      }
-      
-      // Sadece durum gerçekten değiştiyse güncelle
-      if (prevCollapsed !== shouldBeCollapsed) {
-        // localStorage'a kaydet
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem('sidebarCollapsedDesktop', shouldBeCollapsed.toString())
-          } catch {
-            // localStorage'a kayıt başarısız, sessizce devam et
-          }
+      setIsCollapsed(prevCollapsed => {
+        let shouldBeCollapsed = prevCollapsed
+        
+        // Mevcut duruma göre farklı threshold'lar kullan
+        if (prevCollapsed) {
+          // Şu an collapsed ise, expanded'a geçmek için daha büyük bir değer gereksin
+          shouldBeCollapsed = size < EXPAND_THRESHOLD
+        } else {
+          // Şu an expanded ise, collapsed'a geçmek için daha küçük bir değer gereksin
+          shouldBeCollapsed = size <= COLLAPSE_THRESHOLD
         }
-        return shouldBeCollapsed
+        
+        // Sadece durum gerçekten değiştiyse güncelle
+        if (prevCollapsed !== shouldBeCollapsed) {
+          // localStorage'a kaydet - sadece durum değiştiğinde
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('sidebarCollapsedDesktop', shouldBeCollapsed.toString())
+            } catch {
+              // localStorage'a kayıt başarısız, sessizce devam et
+            }
+          }
+          return shouldBeCollapsed
+        }
+        return prevCollapsed
+      })
+      
+      throttleRef.current.lastCall = Date.now()
+      throttleRef.current.timeoutId = null
+    }, THROTTLE_DELAY)
+  }, [])
+  
+  // Cleanup throttle timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (throttleRef.current.timeoutId) {
+        clearTimeout(throttleRef.current.timeoutId)
       }
-      return prevCollapsed
-    })
+    }
   }, [])
 
   // Mobile sidebar durumunu localStorage'a kaydet
@@ -276,8 +304,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     />
                   </div>
                 </ResizablePanel>
-                <ResizableHandle withHandle />
-                <ResizablePanel defaultSize={82} minSize={30}>
+                <ResizableHandle 
+                  withHandle 
+                  className="transition-colors duration-200 ease-in-out hover:bg-accent/50 active:bg-accent"
+                />
+                <ResizablePanel 
+                  defaultSize={82} 
+                  minSize={30}
+                >
                   <div className="h-full overflow-auto">
                     {children}
                   </div>

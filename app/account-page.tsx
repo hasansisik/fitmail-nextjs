@@ -66,6 +66,7 @@ import { uploadFileToCloudinary } from '@/utils/cloudinary';
 import ReactCrop, { centerCrop, makeAspectCrop, Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { activeDomains, getMainDomainUrl, server } from "@/config";
+import { Metadata } from "@/components/metadata";
 import LoginPage from "./(logged-out)/giris/page";
 import RegisterPage from "./(logged-out)/kayit-ol/page";
 
@@ -947,9 +948,15 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="border-b border-gray-200">
+    <>
+      <Metadata 
+        title="Fitmail Hesabı"
+        description="Fitmail hesabınızı yönetin: kişisel bilgiler, güvenlik ayarları, dil ve bölge tercihleri"
+        keywords="fitmail, hesap yönetimi, profil, güvenlik, ayarlar"
+      />
+      <div className="min-h-screen bg-white">
+        {/* Header */}
+        <header className="border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-14 sm:h-16">
             {/* Logo */}
@@ -2334,6 +2341,7 @@ export default function AccountPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </>
   );
 }
