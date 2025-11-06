@@ -851,14 +851,60 @@ export default function AccountPage() {
     setCompletedCrop(undefined);
   };
 
+  // Cookie temizleme helper fonksiyonu
+  const clearCookies = (cookieNames: string[]) => {
+    if (typeof window === 'undefined') return;
+    
+    const hostname = window.location.hostname;
+    const domain = hostname.includes('.') ? `.${hostname.split('.').slice(-2).join('.')}` : hostname;
+    
+    cookieNames.forEach(cookieName => {
+      // Mevcut domain için cookie'yi temizle
+      document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      
+      // Ana domain için cookie'yi temizle (subdomain'ler için)
+      if (domain.startsWith('.')) {
+        document.cookie = `${cookieName}=; path=/; domain=${domain}; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      }
+      
+      // Localhost için cookie'yi temizle
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      }
+      
+      // Tüm olası path'ler için cookie'yi temizle
+      document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      document.cookie = `${cookieName}=; path=/; domain=${hostname}; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+    });
+  };
+
   // Hesap silme fonksiyonu
   const handleDeleteAccount = async () => {
     try {
+      // Silinen hesabın email'ini sakla (cookie temizleme için)
+      const deletedUserEmail = user?.email;
+      
       await dispatch(deleteAccount());
       toast.success('Hesabınız başarıyla silindi');
+      
+      // Silinen hesabın cookie'lerini temizle
+      clearCookies(['accessToken', 'refreshToken']);
+      
       // Çıkış yap ve login sayfasına yönlendir
       localStorage.removeItem("accessToken");
       localStorage.removeItem("userEmail");
+      
+      // Eğer silinen hesap aktif hesapsa, userSessions'dan da kaldır
+      if (deletedUserEmail) {
+        try {
+          const existingSessions = JSON.parse(localStorage.getItem("userSessions") || "[]");
+          const filteredSessions = existingSessions.filter((s: any) => s.email !== deletedUserEmail);
+          localStorage.setItem("userSessions", JSON.stringify(filteredSessions));
+        } catch (e) {
+          console.error('Error removing session from localStorage:', e);
+        }
+      }
+      
       // Sadece zaten /giris'te değilsek yönlendir
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/giris')) {
         window.location.href = '/giris';
