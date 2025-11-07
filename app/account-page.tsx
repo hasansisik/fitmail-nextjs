@@ -69,6 +69,7 @@ import { activeDomains, getMainDomainUrl, server } from "@/config";
 import { Metadata } from "@/components/metadata";
 import LoginPage from "./(logged-out)/giris/page";
 import RegisterPage from "./(logged-out)/kayit-ol/page";
+import { PolicyDialog } from "@/components/register/policy-dialog";
 
 const navigationItems = [
   { id: 'home', label: 'Ana Sayfa', icon: Home },
@@ -106,6 +107,11 @@ export default function AccountPage() {
   const [show2FADisableDialog, setShow2FADisableDialog] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [disable2FAPassword, setDisable2FAPassword] = useState('');
+
+  // Policy dialog state
+  const [showPolicyDialog, setShowPolicyDialog] = useState(false);
+  const [policyType, setPolicyType] = useState<'privacy' | 'terms'>('privacy');
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
 
   // Kişisel veriler için state'ler
   const [isEditing, setIsEditing] = useState(false);
@@ -521,6 +527,24 @@ export default function AccountPage() {
   const handleOpenSection = (section: string) => {
     setActiveNav(section);
     setShowProfileMenu(false);
+  };
+
+  // Policy dialog handlers
+  const handlePolicyClick = (type: 'privacy' | 'terms') => {
+    setPolicyType(type);
+    setShowPolicyDialog(true);
+    setHasScrolledToBottom(false);
+  };
+
+  const handlePolicyScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10;
+    setHasScrolledToBottom(isAtBottom);
+  };
+
+  const handlePolicyClose = () => {
+    setShowPolicyDialog(false);
+    setHasScrolledToBottom(false);
   };
 
   // Form düzenleme fonksiyonları
@@ -1236,14 +1260,14 @@ export default function AccountPage() {
                     <div className="p-4 border-t border-gray-200 text-center">
                       <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
                         <button
-                          onClick={() => handleOpenSection('about')}
+                          onClick={() => handlePolicyClick('privacy')}
                           className="hover:text-gray-700"
                         >
                           Gizlilik Politikası
                         </button>
                         <span>•</span>
                         <button
-                          onClick={() => handleOpenSection('about')}
+                          onClick={() => handlePolicyClick('terms')}
                           className="hover:text-gray-700"
                         >
                           Hizmet Şartları
@@ -2387,6 +2411,18 @@ export default function AccountPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Policy Dialog */}
+      <PolicyDialog
+        showPolicyDialog={showPolicyDialog}
+        setShowPolicyDialog={setShowPolicyDialog}
+        policyType={policyType}
+        hasScrolledToBottom={hasScrolledToBottom}
+        setHasScrolledToBottom={setHasScrolledToBottom}
+        onPolicyAccept={handlePolicyClose}
+        onScroll={handlePolicyScroll}
+        readOnly={true}
+      />
       </div>
     </>
   );

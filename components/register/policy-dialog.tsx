@@ -11,6 +11,7 @@ interface PolicyDialogProps {
   setHasScrolledToBottom: (scrolled: boolean) => void
   onPolicyAccept: () => void
   onScroll: (e: React.UIEvent<HTMLDivElement>) => void
+  readOnly?: boolean
 }
 
 export function PolicyDialog({ 
@@ -20,7 +21,8 @@ export function PolicyDialog({
   hasScrolledToBottom, 
   setHasScrolledToBottom, 
   onPolicyAccept, 
-  onScroll 
+  onScroll,
+  readOnly = false
 }: PolicyDialogProps) {
   const renderPrivacyPolicy = () => (
     <div className="space-y-6">
@@ -168,7 +170,10 @@ export function PolicyDialog({
             {policyType === 'privacy' ? 'Gizlilik Politikası' : 'Kullanım Şartları'}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Lütfen aşağıdaki metni tamamen okuyun ve kabul etmek için aşağıya kaydırın.
+            {readOnly 
+              ? 'Aşağıdaki metni okuyabilirsiniz.'
+              : 'Lütfen aşağıdaki metni tamamen okuyun ve kabul etmek için aşağıya kaydırın.'
+            }
           </DialogDescription>
         </DialogHeader>
         
@@ -182,33 +187,49 @@ export function PolicyDialog({
         </div>
         
         <DialogFooter className="flex-shrink-0 p-6 pt-4 border-t bg-background">
-          <div className="flex flex-col sm:flex-row gap-3 w-full">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setShowPolicyDialog(false)
-                setHasScrolledToBottom(false)
-              }}
-              className="flex-1 sm:flex-none"
-            >
-              İptal
-            </Button>
-            <Button 
-              onClick={onPolicyAccept}
-              disabled={!hasScrolledToBottom}
-              className={`flex-1 sm:flex-none font-semibold transition-all duration-200 ${
-                hasScrolledToBottom 
-                  ? 'bg-black hover:bg-gray-800 text-white shadow-lg' 
-                  : 'bg-muted text-muted-foreground cursor-not-allowed'
-              }`}
-            >
-              {hasScrolledToBottom ? '✓ Kabul Et ve Onayla' : '📖 Metni tamamen okuyun'}
-            </Button>
-          </div>
-          {!hasScrolledToBottom && (
-            <p className="text-xs text-muted-foreground text-center mt-2">
-              Lütfen metni aşağıya kaydırarak tamamen okuyun
-            </p>
+          {readOnly ? (
+            <div className="flex justify-end w-full">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowPolicyDialog(false)
+                  setHasScrolledToBottom(false)
+                }}
+              >
+                Kapat
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowPolicyDialog(false)
+                    setHasScrolledToBottom(false)
+                  }}
+                  className="flex-1 sm:flex-none"
+                >
+                  İptal
+                </Button>
+                <Button 
+                  onClick={onPolicyAccept}
+                  disabled={!hasScrolledToBottom}
+                  className={`flex-1 sm:flex-none font-semibold transition-all duration-200 ${
+                    hasScrolledToBottom 
+                      ? 'bg-black hover:bg-gray-800 text-white shadow-lg' 
+                      : 'bg-muted text-muted-foreground cursor-not-allowed'
+                  }`}
+                >
+                  {hasScrolledToBottom ? '✓ Kabul Et ve Onayla' : '📖 Metni tamamen okuyun'}
+                </Button>
+              </div>
+              {!hasScrolledToBottom && (
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  Lütfen metni aşağıya kaydırarak tamamen okuyun
+                </p>
+              )}
+            </>
           )}
         </DialogFooter>
       </DialogContent>

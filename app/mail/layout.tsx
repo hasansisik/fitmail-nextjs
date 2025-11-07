@@ -73,15 +73,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Debounce ve resize tracking için ref'ler - önce tanımlanmalı
   const resizeTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+  const storageSaveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null) // localStorage kaydetme için ayrı timeout
   const isResizingRef = React.useRef(false)
   const lastResizeSizeRef = React.useRef<number | null>(null)
   const collapseExpandTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+  const resizeCooldownRef = React.useRef(false) // Resize bittikten sonra kısa bir süre collapse/expand'i engelle
+  const cooldownTimeoutRef = React.useRef<NodeJS.Timeout | null>(null) // Cooldown timeout'unu sakla
 
   // Desktop sidebar durumunu localStorage'a kaydet
   // Resize sırasında tetiklenmemesi için debounce eklendi
   const handleDesktopCollapse = React.useCallback((collapsed: boolean) => {
-    // Resize aktifse, collapse/expand callback'lerini yok say
-    if (isResizingRef.current) {
+    // Resize aktifse veya cooldown period'daysa, collapse/expand callback'lerini yok say
+    if (isResizingRef.current || resizeCooldownRef.current) {
       return
     }
     
@@ -92,6 +95,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     
     // Debounce ile state güncelle
     collapseExpandTimeoutRef.current = setTimeout(() => {
+      // Resize hala aktifse veya cooldown period'daysa, güncelleme yapma
+      if (isResizingRef.current || resizeCooldownRef.current) {
+        collapseExpandTimeoutRef.current = null
+        return
+      }
+      
       setIsCollapsed(collapsed)
       if (typeof window !== 'undefined') {
         try {
@@ -101,14 +110,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         }
       }
       collapseExpandTimeoutRef.current = null
-    }, 100) // 100ms debounce
+    }, 100) // 100ms debounce - daha hızlı
   }, [])
 
   // Panel resize callback'i - size parametresi ile collapsed durumunu belirle
-  // useCallback ile optimize ediyoruz ki gereksiz render'ları önleyelim
-  // Hysteresis (gecikme) mekanizması ekleniyor: toggle sorununu önlemek için
-  // collapsed'tan expanded'a geçmek için daha yüksek threshold, expanded'tan collapsed'a geçmek için daha düşük threshold
-  // Debounce ile optimize edildi - resize sırasında state değişikliğini engeller, sadece resize bitince günceller
+  // İki aşamalı debounce: resize sırasında hızlı güncelleme (UI feedback), resize bittikten sonra localStorage'a kaydetme
+  // Hysteresis (gecikme) mekanizması: toggle sorununu önlemek için
   const handlePanelResize = React.useCallback((size: number | undefined) => {
     if (size === undefined || size === null) return
     
@@ -121,49 +128,105 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       clearTimeout(resizeTimeoutRef.current)
     }
     
-    // Resize bittikten sonra state'i güncelle (debounce)
-    const DEBOUNCE_DELAY = 300 // 300ms debounce - resize bitince güncelle
+    // Collapse/expand timeout'unu da temizle (resize öncelikli)
+    if (collapseExpandTimeoutRef.current) {
+      clearTimeout(collapseExpandTimeoutRef.current)
+      collapseExpandTimeoutRef.current = null
+    }
+    
+    // Hysteresis thresholds: daha büyük dead zone ile toggle sorununu önle
+    const COLLAPSE_THRESHOLD = 6.0  // Expanded'tan collapsed'a geçmek için
+    const EXPAND_THRESHOLD = 7.5    // Collapsed'tan expanded'a geçmek için
+    
+    // Resize sırasında state'i hızlı güncelle (UI feedback için) - kısa debounce
+    const UI_UPDATE_DELAY = 16 // 16ms - bir frame süresi, resize sırasında çok hızlı güncelleme
+    
+    // Önceki storage save timeout'unu temizle
+    if (storageSaveTimeoutRef.current) {
+      clearTimeout(storageSaveTimeoutRef.current)
+    }
     
     resizeTimeoutRef.current = setTimeout(() => {
-      // Resize bitti, state'i güncelle
-      isResizingRef.current = false
-      const finalSize = lastResizeSizeRef.current
+      const currentSize = lastResizeSizeRef.current
       
-      if (finalSize === null || finalSize === undefined) return
+      if (currentSize === null || currentSize === undefined) {
+        isResizingRef.current = false
+        resizeTimeoutRef.current = null
+        return
+      }
       
-      // Hysteresis thresholds: daha büyük dead zone ile toggle sorununu önle
-      const COLLAPSE_THRESHOLD = 6.0  // Expanded'tan collapsed'a geçmek için (daha büyük dead zone)
-      const EXPAND_THRESHOLD = 7.5    // Collapsed'tan expanded'a geçmek için (daha büyük dead zone)
-      
+      // State'i güncelle (resize sırasında UI feedback için)
       setIsCollapsed(prevCollapsed => {
         let shouldBeCollapsed = prevCollapsed
         
         // Mevcut duruma göre farklı threshold'lar kullan
         if (prevCollapsed) {
           // Şu an collapsed ise, expanded'a geçmek için daha büyük bir değer gereksin
-          shouldBeCollapsed = finalSize < EXPAND_THRESHOLD
+          shouldBeCollapsed = currentSize < EXPAND_THRESHOLD
         } else {
           // Şu an expanded ise, collapsed'a geçmek için daha küçük bir değer gereksin
-          shouldBeCollapsed = finalSize <= COLLAPSE_THRESHOLD
+          shouldBeCollapsed = currentSize <= COLLAPSE_THRESHOLD
         }
         
-        // Sadece durum gerçekten değiştiyse güncelle
-        if (prevCollapsed !== shouldBeCollapsed) {
-          // localStorage'a kaydet - sadece durum değiştiğinde
-          if (typeof window !== 'undefined') {
-            try {
-              localStorage.setItem('sidebarCollapsedDesktop', shouldBeCollapsed.toString())
-            } catch {
-              // localStorage'a kayıt başarısız, sessizce devam et
-            }
-          }
-          return shouldBeCollapsed
-        }
-        return prevCollapsed
+        // Durum değiştiyse güncelle (localStorage'a kaydetme - resize bitince yapılacak)
+        return shouldBeCollapsed
       })
       
       resizeTimeoutRef.current = null
-    }, DEBOUNCE_DELAY)
+    }, UI_UPDATE_DELAY)
+    
+    // Resize bittikten sonra localStorage'a kaydet (uzun debounce)
+    const STORAGE_SAVE_DELAY = 200 // 200ms - resize bitince localStorage'a kaydet
+    
+    storageSaveTimeoutRef.current = setTimeout(() => {
+      // Resize bitti, final state'i localStorage'a kaydet
+      const finalSize = lastResizeSizeRef.current
+      
+      if (finalSize === null || finalSize === undefined) {
+        isResizingRef.current = false
+        storageSaveTimeoutRef.current = null
+        return
+      }
+      
+      setIsCollapsed(prevCollapsed => {
+        let shouldBeCollapsed = prevCollapsed
+        
+        // Mevcut duruma göre farklı threshold'lar kullan
+        if (prevCollapsed) {
+          shouldBeCollapsed = finalSize < EXPAND_THRESHOLD
+        } else {
+          shouldBeCollapsed = finalSize <= COLLAPSE_THRESHOLD
+        }
+        
+        // localStorage'a kaydet - sadece durum değiştiğinde
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('sidebarCollapsedDesktop', shouldBeCollapsed.toString())
+          } catch {
+            // localStorage'a kayıt başarısız, sessizce devam et
+          }
+        }
+        
+        return shouldBeCollapsed
+      })
+      
+      // Resize bitti, flag'leri temizle ve cooldown period başlat
+      isResizingRef.current = false
+      resizeCooldownRef.current = true
+      
+      // Önceki cooldown timeout'unu temizle
+      if (cooldownTimeoutRef.current) {
+        clearTimeout(cooldownTimeoutRef.current)
+      }
+      
+      // Cooldown period: resize bittikten sonra 200ms boyunca collapse/expand'i engelle
+      cooldownTimeoutRef.current = setTimeout(() => {
+        resizeCooldownRef.current = false
+        cooldownTimeoutRef.current = null
+      }, 200)
+      
+      storageSaveTimeoutRef.current = null
+    }, STORAGE_SAVE_DELAY)
   }, [])
   
   // Cleanup debounce timeout on unmount
@@ -172,8 +235,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       if (resizeTimeoutRef.current) {
         clearTimeout(resizeTimeoutRef.current)
       }
+      if (storageSaveTimeoutRef.current) {
+        clearTimeout(storageSaveTimeoutRef.current)
+      }
       if (collapseExpandTimeoutRef.current) {
         clearTimeout(collapseExpandTimeoutRef.current)
+      }
+      if (cooldownTimeoutRef.current) {
+        clearTimeout(cooldownTimeoutRef.current)
       }
     }
   }, [])
@@ -315,17 +384,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 className="h-screen items-stretch"
               >
                 <ResizablePanel
-                  defaultSize={isCollapsed ? 4 : 15}
+                  defaultSize={isCollapsed ? 4 : 18}
                   collapsedSize={4}
                   collapsible={true}
-                  minSize={isCollapsed ? 4 : 10}
-                  maxSize={25}
-                  onCollapse={() => handleDesktopCollapse(true)}
-                  onExpand={() => handleDesktopCollapse(false)}
+                  minSize={isCollapsed ? 4 : 12}
+                  maxSize={30}
+                  onCollapse={() => {
+                    // Resize aktif değilse ve cooldown period'da değilse collapse callback'ini çalıştır
+                    if (!isResizingRef.current && !resizeCooldownRef.current) {
+                      handleDesktopCollapse(true)
+                    }
+                  }}
+                  onExpand={() => {
+                    // Resize aktif değilse ve cooldown period'da değilse expand callback'ini çalıştır
+                    if (!isResizingRef.current && !resizeCooldownRef.current) {
+                      handleDesktopCollapse(false)
+                    }
+                  }}
                   onResize={handlePanelResize}
-                  className="border-r"
+                  className="border-r transition-all duration-75 ease-out"
                 >
-                  <div className="h-screen overflow-hidden">
+                  <div className="h-full overflow-hidden">
                     <Sidebar 
                       isCollapsed={isCollapsed} 
                       onCollapse={handleDesktopCollapse} 

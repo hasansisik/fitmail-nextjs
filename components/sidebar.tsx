@@ -450,11 +450,11 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
                 <button
                   className={cn(
                     buttonVariants({ variant: "ghost", size: "icon" }),
-                    "h-9 w-9 mx-auto cursor-pointer",
-                    "hover:bg-transparent hover:text-foreground"
+                    "h-9 w-9 mx-auto cursor-pointer transition-all duration-100 ease-out",
+                    "hover:bg-transparent hover:text-foreground hover:scale-110"
                   )}
                 >
-                  <link.icon className="h-4 w-4" />
+                  <link.icon className="h-4 w-4 transition-transform duration-100" />
                   <span className="sr-only">{link.title}</span>
                 </button>
               </AlertDialogTrigger>
@@ -516,11 +516,11 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
               onClick={() => window.open(link.href, '_blank')}
               className={cn(
                 buttonVariants({ variant: isActive ? "default" : "ghost", size: "icon" }),
-                "h-9 w-9 mx-auto cursor-pointer",
-                !isActive && "hover:bg-transparent hover:text-foreground"
+                "h-9 w-9 mx-auto cursor-pointer transition-all duration-100 ease-out",
+                !isActive && "hover:bg-transparent hover:text-foreground hover:scale-110"
               )}
             >
-              <link.icon className="h-4 w-4" />
+              <link.icon className="h-4 w-4 transition-transform duration-100" />
               <span className="sr-only">{link.title}</span>
             </button>
           </TooltipTrigger>
@@ -535,11 +535,11 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
           className={cn(
             buttonVariants({ variant: isActive ? "default" : "ghost", size: "sm" }),
             !isActive && "hover:bg-transparent hover:text-foreground",
-            "justify-start w-full cursor-pointer"
+            "justify-start w-full cursor-pointer transition-all duration-100 ease-out hover:translate-x-1"
           )}
         >
-          <link.icon className="mr-2 h-4 w-4" />
-          {link.title}
+          <link.icon className="mr-2 h-4 w-4 transition-transform duration-100" />
+          <span className="transition-all duration-100 ease-out">{link.title}</span>
         </button>
       )
     ) : isSettings ? (
@@ -550,11 +550,11 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
               onClick={() => router.push(link.href)}
               className={cn(
                 buttonVariants({ variant: isActive ? "default" : "ghost", size: "icon" }),
-                "h-9 w-9 mx-auto cursor-pointer",
-                !isActive && "hover:bg-transparent hover:text-foreground"
+                "h-9 w-9 mx-auto cursor-pointer transition-all duration-100 ease-out",
+                !isActive && "hover:bg-transparent hover:text-foreground hover:scale-110"
               )}
             >
-              <link.icon className="h-4 w-4" />
+              <link.icon className="h-4 w-4 transition-transform duration-100" />
               <span className="sr-only">{link.title}</span>
             </button>
           </TooltipTrigger>
@@ -569,11 +569,11 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
           className={cn(
             buttonVariants({ variant: isActive ? "default" : "ghost", size: "sm" }),
             !isActive && "hover:bg-transparent hover:text-foreground",
-            "justify-start w-full cursor-pointer"
+            "justify-start w-full cursor-pointer transition-all duration-100 ease-out hover:translate-x-1"
           )}
         >
-          <link.icon className="mr-2 h-4 w-4" />
-          {link.title}
+          <link.icon className="mr-2 h-4 w-4 transition-transform duration-100" />
+          <span className="transition-all duration-100 ease-out">{link.title}</span>
         </button>
       )
     ) : (
@@ -586,11 +586,11 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
               }}
               className={cn(
                 buttonVariants({ variant: isActive ? "default" : "ghost", size: "icon" }),
-                "h-9 w-9 mx-auto cursor-pointer",
-                !isActive && "hover:bg-transparent hover:text-foreground"
+                "h-9 w-9 mx-auto cursor-pointer transition-all duration-100 ease-out",
+                !isActive && "hover:bg-transparent hover:text-foreground hover:scale-110"
               )}
             >
-              <link.icon className="h-4 w-4" />
+              <link.icon className="h-4 w-4 transition-transform duration-100" />
               <span className="sr-only">{link.title}</span>
             </button>
           </TooltipTrigger>
@@ -612,15 +612,15 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
           className={cn(
             buttonVariants({ variant: isActive ? "default" : "ghost", size: "sm" }),
             !isActive && "hover:bg-transparent hover:text-foreground",
-            "justify-start w-full cursor-pointer"
+            "justify-start w-full cursor-pointer transition-all duration-100 ease-out hover:translate-x-1"
           )}
         >
-          <link.icon className="mr-2 h-4 w-4" />
-          {link.title}
+          <link.icon className="mr-2 h-4 w-4 transition-transform duration-100" />
+          <span className="transition-all duration-100 ease-out">{link.title}</span>
           {!statsLoading && link.label && (
             <span
               className={cn(
-                "ml-auto",
+                "ml-auto transition-all duration-100 ease-out",
                 isActive && "text-primary-foreground"
               )}
             >
@@ -633,10 +633,10 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
   }
 
   return (
-    <div className="flex h-full w-full flex-col bg-background transition-all duration-300 ease-in-out relative z-10 overflow-hidden">
+    <div className="flex h-full w-full flex-col bg-background transition-all duration-75 ease-out relative z-10 overflow-hidden">
       {/* User Account Section */}
       {!isCollapsed && (
-        <div className="px-2 py-3">
+        <div className="px-2 py-3 transition-all duration-75 ease-out">
           <div className="mb-8">
             <Select value={selectedAccountEmail || user?.email} onValueChange={handleAccountSwitch}>
               <SelectTrigger className="h-auto py-2 px-3 rounded-md hover:bg-accent transition-colors cursor-pointer bg-background w-full border-0 shadow-none">
@@ -733,9 +733,9 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       )}
       
       {isCollapsed && (
-        <div className="py-3">
+        <div className="py-3 transition-all duration-75 ease-out">
           <div className="flex flex-col items-center gap-2">
-            <Avatar className="h-8 w-8">
+            <Avatar className="h-8 w-8 transition-all duration-75 ease-out">
               <AvatarImage src={getUserProfileImage()} alt={`${user?.name} ${user?.surname}`} />
               <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
                 {userInitials}
@@ -748,9 +748,9 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => setIsSendDialogOpen(true)}
-                    className="flex items-center justify-center w-8 h-8 text-white bg-purple-800 hover:bg-purple-800 rounded-lg transition-colors"
+                    className="flex items-center justify-center w-8 h-8 text-white bg-purple-800 hover:bg-purple-800 rounded-lg transition-all duration-100 ease-out hover:scale-110"
                   >
-                    <Send className="h-4 w-4" />
+                    <Send className="h-4 w-4 transition-transform duration-100" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right">
@@ -763,10 +763,10 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       )}
       
       {/* Main Navigation and Category Navigation Combined */}
-      <div className="flex flex-1 flex-col gap-3 py-1 overflow-hidden">
+      <div className="flex flex-1 flex-col gap-3 py-1 overflow-y-auto overflow-x-hidden scrollbar-hide transition-all duration-75 ease-out">
         {/* Main Navigation */}
         <nav className={cn(
-          "grid gap-1 pointer-events-auto",
+          "grid gap-1 pointer-events-auto transition-all duration-75 ease-out",
           isCollapsed ? "px-1" : "px-2"
         )}>
           {mainNav.map((link, index) => {
@@ -777,7 +777,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
         
         {/* Category Navigation - Right below main navigation */}
         <nav className={cn(
-          "grid gap-1 pointer-events-auto",
+          "grid gap-1 pointer-events-auto transition-all duration-75 ease-out",
           isCollapsed ? "px-1" : "px-2"
         )}>
           {categoryNav.map((link, index) => {
@@ -788,9 +788,9 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       </div>
       
       {/* Settings and Logout - Fixed at Bottom */}
-      <div className="flex flex-col gap-3 pb-1 border-t">
+      <div className="flex flex-col gap-3 pb-1 border-t transition-all duration-75 ease-out">
         <nav className={cn(
-          "grid gap-1",
+          "grid gap-1 transition-all duration-75 ease-out",
           isCollapsed ? "px-1" : "px-2"
         )}>
           {settingsNav.map((link, index) => {
