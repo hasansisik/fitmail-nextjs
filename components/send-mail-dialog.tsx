@@ -137,7 +137,6 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     if (isDialogOpen && isNewMail && !hasLoadedFromStorageRef.current && typeof window !== 'undefined') {
       const savedState = loadFormStateFromStorage()
       if (savedState && Object.keys(savedState).length > 0) {
-        console.log('Loading from localStorage:', savedState)
         // ÖNEMLİ: Flag'i hemen true yap ki form temizleme işlemi çalışmasın
         hasLoadedFromStorageRef.current = true
 
@@ -207,7 +206,6 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       return
     }
 
-    console.log('Saving to localStorage:', { formData, toRecipients, ccRecipients, bccRecipients, currentDraftId })
     saveFormStateToStorage({
       formData,
       toRecipients,
@@ -788,12 +786,10 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     const loadingToastId = toast.loading("Mail gönderiliyor...")
 
     try {
-      console.log("Sending mail with data:", mailDataToSend)
 
       // Call Redux action for sending mail
       const result = await dispatch(sendMail(mailDataToSend)).unwrap()
 
-      console.log("Sent mail status:", result.mail?.status)
 
       // Dismiss loading toast
       toast.dismiss(loadingToastId)

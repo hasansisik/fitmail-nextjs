@@ -285,7 +285,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
     dispatch(getAllSessions())
     
     // Then load mail stats if user exists
-    if (user && !mailStats) {
+    if (user) {
       dispatch(getMailStats())
     }
 
@@ -312,7 +312,7 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
         }
       }
     } catch (_) {}
-  }, [dispatch, user, mailStats])
+  }, [dispatch, user])
   
   // Seçili hesap değiştiğinde mail stats'ı yenile
   useEffect(() => {
@@ -320,6 +320,23 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       dispatch(getMailStats())
     }
   }, [selectedAccountEmail, dispatch, user])
+
+  // Mail stats'ı düzenli olarak güncelle (her 30 saniyede bir)
+  useEffect(() => {
+    if (!user) return
+
+    // İlk yüklemede hemen çek
+    dispatch(getMailStats())
+
+    // Her 30 saniyede bir güncelle
+    const interval = setInterval(() => {
+      dispatch(getMailStats())
+    }, 30000) // 30 saniye
+
+    return () => {
+      clearInterval(interval)
+    }
+  }, [dispatch, user])
   
   // Account switch handler
   const handleAccountSwitch = async (email: string) => {

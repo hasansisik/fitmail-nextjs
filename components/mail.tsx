@@ -184,6 +184,7 @@ export function Mail({
     // Seçili hesaba göre filtrele
     // Gönderilenler, taslaklar ve planlanan mailler için from email'e göre filtrele
     // Diğer klasörler için to email'e göre filtrele
+    // Trash klasöründe hem from hem to email'lerini kontrol et (çünkü hem gönderilen hem gelen mailler olabilir)
     if (selectedAccountEmail) {
       const folderCategories = ['sent', 'drafts', 'scheduled']
       const currentFolder = pathname.split('/')[2] || 'inbox'
@@ -196,6 +197,19 @@ export function Mail({
             return true
           }
           return mail.from?.email === selectedAccountEmail
+        }
+        // Trash klasöründe hem from hem to email'lerini kontrol et
+        if (currentFolder === 'trash') {
+          // Gönderilen mailler için from email kontrolü
+          if (mail.from?.email === selectedAccountEmail) {
+            return true
+          }
+          // Gelen mailler için to email kontrolü
+          if (mail.to?.some(recipient => recipient.email === selectedAccountEmail)) {
+            return true
+          }
+          // Eğer ne from ne de to email eşleşmiyorsa, filtreleme yapma (backward compatibility)
+          return false
         }
         // Diğer klasörlerde to email'e göre filtrele
         return mail.to?.some(recipient => recipient.email === selectedAccountEmail)
