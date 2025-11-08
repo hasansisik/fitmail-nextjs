@@ -3,7 +3,7 @@ import { useMail } from "@/app/mail/use-mail"
 import { MailItem } from "@/components/mail-item"
 import { useRouter } from "next/navigation"
 import { useAppDispatch } from "@/redux/hook"
-import { getMailById, deleteMail, moveMailToFolder, markMailAsStarred } from "@/redux/actions/mailActions"
+import { getMailById, deleteMail, moveMailToFolder, markMailAsStarred, toggleMailReadStatus, markMailAsImportant, moveMailToCategory, removeMailFromCategory } from "@/redux/actions/mailActions"
 import { useState } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
@@ -229,58 +229,17 @@ export function MailList({
     return mapping[title] || "inbox"
   }
   
-  const handleMailAction = (action: string, mailId: string, data?: any) => {
-    
-    switch (action) {
-      case "reply":
-        // Implement reply functionality
-        break
-      case "replyAll":
-        // Implement reply all functionality
-        break
-      case "forward":
-        // Implement forward functionality
-        break
-      case "forwardAsAttachment":
-        // Implement forward as attachment functionality
-        break
-      case "archive":
-        // Implement archive functionality
-        break
-      case "delete":
-        // Implement delete functionality
-        break
-      case "markAsRead":
-        // Implement mark as read functionality
-        break
-      case "snooze":
-        // Implement snooze functionality
-        break
-      case "addToTasks":
-        // Implement add to tasks functionality
-        break
-      case "move":
-        // Implement move functionality
-        break
-      case "createNewCategory":
-        // Implement create new category functionality
-        break
-      case "editCategories":
-        // Implement edit categories functionality
-        break
-      case "toggleLabel":
-        // Implement toggle label functionality
-        break
-      case "createNewLabel":
-        // Implement create new label functionality
-        break
-      case "editLabels":
-        // Implement edit labels functionality
-        break
-      case "mute":
-        // Implement mute functionality
-        break
-      default:
+  const handleMailAction = async (action: string, mailId: string, data?: any) => {
+    try {
+      // İşlemler mail-context-menu'de yapılıyor, burada sadece refresh yap
+      // Mail listesini ve stats'ı yenile - bu sayede silinen/taşınan mailler listeden kaldırılır
+      if (onRefresh) {
+        await onRefresh()
+      }
+    } catch (error: any) {
+      console.error("Mail action failed:", error)
+      const errorMessage = typeof error === 'string' ? error : error?.message || "İşlem başarısız"
+      toast.error(errorMessage)
     }
   }
 

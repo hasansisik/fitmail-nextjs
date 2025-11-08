@@ -1333,18 +1333,20 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
               </div>
 
               {/* Content Field */}
-              <div className="space-y-2">
+              <div className="space-y-2 w-full overflow-hidden">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="content">İçerik *</Label>
                   <InfoHelp label="İçerik hakkında bilgi">
                     E-postanızın ana metni. Zengin metin düzenleyici ile metin biçimlendirme, bağlantı ekleme ve daha fazlasını yapabilirsiniz.
                   </InfoHelp>
                 </div>
-                <RichTextEditor
-                  content={formData.content}
-                  onChange={(content) => handleInputChange("content", content)}
-                  placeholder="Mail içeriğinizi yazın..."
-                />
+                <div className="w-full overflow-hidden">
+                  <RichTextEditor
+                    content={formData.content}
+                    onChange={(content) => handleInputChange("content", content)}
+                    placeholder="Mail içeriğinizi yazın..."
+                  />
+                </div>
               </div>
 
               {/* Attachments Field */}

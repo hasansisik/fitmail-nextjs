@@ -238,7 +238,7 @@ export function MailItem({ mail, onAction, onClick }: MailItemProps) {
             return cleanContent ? cleanContent.substring(0, 200) + (cleanContent.length > 200 ? '...' : '') : 'İçerik yok'
           })()}
         </div>
-        {mail.labels.length ? (
+        {mail.labels && mail.labels.length > 0 ? (
           <div className="flex items-center gap-2">
             {mail.labels.map((label) => (
               <Badge key={label} variant={getBadgeVariantFromLabel(label)}>

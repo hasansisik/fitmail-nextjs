@@ -347,6 +347,8 @@ export function AttachmentPreview({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
   }
 
+  const [isConfirmingDownload, setIsConfirmingDownload] = useState(false)
+
   const handleDownloadClick = () => {
     if (isDangerous || isArchive || isOfficeDocument) {
       setShowDownloadConfirm(true)
@@ -356,9 +358,21 @@ export function AttachmentPreview({
   }
 
   const confirmDownload = () => {
+    setIsConfirmingDownload(true)
     setShowDownloadConfirm(false)
     onDownload()
     toast.success("Dosya indiriliyor...")
+    // Reset after a short delay
+    setTimeout(() => {
+      setIsConfirmingDownload(false)
+    }, 100)
+  }
+
+  const handleDownloadDialogClose = (open: boolean) => {
+    // Eğer dialog kapatılıyorsa ve kullanıcı onaylamadıysa, sadece kapat
+    if (!open && !isConfirmingDownload) {
+      setShowDownloadConfirm(false)
+    }
   }
 
   return (
@@ -448,7 +462,7 @@ export function AttachmentPreview({
       </Dialog>
 
       {/* İndirme Onay Dialog'u */}
-      <AlertDialog open={showDownloadConfirm} onOpenChange={setShowDownloadConfirm}>
+      <AlertDialog open={showDownloadConfirm} onOpenChange={handleDownloadDialogClose}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
@@ -485,7 +499,9 @@ export function AttachmentPreview({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setShowDownloadConfirm(false)}>
+              İptal
+            </AlertDialogCancel>
             <AlertDialogAction 
               onClick={confirmDownload}
               className={isDangerous ? "bg-red-600 hover:bg-red-700" : ""}

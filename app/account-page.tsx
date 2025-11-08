@@ -645,14 +645,14 @@ export default function AccountPage() {
 
       if (editProfile.fulfilled.match(result)) {
         setIsEditing(false);
-        toast.success('Profil başarıyla güncellendi!');
+        // Toast mesajı useEffect içinde Redux message'dan gösterilecek
       } else {
         console.error('Profile update failed:', result.payload);
-        toast.error(result.payload as string || 'Profil güncellenirken hata oluştu');
+        // Hata mesajı useEffect içinde Redux error'dan gösterilecek
       }
     } catch (error) {
       console.error('Profile update error:', error);
-      toast.error('Profil güncellenirken hata oluştu');
+      // Hata mesajı useEffect içinde Redux error'dan gösterilecek
     }
   };
 
@@ -757,10 +757,10 @@ export default function AccountPage() {
   const handleAvatarClick = () => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/jpeg,image/jpg,image/png,image/gif,image/webp';
-
-    // Direkt dosya seçiciyi aç, soru sorma
-    input.removeAttribute('capture');
+    // Mobilde "çek ya da aç" seçeneğinin gelmesi için image/* kullan
+    input.accept = 'image/*';
+    // capture attribute'unu ekleme - bu sayede mobilde "çek ya da aç" seçeneği gelir
+    // removeAttribute ile kaldırmaya gerek yok, zaten hiç eklenmiyor
 
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
@@ -857,7 +857,7 @@ export default function AccountPage() {
         setShowCropModal(false);
         setPreviewUrl('');
         setSelectedFile(null);
-        toast.success('Profil resmi başarıyla güncellendi!');
+        // Toast mesajı useEffect içinde Redux message'dan gösterilecek
       }
     } catch (error) {
       console.error('Avatar upload error:', error);
@@ -1313,16 +1313,26 @@ export default function AccountPage() {
               {/* Profile Section */}
               <div className="text-center mb-6 sm:mb-8">
                 <div className="relative w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 group">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-[#490e6f] overflow-hidden">
+                  <button
+                    onClick={handleAvatarClick}
+                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-[#490e6f] overflow-hidden cursor-pointer relative"
+                  >
                     <img
                       src={getProfileImage()}
                       alt={getUserDisplayName()}
                       className="w-full h-full object-cover"
                     />
-                  </div>
+                    {/* Mobilde görünür overlay */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Camera className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                      </div>
+                    </div>
+                  </button>
+                  {/* Desktop için kamera butonu */}
                   <button
                     onClick={handleAvatarClick}
-                    className="absolute -bottom-1 -right-1 bg-[#490e6f] text-white p-1.5 sm:p-2 rounded-full shadow-lg hover:bg-[#490e6f] transition-colors opacity-0 group-hover:opacity-100"
+                    className="hidden sm:block absolute -bottom-1 -right-1 bg-[#490e6f] text-white p-1.5 sm:p-2 rounded-full shadow-lg hover:bg-[#490e6f] transition-colors opacity-0 group-hover:opacity-100"
                   >
                     <Camera className="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>

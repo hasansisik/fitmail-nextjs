@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useAppDispatch, useAppSelector } from "@/redux/hook"
-import { getMailById } from "@/redux/actions/mailActions"
+import { getMailById, getMailsByCategory, getMailsByLabelCategory, getMailStats, getScheduledMails, getStarredMails } from "@/redux/actions/mailActions"
 import { MailDisplay } from "@/components/mail-display"
 import { Button } from "@/components/ui/button"
 import { Metadata } from "@/components/metadata"
@@ -41,6 +41,27 @@ export default function MailDetailPage() {
   const handleBack = () => {
     // Kategori sayfasına dön
     router.push(`/mail/${category}`)
+  }
+
+  // Mail işlemlerinden sonra liste yenileme fonksiyonu
+  const handleMailSent = async () => {
+    try {
+      // Kategoriye göre doğru action'ı çağır
+      if (category === 'scheduled') {
+        await dispatch(getScheduledMails({ page: 1, limit: 50 })).unwrap()
+      } else if (category === 'starred') {
+        await dispatch(getStarredMails({ page: 1, limit: 50 })).unwrap()
+      } else if (['social', 'updates', 'forums', 'shopping', 'promotions'].includes(category)) {
+        await dispatch(getMailsByLabelCategory({ category, page: 1, limit: 50 })).unwrap()
+      } else {
+        await dispatch(getMailsByCategory({ folder: category, page: 1, limit: 50 })).unwrap()
+      }
+      
+      // Stats'ı da yenile
+      await dispatch(getMailStats()).unwrap()
+    } catch (error) {
+      console.error("Refresh failed:", error)
+    }
   }
 
   if (isLoading || mailsLoading) {
@@ -129,7 +150,11 @@ export default function MailDetailPage() {
 
         {/* Mail Content */}
         <div className="flex-1 overflow-hidden">
-          <MailDisplay mail={selectedMail} />
+          <MailDisplay 
+            mail={selectedMail} 
+            onMailSent={handleMailSent}
+            onToggleMaximize={handleBack}
+          />
         </div>
       </div>
     </>

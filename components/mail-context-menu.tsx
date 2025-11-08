@@ -124,9 +124,13 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
       if (action === 'add') {
         await dispatch(moveMailToCategory({ mailId: mail._id, category })).unwrap()
         toast.success(`Mail ${category} kategorisine eklendi`)
+        // Parent component'e bildir
+        handleAction('toggleLabel', { category, action: 'add' })
       } else if (action === 'remove') {
         await dispatch(removeMailFromCategory({ mailId: mail._id, category })).unwrap()
         toast.success(`Mail ${category} kategorisinden çıkarıldı`)
+        // Parent component'e bildir
+        handleAction('toggleLabel', { category, action: 'remove' })
       }
     } catch (error) {
       console.error('Kategori işlemi başarısız:', error)
@@ -153,20 +157,28 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
         case 'archive':
           await dispatch(moveMailToFolder({ mailId: mail._id, folder: 'archive' })).unwrap()
           toast.success('Mail arşivlendi')
+          // Parent component'e bildir
+          handleAction(action, data)
           break
         case 'delete':
           await dispatch(deleteMail(mail._id)).unwrap()
           toast.success('Mail silindi')
+          // Parent component'e bildir
+          handleAction(action, data)
           break
         case 'markAsRead':
           await dispatch(toggleMailReadStatus(mail._id)).unwrap()
           toast.success(mail.isRead ? 'Mail okunmadı olarak işaretlendi' : 'Mail okundu olarak işaretlendi')
+          // Parent component'e bildir
+          handleAction(action, data)
           break
         case 'snooze':
           // 1 saat sonra için ertele
           const snoozeUntil = new Date(Date.now() + 60 * 60 * 1000).toISOString()
           await dispatch(snoozeMail({ mailId: mail._id, snoozeUntil })).unwrap()
           toast.success('Mail 1 saat sonra için ertelendi')
+          // Parent component'e bildir
+          handleAction(action, data)
           break
         case 'move':
           if (data?.category) {
@@ -179,16 +191,22 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
             if (folder) {
               await dispatch(moveMailToFolder({ mailId: mail._id, folder })).unwrap()
               toast.success(`Mail ${data.category} klasörüne taşındı`)
+              // Parent component'e bildir
+              handleAction(action, data)
             }
           }
           break
         case 'markAsImportant':
           await dispatch(markMailAsImportant(mail._id)).unwrap()
           toast.success(mail.isImportant ? 'Mail önemli işareti kaldırıldı' : 'Mail önemli olarak işaretlendi')
+          // Parent component'e bildir
+          handleAction(action, data)
           break
         case 'markAsStarred':
           await dispatch(markMailAsStarred(mail._id)).unwrap()
           toast.success(mail.isStarred ? 'Mail yıldız işareti kaldırıldı' : 'Mail yıldızlı olarak işaretlendi')
+          // Parent component'e bildir
+          handleAction(action, data)
           break
         default:
       }
@@ -248,7 +266,7 @@ export function MailContextMenu({ children, mail, onAction }: MailContextMenuPro
         </div>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-56 p-0 max-h-96 overflow-y-auto" 
+        className="w-56 p-0 max-h-96" 
         align="start" 
         side={menuSide}
         sideOffset={5}

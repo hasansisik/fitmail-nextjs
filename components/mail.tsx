@@ -188,52 +188,18 @@ export function Mail({
       const folderCategories = ['sent', 'drafts', 'scheduled']
       const currentFolder = pathname.split('/')[2] || 'inbox'
       
-      // Debug: scheduled için log
-      if (currentFolder === 'scheduled') {
-        console.log('Filtering scheduled mails:', {
-          totalMails: mails.length,
-          selectedAccountEmail,
-          mails: mails.map(m => ({
-            id: m._id,
-            fromEmail: m.from?.email,
-            subject: m.subject
-          }))
-        })
-      }
-      
       filtered = filtered.filter(mail => {
         // Gönderilenler, taslaklar ve planlanan mailler klasöründe from email'e göre filtrele
         if (folderCategories.includes(currentFolder)) {
           // Eğer from email yoksa, filtreleme yapma (backward compatibility)
           if (!mail.from?.email) {
-            console.warn('Mail missing from.email:', mail._id)
             return true
           }
-          const matches = mail.from?.email === selectedAccountEmail
-          if (currentFolder === 'scheduled' && !matches) {
-            console.log('Scheduled mail filtered out:', {
-              mailId: mail._id,
-              mailFrom: mail.from?.email,
-              selectedAccount: selectedAccountEmail
-            })
-          }
-          return matches
+          return mail.from?.email === selectedAccountEmail
         }
         // Diğer klasörlerde to email'e göre filtrele
         return mail.to?.some(recipient => recipient.email === selectedAccountEmail)
       })
-      
-      // Debug: scheduled için filtered log
-      if (currentFolder === 'scheduled') {
-        console.log('Filtered scheduled mails:', {
-          filteredCount: filtered.length,
-          filteredMails: filtered.map(m => ({
-            id: m._id,
-            fromEmail: m.from?.email,
-            subject: m.subject
-          }))
-        })
-      }
     }
 
     // Basic search query
@@ -403,21 +369,8 @@ export function Mail({
     dispatch(closeComposeDialog())
   }
 
-  // Pathname değiştiğinde mail listesini otomatik yenile
-  const pathnameRef = React.useRef(pathname)
-  React.useEffect(() => {
-    // Pathname gerçekten değiştiyse ve mail sayfasındaysak yenile
-    if (pathnameRef.current !== pathname && pathname.startsWith('/mail')) {
-      pathnameRef.current = pathname
-      const pathParts = pathname.split('/')
-      
-      // Mail detay sayfasındaysak yenileme yapma, sadece kategori sayfasındaysak yenile
-      if (pathParts.length <= 3) {
-        handleRefresh()
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname])
+  // Pathname değişikliği için otomatik yenileme kaldırıldı
+  // Çünkü page.tsx zaten kategori değiştiğinde mailleri yüklüyor
 
   return (
     <div className="h-full flex flex-col lg:flex-row">
@@ -663,9 +616,11 @@ export function Mail({
                 mail={selectedMail}
                 isMaximized={true}
                 onToggleMaximize={handleBackToList}
-                onMailSent={() => {
+                onMailSent={async () => {
                   // Mail listesini yenile ve stats'ı güncelle
-                  handleRefresh()
+                  await handleRefresh()
+                  // Stats'ı da yenile
+                  dispatch(getMailStats())
                 }}
               />
             </div>

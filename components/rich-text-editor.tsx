@@ -83,6 +83,7 @@ export function RichTextEditor({ content, onChange, placeholder = "Mail içeriğ
     editorProps: {
       attributes: {
         class: "prose prose-sm max-w-none focus:outline-none min-h-[120px] lg:min-h-[200px] px-4 py-3 [&_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_p.is-editor-empty:first-child::before]:text-muted-foreground [&_p.is-editor-empty:first-child::before]:float-left [&_p.is-editor-empty:first-child::before]:pointer-events-none [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-2 [&_li]:my-1 [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:my-2 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:my-2 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:my-2 [&_h4]:text-lg [&_h4]:font-bold [&_h4]:my-2 [&_h5]:text-base [&_h5]:font-bold [&_h5]:my-2 [&_h6]:text-sm [&_h6]:font-bold [&_h6]:my-2",
+        style: "word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; white-space: normal; max-width: 100%; width: 100%;",
       },
     },
   })
@@ -129,7 +130,7 @@ export function RichTextEditor({ content, onChange, placeholder = "Mail içeriğ
   return (
     <div className="border rounded-lg overflow-hidden bg-background w-full max-w-full">
       {/* Toolbar */}
-      <div className="border-b p-2 flex flex-wrap gap-1 bg-muted/30 overflow-x-auto max-w-full">
+      <div className="border-b p-2 flex flex-wrap gap-1 bg-muted/30 overflow-x-auto max-w-full overflow-hidden">
         {/* Formatting */}
         <ToolbarButton
           onClick={(e) => {
@@ -324,10 +325,10 @@ export function RichTextEditor({ content, onChange, placeholder = "Mail içeriğ
       </div>
 
       {/* Editor Content */}
-      <div className="relative">
+      <div className="relative w-full overflow-hidden">
         <EditorContent 
           editor={editor} 
-          className="min-h-[120px] lg:min-h-[200px] overflow-y-auto max-h-[200px] lg:max-h-[300px]"
+          className="min-h-[120px] lg:min-h-[200px] overflow-y-auto overflow-x-hidden max-h-[200px] lg:max-h-[300px] w-full [&_.ProseMirror]:break-words [&_.ProseMirror]:overflow-wrap-anywhere [&_.ProseMirror]:word-break-break-word [&_.ProseMirror]:whitespace-normal [&_.ProseMirror]:w-full [&_.ProseMirror]:max-w-full [&_.ProseMirror]:overflow-x-hidden [&_p]:break-words [&_p]:overflow-wrap-anywhere [&_p]:word-break-break-word [&_p]:whitespace-normal [&_p]:max-w-full [&_p]:overflow-x-hidden"
         />
       </div>
     </div>

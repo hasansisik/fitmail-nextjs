@@ -583,7 +583,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
       
       // Callback ile parent component'e mail gönderildiğini bildir
       if (onMailSent) {
-        onMailSent()
+        await onMailSent()
       }
       
     } catch (error: any) {
@@ -606,7 +606,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
       
       // Parent component'i bilgilendir
       if (onMailSent) {
-        onMailSent()
+        await onMailSent()
       }
     } catch (error: any) {
       console.error("Mark as unread failed:", error)
@@ -637,7 +637,15 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
       
       // Parent component'i bilgilendir - bu mail listesini de yenileyecek
       if (onMailSent) {
-        onMailSent()
+        await onMailSent()
+      }
+      
+      // Eğer mail farklı klasöre taşındıysa ve detay sayfasındaysak, geri dön
+      if (onToggleMaximize && mail.folder !== newFolder) {
+        // Kısa bir gecikme sonrası geri dön (liste yenilensin diye)
+        setTimeout(() => {
+          onToggleMaximize()
+        }, 300)
       }
     } catch (error: any) {
       console.error("Archive failed:", error)
@@ -684,7 +692,15 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
         
         // Parent component'i bilgilendir - bu mail listesini de yenileyecek
         if (onMailSent) {
-          onMailSent()
+          await onMailSent()
+        }
+        
+        // Eğer mail farklı klasöre taşındıysa ve detay sayfasındaysak, geri dön
+        if (onToggleMaximize && mail.folder !== 'trash') {
+          // Kısa bir gecikme sonrası geri dön (liste yenilensin diye)
+          setTimeout(() => {
+            onToggleMaximize()
+          }, 300)
         }
       }
     } catch (error: any) {

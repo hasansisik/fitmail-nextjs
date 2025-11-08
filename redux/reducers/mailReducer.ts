@@ -133,7 +133,12 @@ export const mailReducer = createReducer(initialState, (builder) => {
     })
     .addCase(getMailsByCategory.fulfilled, (state, action) => {
       state.mailsLoading = false;
-      state.mails = action.payload.mails || [];
+      // Mail'lerde labels ve categories field'larını normalize et
+      state.mails = (action.payload.mails || []).map((mail: any) => ({
+        ...mail,
+        labels: mail.labels || [],
+        categories: mail.categories || []
+      }));
       state.currentFolder = action.payload.folder || "inbox";
       state.mailsError = null;
     })
@@ -148,7 +153,12 @@ export const mailReducer = createReducer(initialState, (builder) => {
     })
     .addCase(getStarredMails.fulfilled, (state, action) => {
       state.mailsLoading = false;
-      state.mails = action.payload.mails || [];
+      // Mail'lerde labels ve categories field'larını normalize et
+      state.mails = (action.payload.mails || []).map((mail: any) => ({
+        ...mail,
+        labels: mail.labels || [],
+        categories: mail.categories || []
+      }));
       state.currentFolder = "starred";
       state.mailsError = null;
     })
@@ -163,8 +173,15 @@ export const mailReducer = createReducer(initialState, (builder) => {
     })
     .addCase(getMailsByLabelCategory.fulfilled, (state, action) => {
       state.mailsLoading = false;
-      state.mails = action.payload.mails || [];
+      // Mail'lerde labels ve categories field'larını normalize et
+      state.mails = (action.payload.mails || []).map((mail: any) => ({
+        ...mail,
+        labels: mail.labels || [],
+        categories: mail.categories || []
+      }));
       state.currentCategory = action.payload.category || "";
+      // Label kategorileri için currentFolder'ı da güncelle (kategori adı ile)
+      state.currentFolder = action.payload.category || "";
       state.mailsError = null;
     })
     .addCase(getMailsByLabelCategory.rejected, (state, action) => {
@@ -198,8 +215,29 @@ export const mailReducer = createReducer(initialState, (builder) => {
       // Update mail in the list
       const mailIndex = state.mails.findIndex(mail => mail._id === action.meta.arg.mailId);
       if (mailIndex !== -1) {
-        state.mails[mailIndex].labels = action.payload.labels;
-        state.mails[mailIndex].categories = action.payload.categories;
+        const oldCategories = state.mails[mailIndex].categories || [];
+        const newCategories = action.payload.categories || [];
+        
+        state.mails[mailIndex].labels = action.payload.labels || state.mails[mailIndex].labels || [];
+        state.mails[mailIndex].categories = newCategories || [];
+        
+        // Eğer mail mevcut kategori sayfasındaysa ve kategorisi değiştiyse, listede kalmalı
+        // Ancak eğer mail mevcut kategoriye eklendiyse, listede kalmalı
+        // Eğer mail mevcut kategoriden çıkarıldıysa ve mevcut kategori sayfasındaysak, listeden kaldır
+        const isCurrentCategory = state.currentCategory === action.meta.arg.category;
+        const wasInCategory = oldCategories.includes(action.meta.arg.category);
+        const isNowInCategory = newCategories.includes(action.meta.arg.category);
+        
+        // Eğer mevcut kategori sayfasındaysak ve mail bu kategoriden çıkarıldıysa, listeden kaldır
+        if (isCurrentCategory && wasInCategory && !isNowInCategory) {
+          state.mails = state.mails.filter(mail => mail._id !== action.meta.arg.mailId);
+        }
+      }
+      
+      // Update selected mail if it's the same
+      if (state.selectedMail && state.selectedMail._id === action.meta.arg.mailId) {
+        state.selectedMail.labels = action.payload.labels || state.selectedMail.labels || [];
+        state.selectedMail.categories = action.payload.categories || state.selectedMail.categories || [];
       }
     })
     .addCase(moveMailToCategory.rejected, (state, action) => {
@@ -219,8 +257,26 @@ export const mailReducer = createReducer(initialState, (builder) => {
       // Update mail in the list
       const mailIndex = state.mails.findIndex(mail => mail._id === action.meta.arg.mailId);
       if (mailIndex !== -1) {
-        state.mails[mailIndex].labels = action.payload.labels;
-        state.mails[mailIndex].categories = action.payload.categories;
+        const oldCategories = state.mails[mailIndex].categories || [];
+        const newCategories = action.payload.categories || [];
+        
+        state.mails[mailIndex].labels = action.payload.labels || state.mails[mailIndex].labels || [];
+        state.mails[mailIndex].categories = newCategories || [];
+        
+        // Eğer mevcut kategori sayfasındaysak ve mail bu kategoriden çıkarıldıysa, listeden kaldır
+        const isCurrentCategory = state.currentCategory === action.meta.arg.category;
+        const wasInCategory = oldCategories.includes(action.meta.arg.category);
+        const isNowInCategory = newCategories.includes(action.meta.arg.category);
+        
+        if (isCurrentCategory && wasInCategory && !isNowInCategory) {
+          state.mails = state.mails.filter(mail => mail._id !== action.meta.arg.mailId);
+        }
+      }
+      
+      // Update selected mail if it's the same
+      if (state.selectedMail && state.selectedMail._id === action.meta.arg.mailId) {
+        state.selectedMail.labels = action.payload.labels || state.selectedMail.labels || [];
+        state.selectedMail.categories = action.payload.categories || state.selectedMail.categories || [];
       }
     })
     .addCase(removeMailFromCategory.rejected, (state, action) => {
@@ -260,7 +316,35 @@ export const mailReducer = createReducer(initialState, (builder) => {
       // Update mail in the list
       const mailIndex = state.mails.findIndex(mail => mail._id === action.meta.arg.mailId);
       if (mailIndex !== -1) {
-        state.mails[mailIndex].folder = action.payload.folder;
+        const oldFolder = state.mails[mailIndex].folder;
+        const newFolder = action.payload.folder;
+        
+        // Mail'in folder'ını güncelle
+        state.mails[mailIndex].folder = newFolder;
+        
+        // Eğer mail farklı bir klasöre taşındıysa ve mevcut klasörde değilse, listeden kaldır
+        // Bu, mail'in görüntülendiği klasörden çıkmasını sağlar
+        // currentFolder veya currentCategory ile karşılaştır (label kategorileri için)
+        const isCurrentFolder = state.currentFolder === oldFolder || state.currentCategory === oldFolder;
+        const isNewFolder = state.currentFolder === newFolder || state.currentCategory === newFolder;
+        
+        // Eğer mail farklı klasöre taşındıysa ve mevcut klasördeyse ama yeni klasörde değilse, listeden kaldır
+        if (oldFolder !== newFolder && isCurrentFolder && !isNewFolder) {
+          // Mail farklı klasöre taşındı, mevcut listeden kaldır
+          state.mails = state.mails.filter(mail => mail._id !== action.meta.arg.mailId);
+        }
+      }
+      
+      // Eğer seçili mail taşındıysa ve farklı klasöre gittiyse, seçimi temizle
+      if (state.selectedMail && state.selectedMail._id === action.meta.arg.mailId) {
+        // Seçili mail'in folder'ını güncelle
+        state.selectedMail.folder = action.payload.folder;
+        
+        // Eğer mail farklı klasöre taşındıysa ve mevcut klasörde değilse, seçimi temizle
+        const isCurrentFolder = state.currentFolder === state.selectedMail.folder || state.currentCategory === state.selectedMail.folder;
+        if (!isCurrentFolder) {
+          state.selectedMail = null;
+        }
       }
     })
     .addCase(moveMailToFolder.rejected, (state, action) => {
@@ -279,6 +363,11 @@ export const mailReducer = createReducer(initialState, (builder) => {
       
       // Remove mail from the list
       state.mails = state.mails.filter(mail => mail._id !== action.payload.mailId);
+      
+      // Eğer seçili mail silindiyse, seçimi temizle
+      if (state.selectedMail && state.selectedMail._id === action.payload.mailId) {
+        state.selectedMail = null;
+      }
     })
     .addCase(deleteMail.rejected, (state, action) => {
       state.mailsLoading = false;
@@ -481,7 +570,12 @@ export const mailReducer = createReducer(initialState, (builder) => {
     })
     .addCase(getScheduledMails.fulfilled, (state, action) => {
       state.mailsLoading = false;
-      state.mails = action.payload.mails || [];
+      // Mail'lerde labels ve categories field'larını normalize et
+      state.mails = (action.payload.mails || []).map((mail: any) => ({
+        ...mail,
+        labels: mail.labels || [],
+        categories: mail.categories || []
+      }));
       state.currentFolder = "scheduled";
       state.mailsError = null;
     })

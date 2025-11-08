@@ -24,19 +24,10 @@ export default function MailCategoryPage({ params }: MailCategoryPageProps) {
   // Kategori state'i
   const [category, setCategory] = React.useState<string>("")
   const [categoryTitle, setCategoryTitle] = React.useState<string>("Yükleniyor...")
-  
-  // Debug: scheduled mailler için log
-  React.useEffect(() => {
-    if (category === 'scheduled') {
-      console.log('Scheduled mails from Redux:', mails)
-      console.log('Mails count:', mails.length)
-      console.log('Mails loading:', mailsLoading)
-      console.log('Mails error:', mailsError)
-    }
-  }, [category, mails, mailsLoading, mailsError])
+  const [resolvedCategory, setResolvedCategory] = React.useState<string | null>(null)
 
   // Kategori başlıklarını tanımla
-  const getCategoryTitle = (category: string) => {
+  const getCategoryTitle = React.useCallback((category: string) => {
     const titles: Record<string, string> = {
       inbox: "Gelen Kutusu",
       sent: "Gönderilenler",
@@ -52,46 +43,56 @@ export default function MailCategoryPage({ params }: MailCategoryPageProps) {
       promotions: "Promosyonlar"
     }
     return titles[category] || "Bilinmeyen Kategori"
-  }
+  }, [])
 
-  // Kategori değiştiğinde mailleri yükle
+  // Params'ı bir kez resolve et
   useEffect(() => {
-    if (user && params) {
-      params.then(({ category: categoryParam }) => {
-        
-        // Kategori state'ini güncelle
+    let isMounted = true
+    
+    params.then(({ category: categoryParam }) => {
+      if (isMounted) {
+        setResolvedCategory(categoryParam)
         setCategory(categoryParam)
         setCategoryTitle(getCategoryTitle(categoryParam))
-        
-        // Kategori sayfaları için label category kullan
-        if (['social', 'updates', 'forums', 'shopping', 'promotions'].includes(categoryParam)) {
-          dispatch(getMailsByLabelCategory({
-            category: categoryParam,
-            page: 1,
-            limit: 50
-          }))
-        } 
-        // Planlanan mailler için özel action kullan
-        else if (categoryParam === 'scheduled') {
-          dispatch(getScheduledMails({
-            page: 1,
-            limit: 50
-          }))
-        } 
-        else {
-          // Klasör sayfaları için normal category kullan
-          dispatch(getMailsByCategory({
-            folder: categoryParam,
-            page: 1,
-            limit: 50
-          }))
-        }
-        
-        // Mail stats'ı da güncelle
-        dispatch(getMailStats())
-      })
+      }
+    })
+    
+    return () => {
+      isMounted = false
     }
-  }, [dispatch, user, params])
+  }, [params, getCategoryTitle])
+
+  // Kategori değiştiğinde mailleri yükle (sadece bir kez)
+  useEffect(() => {
+    if (!user || !resolvedCategory) return
+    
+    // Kategori sayfaları için label category kullan
+    if (['social', 'updates', 'forums', 'shopping', 'promotions'].includes(resolvedCategory)) {
+      dispatch(getMailsByLabelCategory({
+        category: resolvedCategory,
+        page: 1,
+        limit: 50
+      }))
+    } 
+    // Planlanan mailler için özel action kullan
+    else if (resolvedCategory === 'scheduled') {
+      dispatch(getScheduledMails({
+        page: 1,
+        limit: 50
+      }))
+    } 
+    else {
+      // Klasör sayfaları için normal category kullan
+      dispatch(getMailsByCategory({
+        folder: resolvedCategory,
+        page: 1,
+        limit: 50
+      }))
+    }
+    
+    // Mail stats'ı da güncelle
+    dispatch(getMailStats())
+  }, [dispatch, user, resolvedCategory])
 
   return (
     <div className="h-full flex flex-col">
