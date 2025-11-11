@@ -1246,7 +1246,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                     return (
                       <div
                         key={`attachment-${index}`}
-                        className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                        className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 border rounded-lg hover:bg-muted/50 transition-colors min-w-0 overflow-hidden"
                       >
                         {/* Resim önizlemesi veya ikon */}
                         {isImage && attachment.url ? (
@@ -1254,7 +1254,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                             <img
                               src={attachment.url}
                               alt={attachment.filename}
-                              className="w-16 h-16 object-cover rounded border"
+                              className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded border"
                               loading="lazy"
                               onError={(e) => {
                                 // Resim yüklenemezse ikona geri dön
@@ -1266,35 +1266,38 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                                 }
                               }}
                             />
-                            <div className="hidden items-center justify-center w-16 h-16">
+                            <div className="hidden items-center justify-center w-12 h-12 sm:w-16 sm:h-16">
                               {getAttachmentIcon(attachment)}
                             </div>
                           </div>
                         ) : (
-                          <div className="flex items-center justify-center flex-shrink-0">
+                          <div className="flex items-center justify-center flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16">
                             {getAttachmentIcon(attachment)}
                           </div>
                         )}
                         
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{attachment.filename}</p>
-                          <div className="flex items-center gap-2">
-                            <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <p className="text-xs sm:text-sm font-medium truncate" title={attachment.filename}>
+                            {attachment.filename}
+                          </p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-xs text-muted-foreground whitespace-nowrap">{formatFileSize(attachment.size)}</p>
                             {attachment.url && (
-                              <span className="text-xs text-green-600 font-medium">✓ İndirilebilir</span>
+                              <span className="text-xs text-green-600 font-medium whitespace-nowrap">✓ İndirilebilir</span>
                             )}
                             {!attachment.url && (
-                              <span className="text-xs text-orange-600 font-medium">⚠ URL yok</span>
+                              <span className="text-xs text-orange-600 font-medium whitespace-nowrap">⚠ URL yok</span>
                             )}
                           </div>
                         </div>
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 flex-shrink-0">
                           {attachment.url && (
                             <Button 
                               variant="ghost" 
                               size="sm"
                               onClick={() => handlePreview(attachment)}
                               title="Güvenli Önizleme"
+                              className="h-8 w-8 p-0"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -1305,12 +1308,13 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                               size="sm"
                               onClick={() => handleDownload(attachment)}
                               title="İndir"
+                              className="h-8 w-8 p-0"
                             >
                               <Download className="h-4 w-4" />
                             </Button>
                           )}
                           {!attachment.url && (
-                            <span className="text-xs text-muted-foreground px-2 py-1">
+                            <span className="text-xs text-muted-foreground px-1 sm:px-2 py-1 whitespace-nowrap">
                               URL yok
                             </span>
                           )}
@@ -1388,7 +1392,7 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                         return (
                           <div
                             key={attachment.id}
-                            className="flex items-center gap-2 sm:gap-3 p-2 border rounded-lg bg-muted/50 min-w-0"
+                            className="flex items-center gap-2 sm:gap-3 p-2 border rounded-lg bg-muted/50 min-w-0 overflow-hidden"
                           >
                             {/* Resim önizlemesi veya ikon */}
                             {isImage && attachment.url ? (
@@ -1412,20 +1416,22 @@ export function MailDisplay({ mail, isMaximized = false, onToggleMaximize, onMai
                                 </div>
                               </div>
                             ) : (
-                              <div className="flex items-center justify-center flex-shrink-0">
+                              <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12">
                                 {getAttachmentIcon(attachment.type)}
                               </div>
                             )}
                             
                             <div className="flex-1 min-w-0 overflow-hidden">
-                              <p className="text-xs sm:text-sm font-medium truncate">{attachment.name}</p>
+                              <p className="text-xs sm:text-sm font-medium truncate" title={attachment.name}>
+                                {attachment.name}
+                              </p>
                               <div className="flex items-center gap-2 flex-wrap">
-                                <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
+                                <p className="text-xs text-muted-foreground whitespace-nowrap">{formatFileSize(attachment.size)}</p>
                                 {attachment.url && (
-                                  <span className="text-xs text-green-600 font-medium">✓ Yüklendi</span>
+                                  <span className="text-xs text-green-600 font-medium whitespace-nowrap">✓ Yüklendi</span>
                                 )}
                                 {!attachment.url && (
-                                  <span className="text-xs text-orange-600 font-medium">⚠ Yüklenemedi</span>
+                                  <span className="text-xs text-orange-600 font-medium whitespace-nowrap">⚠ Yüklenemedi</span>
                                 )}
                               </div>
                             </div>

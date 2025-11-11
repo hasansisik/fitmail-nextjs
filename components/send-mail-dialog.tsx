@@ -472,6 +472,29 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
     return emailRegex.test(email.trim())
   }
 
+  // HTML içeriğinin gerçekten boş olup olmadığını kontrol et
+  const isContentEmpty = (htmlContent: string) => {
+    if (!htmlContent || !htmlContent.trim()) {
+      return true
+    }
+    
+    // SSR uyumluluğu için window kontrolü
+    if (typeof window === 'undefined') {
+      // Server-side'da basit kontrol
+      return htmlContent.trim().length === 0
+    }
+    
+    // HTML tag'lerini kaldır ve sadece metin içeriğini al
+    const tempDiv = document.createElement('div')
+    tempDiv.innerHTML = htmlContent
+    const textContent = tempDiv.textContent || tempDiv.innerText || ''
+    
+    // Boşlukları, yeni satırları ve tab'ları temizle
+    const cleanedContent = textContent.replace(/\s+/g, ' ').trim()
+    
+    return cleanedContent.length === 0
+  }
+
   // Parse emails from input and update recipients
   const parseEmails = (input: string, field: 'to' | 'cc' | 'bcc') => {
     const emails = input.split(',').map(email => email.trim()).filter(Boolean)
@@ -742,7 +765,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       return
     }
 
-    if (!formData.content.trim()) {
+    if (isContentEmpty(formData.content)) {
       toast.error("Lütfen mail içeriğini girin!")
       return
     }
@@ -827,7 +850,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
       return
     }
 
-    if (!formData.content.trim()) {
+    if (isContentEmpty(formData.content)) {
       toast.error("Lütfen mail içeriğini girin!")
       return
     }
@@ -1460,7 +1483,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                     type="button"
                     variant="outline"
                     size="sm"
-                    disabled={toRecipients.length === 0 || !formData.subject || !formData.content || !scheduledDate || !scheduledTime}
+                    disabled={toRecipients.length === 0 || !formData.subject || isContentEmpty(formData.content) || !scheduledDate || !scheduledTime}
                     onClick={handleScheduledSend}
                     className="text-xs lg:text-sm"
                   >
@@ -1477,7 +1500,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                         type="button"
                         variant="outline"
                         size="sm"
-                        disabled={toRecipients.length === 0 || !formData.subject || !formData.content}
+                        disabled={toRecipients.length === 0 || !formData.subject || isContentEmpty(formData.content)}
                         className="text-xs lg:text-sm"
                       >
                         <Clock className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
@@ -1555,7 +1578,7 @@ export function SendMailDialog({ open, onOpenChange, replyMode = null, originalM
                   {/* Hemen Gönder Butonu - En Sağda */}
                   <Button
                     type="submit"
-                    disabled={toRecipients.length === 0 || !formData.subject || !formData.content}
+                    disabled={toRecipients.length === 0 || !formData.subject || isContentEmpty(formData.content)}
                     size="sm"
                     onClick={handleSubmit}
                     className="text-xs lg:text-sm"

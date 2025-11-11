@@ -145,7 +145,7 @@ export function MailList({
             }
             toast.success(`${selectedMailIds.length} mail kalıcı olarak silindi!`)
           } else {
-            // Her maili tek tek çöp kutusuna taşı
+            // Her maili tek tek çöp kutusuna taşı (deleteMail zaten çöp kutusuna taşıyor)
             for (const mailId of selectedMailIds) {
               await dispatch(deleteMail(mailId)).unwrap()
             }
@@ -155,18 +155,36 @@ export function MailList({
           
         case 'archive':
           // Her maili tek tek arşive taşı
+          // Eğer mail zaten arşivdeyse, arşivden çıkarmak yerine sadece taşıma işlemi yapılır
           for (const mailId of selectedMailIds) {
             await dispatch(moveMailToFolder({ mailId, folder: 'archive' })).unwrap()
           }
           toast.success(`${selectedMailIds.length} mail arşivlendi!`)
           break
           
+        case 'unarchive':
+          // Arşivden çıkar - inbox'a taşı
+          for (const mailId of selectedMailIds) {
+            await dispatch(moveMailToFolder({ mailId, folder: 'inbox' })).unwrap()
+          }
+          toast.success(`${selectedMailIds.length} mail arşivden çıkarıldı!`)
+          break
+          
+        case 'restore':
+          // Çöp kutusundan geri yükle - inbox'a taşı
+          for (const mailId of selectedMailIds) {
+            await dispatch(moveMailToFolder({ mailId, folder: 'inbox' })).unwrap()
+          }
+          toast.success(`${selectedMailIds.length} mail geri yüklendi!`)
+          break
+          
         case 'star':
-          // Her maili tek tek yıldızla
+          // Her maili tek tek yıldızla (toggle - eğer zaten yıldızlıysa kaldırır)
           for (const mailId of selectedMailIds) {
             await dispatch(markMailAsStarred(mailId)).unwrap()
           }
-          toast.success(`${selectedMailIds.length} mail yıldızlandı!`)
+          // Toggle olduğu için genel mesaj göster
+          toast.success(`${selectedMailIds.length} mail için yıldız durumu güncellendi!`)
           break
           
         case 'markAsRead':
@@ -289,26 +307,76 @@ export function MailList({
             
             {selectedMails.size > 0 && (
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleBulkAction('delete')}
-                  disabled={isBulkActionLoading}
-                  className="h-8"
-                >
-                  <Trash2 className="h-4 w-4 sm:mr-1" />
-                  <span className="hidden sm:inline">Sil</span>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleBulkAction('archive')}
-                  disabled={isBulkActionLoading}
-                  className="h-8"
-                >
-                  <Archive className="h-4 w-4 sm:mr-1" />
-                  <span className="hidden sm:inline">Arşivle</span>
-                </Button>
+                {categoryTitle === "Çöp Kutusu" ? (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleBulkAction('restore')}
+                      disabled={isBulkActionLoading}
+                      className="h-8"
+                    >
+                      <Archive className="h-4 w-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Geri Yükle</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleBulkAction('delete')}
+                      disabled={isBulkActionLoading}
+                      className="h-8"
+                    >
+                      <Trash2 className="h-4 w-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Kalıcı Sil</span>
+                    </Button>
+                  </>
+                ) : categoryTitle === "Arşiv" ? (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleBulkAction('unarchive')}
+                      disabled={isBulkActionLoading}
+                      className="h-8"
+                    >
+                      <Archive className="h-4 w-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Arşivden Çıkar</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleBulkAction('delete')}
+                      disabled={isBulkActionLoading}
+                      className="h-8"
+                    >
+                      <Trash2 className="h-4 w-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Sil</span>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleBulkAction('delete')}
+                      disabled={isBulkActionLoading}
+                      className="h-8"
+                    >
+                      <Trash2 className="h-4 w-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Sil</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleBulkAction('archive')}
+                      disabled={isBulkActionLoading}
+                      className="h-8"
+                    >
+                      <Archive className="h-4 w-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Arşivle</span>
+                    </Button>
+                  </>
+                )}
                 <Button
                   size="sm"
                   variant="outline"

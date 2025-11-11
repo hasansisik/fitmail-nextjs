@@ -1,8 +1,8 @@
 // Development server
-export const server: string = "https://api.fitmail.com/v1";
+export const server: string = "http://localhost:5003/v1";
 
 // Production server
-export const server2: string = "https://api.fitmail.com/v1";
+export const server2: string = "http://localhost:5003/v1";
 
 // Active server based on environment
 export const activeServer: string = process.env.NODE_ENV === 'production' ? server2 : server;
@@ -11,17 +11,19 @@ export const activeServer: string = process.env.NODE_ENV === 'production' ? serv
 export const domains = {
   // Development domains
   development: {
-    main: 'fitmail.com',
-    account: 'account.fitmail.com',
-    panel: 'panel.fitmail.com',
-    protocol: 'https'
+    main: 'localhost',
+    account: 'account.localhost',
+    panel: 'panel.localhost',
+    protocol: 'http',
+    emailDomain: 'localhost'
   },
   // Production domains
   production: {
-    main: 'fitmail.com',
-    account: 'account.fitmail.com',
-    panel: 'panel.fitmail.com',
-    protocol: 'https'
+    main: 'localhost',
+    account: 'account.localhost',
+    panel: 'panel.localhost',
+    protocol: 'http',
+    emailDomain: 'localhost'
   }
 };
 
@@ -68,4 +70,9 @@ export const isAccountSubdomain = (hostname: string) => {
 export const isPanelSubdomain = (hostname: string) => {
   const panelHost = activeDomains.panel.split(':')[0];
   return hostname === panelHost;
+};
+
+// Get email domain (e.g., @localhost or @fitmail.com)
+export const getEmailDomain = () => {
+  return `@${activeDomains.emailDomain}`;
 };

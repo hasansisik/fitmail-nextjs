@@ -99,7 +99,7 @@ interface SearchFilters {
   hasAttachment: boolean
 }
 
-export function Mail({
+export const Mail = React.memo(function Mail({
   mails,
   mailsLoading = false,
   mailsError = null,
@@ -178,43 +178,11 @@ export function Mail({
   }, [searchQuery, advancedFilters])
 
   // Mail filtreleme fonksiyonu
+  // Backend zaten seçili hesaba göre filtrelenmiş mailleri gönderiyor,
+  // bu yüzden frontend'te tekrar filtreleme yapmaya gerek yok
+  // Sadece search ve advanced filters için filtreleme yapıyoruz
   const filteredMails = React.useMemo(() => {
     let filtered = mails
-    
-    // Seçili hesaba göre filtrele
-    // Gönderilenler, taslaklar ve planlanan mailler için from email'e göre filtrele
-    // Diğer klasörler için to email'e göre filtrele
-    // Trash klasöründe hem from hem to email'lerini kontrol et (çünkü hem gönderilen hem gelen mailler olabilir)
-    if (selectedAccountEmail) {
-      const folderCategories = ['sent', 'drafts', 'scheduled']
-      const currentFolder = pathname.split('/')[2] || 'inbox'
-      
-      filtered = filtered.filter(mail => {
-        // Gönderilenler, taslaklar ve planlanan mailler klasöründe from email'e göre filtrele
-        if (folderCategories.includes(currentFolder)) {
-          // Eğer from email yoksa, filtreleme yapma (backward compatibility)
-          if (!mail.from?.email) {
-            return true
-          }
-          return mail.from?.email === selectedAccountEmail
-        }
-        // Trash klasöründe hem from hem to email'lerini kontrol et
-        if (currentFolder === 'trash') {
-          // Gönderilen mailler için from email kontrolü
-          if (mail.from?.email === selectedAccountEmail) {
-            return true
-          }
-          // Gelen mailler için to email kontrolü
-          if (mail.to?.some(recipient => recipient.email === selectedAccountEmail)) {
-            return true
-          }
-          // Eğer ne from ne de to email eşleşmiyorsa, filtreleme yapma (backward compatibility)
-          return false
-        }
-        // Diğer klasörlerde to email'e göre filtrele
-        return mail.to?.some(recipient => recipient.email === selectedAccountEmail)
-      })
-    }
 
     // Basic search query
     if (searchQuery.trim()) {
@@ -283,7 +251,7 @@ export function Mail({
     }
 
     return filtered
-  }, [mails, searchQuery, advancedFilters, selectedAccountEmail, pathname])
+  }, [mails, searchQuery, advancedFilters])
 
   // Yenileme fonksiyonu - pathname'e göre hangi kategoriyi yenileyeceğini belirle
   const handleRefresh = async () => {
@@ -662,4 +630,14 @@ export function Mail({
       />
     </div>
   )
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison function for memo
+  // Only re-render if these props change
+  return (
+    prevProps.mails === nextProps.mails &&
+    prevProps.mailsLoading === nextProps.mailsLoading &&
+    prevProps.mailsError === nextProps.mailsError &&
+    prevProps.categoryTitle === nextProps.categoryTitle &&
+    prevProps.listOnly === nextProps.listOnly
+  )
+})

@@ -325,11 +325,13 @@ export const mailReducer = createReducer(initialState, (builder) => {
         // Eğer mail farklı bir klasöre taşındıysa ve mevcut klasörde değilse, listeden kaldır
         // Bu, mail'in görüntülendiği klasörden çıkmasını sağlar
         // currentFolder veya currentCategory ile karşılaştır (label kategorileri için)
+        // NOT: starred bir kategori değil, bir özellik olduğu için folder değişikliğinde starred sayfasından kaldırmayız
         const isCurrentFolder = state.currentFolder === oldFolder || state.currentCategory === oldFolder;
         const isNewFolder = state.currentFolder === newFolder || state.currentCategory === newFolder;
         
         // Eğer mail farklı klasöre taşındıysa ve mevcut klasördeyse ama yeni klasörde değilse, listeden kaldır
-        if (oldFolder !== newFolder && isCurrentFolder && !isNewFolder) {
+        // starred sayfasındaysak, folder değişikliği mail'i listeden kaldırmamalı (çünkü starred bir özellik)
+        if (oldFolder !== newFolder && isCurrentFolder && !isNewFolder && state.currentFolder !== 'starred') {
           // Mail farklı klasöre taşındı, mevcut listeden kaldır
           state.mails = state.mails.filter(mail => mail._id !== action.meta.arg.mailId);
         }
@@ -341,8 +343,9 @@ export const mailReducer = createReducer(initialState, (builder) => {
         state.selectedMail.folder = action.payload.folder;
         
         // Eğer mail farklı klasöre taşındıysa ve mevcut klasörde değilse, seçimi temizle
+        // starred sayfasındaysak, folder değişikliği seçimi temizlememeli
         const isCurrentFolder = state.currentFolder === state.selectedMail.folder || state.currentCategory === state.selectedMail.folder;
-        if (!isCurrentFolder) {
+        if (!isCurrentFolder && state.currentFolder !== 'starred') {
           state.selectedMail = null;
         }
       }
@@ -423,10 +426,22 @@ export const mailReducer = createReducer(initialState, (builder) => {
       state.message = action.payload.message;
       state.mailsError = null;
       
-      // Update mail in the list
+      // Update mail in the list - mail'i listeden kaldırma, sadece isStarred flag'ini güncelle
+      // Çünkü bir mail hem starred hem başka bir klasörde olabilir (örn: hem sent hem starred)
       const mailIndex = state.mails.findIndex(mail => mail._id === action.meta.arg);
       if (mailIndex !== -1) {
         state.mails[mailIndex].isStarred = action.payload.isStarred;
+      }
+      
+      // Update selected mail if it's the same
+      if (state.selectedMail && state.selectedMail._id === action.meta.arg) {
+        state.selectedMail.isStarred = action.payload.isStarred;
+      }
+      
+      // Eğer starred sayfasındaysak ve mail yıldızdan çıkarıldıysa, listeden kaldır
+      // Ama eğer başka bir sayfadaysak (örn: sent), mail listede kalmalı
+      if (state.currentFolder === 'starred' && !action.payload.isStarred) {
+        state.mails = state.mails.filter(mail => mail._id !== action.meta.arg);
       }
     })
     .addCase(markMailAsStarred.rejected, (state, action) => {

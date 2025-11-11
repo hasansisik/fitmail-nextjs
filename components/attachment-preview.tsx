@@ -47,6 +47,7 @@ export function AttachmentPreview({
   const [showSecurityWarning, setShowSecurityWarning] = useState(false)
   const [showDownloadConfirm, setShowDownloadConfirm] = useState(false)
   const [securityChecked, setSecurityChecked] = useState(false)
+  const [isConfirmingDownload, setIsConfirmingDownload] = useState(false)
 
   if (!attachment) return null
 
@@ -346,8 +347,6 @@ export function AttachmentPreview({
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
   }
-
-  const [isConfirmingDownload, setIsConfirmingDownload] = useState(false)
 
   const handleDownloadClick = () => {
     if (isDangerous || isArchive || isOfficeDocument) {
