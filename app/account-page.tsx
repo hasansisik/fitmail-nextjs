@@ -449,17 +449,40 @@ export default function AccountPage() {
       if (typeof window !== 'undefined') {
         localStorage.setItem('selectedAccountEmail', email);
       }
+      
       // Daha önce oturum açılmışsa sunucuda aktif hesabı çerezle güncelle
-      await fetch(`${server}/auth/switch-active`, {
+      const response = await fetch(`${server}/auth/switch-active`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ email })
-      })
-      window.location.reload();
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Hesap değiştirilemedi');
+      }
+      
+      const data = await response.json();
+      
+      // Kullanıcı bilgilerini güncelle
+      await dispatch(loadUser());
+      
+      toast.success("Hesap değiştirildi");
+      
+      // Sayfayı yenile (kullanıcı bilgileri güncellensin)
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error: any) {
       console.error("Account switch failed:", error);
-      toast.error("Hesap değiştirilemedi");
+      const errorMessage = error.message || "Hesap değiştirilemedi";
+      toast.error(errorMessage);
+      
+      // Eğer 409 hatası alırsak, kullanıcıyı bilgilendir
+      if (error.message?.includes('409') || error.message?.includes('oturum bulunamadı')) {
+        toast.error("Bu hesap için önce bir kez giriş yapmanız gerekiyor");
+      }
     }
   };
 

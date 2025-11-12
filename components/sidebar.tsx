@@ -5,7 +5,7 @@ import axios from "axios"
 import { server } from "@/config"
 import { usePathname, useRouter } from "next/navigation"
 import { useAppDispatch } from "@/redux/hook"
-import { logout, switchUser, getAllSessions, removeSession } from "@/redux/actions/userActions"
+import { logout, switchUser, getAllSessions, removeSession, loadUser } from "@/redux/actions/userActions"
 import { getMailsByCategory, getMailsByLabelCategory, getMailStats, clearSelectedMail, getStarredMails, getScheduledMails } from "@/redux/actions/mailActions"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
@@ -354,13 +354,43 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
       if (typeof window !== 'undefined') {
         localStorage.setItem('selectedAccountEmail', email)
       }
+      
       // Sunucuda daha önce oturum açılmışsa, tekrar giriş istemeden aktif hesabı güncelle
-      await axios.post(`${server}/auth/switch-active`, { email }, { withCredentials: true })
-      // Kullanıcı ve istatistikleri yenile
-      window.location.reload()
-      toast.success("Hesap değiştirildi")
+      const response = await axios.post(`${server}/auth/switch-active`, { email }, { withCredentials: true })
+      
+      // Backend'den dönen kullanıcı bilgilerini Redux'a kaydet
+      if (response.data?.user) {
+        // Kullanıcı bilgilerini güncelle
+        await dispatch(loadUser())
+        
+        // Mail stats'ı yenile
+        if (response.data.user.email) {
+          dispatch(getMailStats())
+        }
+        
+        toast.success("Hesap değiştirildi")
+        
+        // Sayfayı yenile (kullanıcı bilgileri ve mail stats güncellensin)
+        setTimeout(() => {
+          window.location.reload()
+        }, 500)
+      } else {
+        // Eğer user bilgisi yoksa, loadUser çağır
+        await dispatch(loadUser())
+        toast.success("Hesap değiştirildi")
+        setTimeout(() => {
+          window.location.reload()
+        }, 500)
+      }
     } catch (error: any) {
-      toast.error("Hesap değiştirilemedi")
+      console.error("Account switch error:", error)
+      const errorMessage = error.response?.data?.message || "Hesap değiştirilemedi"
+      toast.error(errorMessage)
+      
+      // Eğer 409 hatası alırsak, kullanıcıyı bilgilendir
+      if (error.response?.status === 409) {
+        toast.error("Bu hesap için önce bir kez giriş yapmanız gerekiyor")
+      }
     }
   }
   

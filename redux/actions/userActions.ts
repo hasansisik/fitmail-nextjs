@@ -172,6 +172,14 @@ export const register = createAsyncThunk(
       localStorage.setItem("activeUserId", userSession.email);
       localStorage.setItem("userEmail", userSession.email);
       
+      // Refresh sessions from backend to get real active sessions
+      try {
+        await thunkAPI.dispatch(getAllSessions());
+      } catch (error) {
+        // Ignore error, continue with register
+        console.warn("Failed to refresh sessions after register:", error);
+      }
+      
       return userSession.user;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response.data.message);
@@ -222,6 +230,14 @@ export const login = createAsyncThunk(
       // Set current active user (token çerezde, localStorage'a yazmıyoruz)
       localStorage.setItem("activeUserId", userSession.email);
       localStorage.setItem("userEmail", userSession.email);
+      
+      // Refresh sessions from backend to get real active sessions
+      try {
+        await thunkAPI.dispatch(getAllSessions());
+      } catch (error) {
+        // Ignore error, continue with login
+        console.warn("Failed to refresh sessions after login:", error);
+      }
       
       return userSession.user;
     } catch (error: any) {
@@ -331,13 +347,60 @@ export const switchUser = createAsyncThunk(
   }
 );
 
-// Get all active sessions
+// Get all active sessions from backend
 export const getAllSessions = createAsyncThunk(
   "user/getAllSessions",
   async (_, thunkAPI) => {
     try {
-      const sessions = JSON.parse(localStorage.getItem("userSessions") || "[]");
-      return sessions;
+      // Get localStorage sessions first (user's known sessions on this device)
+      const localStorageSessions = JSON.parse(localStorage.getItem("userSessions") || "[]");
+      
+      // Try to get sessions from backend (real sessions with valid tokens)
+      // Send email list from localStorage to backend for security (only check those emails)
+      const emailList = localStorageSessions.map((s: any) => s.email);
+      try {
+        const { data } = await axios.post(
+          `${server}/auth/sessions`, 
+          { emails: emailList },
+          { withCredentials: true }
+        );
+        
+        if (data.success && data.sessions) {
+          // Backend returns only sessions with valid tokens for current user
+          // Filter localStorage sessions to only include those that have valid tokens in backend
+          const backendEmails = new Set(data.sessions.map((s: any) => s.email));
+          
+          // Only keep sessions that exist in backend (have valid tokens)
+          const validSessions = localStorageSessions.filter((session: any) => 
+            backendEmails.has(session.email)
+          );
+          
+          // Update localStorage with only valid sessions
+          localStorage.setItem("userSessions", JSON.stringify(validSessions));
+          
+          // Return backend sessions (they have the most up-to-date user info)
+          const backendSessions = data.sessions.map((session: any) => ({
+            email: session.email,
+            token: null, // token çerezde, localStorage'a yazmıyoruz
+            user: session.user,
+            loginTime: session.loginTime || new Date().toISOString()
+          }));
+          
+          return backendSessions;
+        }
+      } catch (backendError: any) {
+        // If backend call fails (e.g., not authenticated), filter localStorage by checking if we can verify
+        console.warn("Failed to fetch sessions from backend, using filtered localStorage:", backendError);
+        
+        // Return empty array if not authenticated - don't show any sessions
+        if (backendError.response?.status === 401) {
+          localStorage.setItem("userSessions", JSON.stringify([]));
+          return [];
+        }
+      }
+      
+      // Fallback: return localStorage sessions (but they might not all be valid)
+      return localStorageSessions;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.message);
     }
@@ -349,6 +412,15 @@ export const removeSession = createAsyncThunk(
   "user/removeSession",
   async (email: string, thunkAPI) => {
     try {
+      // First try to remove session from backend
+      try {
+        await axios.post(`${server}/auth/remove-session`, { email }, { withCredentials: true });
+      } catch (backendError: any) {
+        // If backend call fails, continue with localStorage cleanup
+        console.warn("Failed to remove session from backend:", backendError);
+      }
+      
+      // Remove from localStorage
       const existingSessions = JSON.parse(localStorage.getItem("userSessions") || "[]");
       const updatedSessions = existingSessions.filter((s: any) => s.email !== email);
       
@@ -359,6 +431,29 @@ export const removeSession = createAsyncThunk(
         const newActiveUser = updatedSessions[0];
         localStorage.setItem("activeUserId", newActiveUser.email);
         localStorage.setItem("userEmail", newActiveUser.email);
+      }
+      
+          // Refresh sessions from backend after removal
+      try {
+        const remainingEmails = updatedSessions.map((s: any) => s.email);
+        const { data } = await axios.post(
+          `${server}/auth/sessions`, 
+          { emails: remainingEmails },
+          { withCredentials: true }
+        );
+        if (data.success && data.sessions) {
+          const backendSessions = data.sessions.map((session: any) => ({
+            email: session.email,
+            token: null,
+            user: session.user,
+            loginTime: session.loginTime || new Date().toISOString()
+          }));
+          localStorage.setItem("userSessions", JSON.stringify(backendSessions));
+          return backendSessions;
+        }
+      } catch (refreshError) {
+        // If refresh fails, return updated localStorage sessions
+        console.warn("Failed to refresh sessions from backend:", refreshError);
       }
       
       return updatedSessions;
