@@ -334,8 +334,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [isAuthenticated, loading, router, isClient, pathname])
 
-  // Show loading state while checking authentication or before client hydration
-  if (!isClient || loading) {
+  // Show loading state ONLY while checking authentication or before client hydration
+  // Don't show loading for mail data loading - that's handled by mail components
+  if (!isClient || (loading && !isAuthenticated)) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">

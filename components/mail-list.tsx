@@ -261,7 +261,9 @@ export function MailList({
     }
   }
 
-  if (loading) {
+  // Loading'i sadece ilk yüklemede göster (mailler boşsa)
+  // Kategori değişikliklerinde loading gösterme (mevcut mailler varsa)
+  if (loading && items.length === 0) {
     return (
       <ScrollArea className="h-screen">
         <div className="flex flex-col gap-2 p-4 pt-0">

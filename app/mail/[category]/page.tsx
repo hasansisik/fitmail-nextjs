@@ -63,8 +63,17 @@ export default function MailCategoryPage({ params }: MailCategoryPageProps) {
   }, [params, getCategoryTitle])
 
   // Kategori değiştiğinde mailleri yükle (sadece bir kez)
+  // Önceki kategoriyi takip et - sadece kategori değiştiğinde yükle
+  const prevCategoryRef = React.useRef<string | null>(null)
+  
   useEffect(() => {
     if (!user || !resolvedCategory) return
+    
+    // Eğer kategori değişmediyse, tekrar yükleme
+    if (prevCategoryRef.current === resolvedCategory) return
+    
+    // Kategoriyi güncelle
+    prevCategoryRef.current = resolvedCategory
     
     // Kategori sayfaları için label category kullan
     if (['social', 'updates', 'forums', 'shopping', 'promotions'].includes(resolvedCategory)) {

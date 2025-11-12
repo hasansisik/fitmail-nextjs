@@ -417,38 +417,9 @@ export function Sidebar({ isCollapsed: externalIsCollapsed, onCollapse }: Sideba
     // Önce seçili maili temizle (mail detay sayfasından çıkarken)
     await dispatch(clearSelectedMail())
     
-    // Starred kategorisi için özel action kullan
-    if (category === 'starred') {
-      dispatch(getStarredMails({
-        page: 1,
-        limit: 50
-      }))
-    } 
-    // Kategori sayfaları için label category kullan
-    else if (['social', 'updates', 'forums', 'shopping', 'promotions'].includes(category)) {
-      dispatch(getMailsByLabelCategory({
-        category: category,
-        page: 1,
-        limit: 50
-      }))
-    } 
-    // Planlanan mailler için özel action kullan
-    else if (category === 'scheduled') {
-      dispatch(getScheduledMails({
-        page: 1,
-        limit: 50
-      }))
-    } 
-    // Klasör sayfaları için normal category kullan
-    else {
-      dispatch(getMailsByCategory({
-        folder: category,
-        page: 1,
-        limit: 50
-      }))
-    }
-    
     // Sayfa yönlendirmesi - mail detay sayfasından çıkıp kategori listesine git
+    // Mail yükleme işlemi sayfa component'inde yapılacak (page.tsx veya [category]/page.tsx)
+    // Bu sayede çift yükleme önlenir ve loading sadece sayfa değiştiğinde gösterilir
     const targetUrl = `/mail${category === 'inbox' ? '' : `/${category}`}`
     router.push(targetUrl)
   }
